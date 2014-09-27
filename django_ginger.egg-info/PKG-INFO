@@ -1,0 +1,18 @@
+Metadata-Version: 1.1
+Name: django-ginger
+Version: 0.1
+Summary: Set of django utilities
+Home-page: https://github.com/vivsh/django-ginger
+Author: Vivek Sharma
+Author-email: vivek@17thstep.com
+License: MIT
+Description: UNKNOWN
+Keywords: django utilities
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: MIT License
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
