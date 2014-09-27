@@ -1,4 +1,0 @@
-django>=1.7
-jinja2
-django_jinja
-pillow
