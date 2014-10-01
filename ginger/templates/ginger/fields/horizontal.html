@@ -1,0 +1,21 @@
+<div class="{{prefix}}field {{field_class}} {%if field.errors%} error {%endif%}" data-field="{{field_name}}">	
+	{%if widget_class in ('checkbox-input', ) %}
+			<div class="{{prefix}}field-label">
+				<label> 				
+					{{field}}&nbsp;&nbsp;				
+					{{field.label}}
+				</label>				 			
+			</div>	
+			<div class="{{prefix}}field-help">{{field.help_text}}</div>		
+			{{field_errors}}
+	{%else %}
+		<div class="{{prefix}}field-label"> 
+			{{field.label_tag()}} 			 
+		</div>	
+		<div class="{{prefix}}widget {{widget_class}}" {{attributes}}>
+			{{field}}
+		</div>
+		<div class="{{prefix}}field-help">{{field.help_text}}</div>		
+		{{field_errors}}
+	{%endif %}
+</div>

@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 base_dir = path.abspath(path.dirname(__file__))
 
-with open(path.join(base_dir, "DESCRIPTION.rst")) as f:
+with open(path.join(base_dir, "DESCRIPTION.md")) as f:
     long_description = f.read()
 
 setup(
@@ -31,6 +31,7 @@ setup(
         "jinja2",
         "django_jinja",
         "pillow",
+        "django_nose",
     ],
     packages=[
         "ginger",
