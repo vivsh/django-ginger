@@ -8,6 +8,7 @@ from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+__all__ = ["FileOrUrlInput"]
 
 class FileOrUrlInput(forms.ClearableFileInput):
     

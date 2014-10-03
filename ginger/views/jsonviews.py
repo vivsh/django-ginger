@@ -12,6 +12,7 @@ from ginger.exceptions import (
     MethodNotFound, BadRequest, GingerHttpError, NotFound,
     PermissionDenied, Http404
 )
+from serializers import process_exception
 
 
 logger = logging.getLogger('ginger.views')
@@ -40,29 +41,8 @@ class JSONView(View):
             if hasattr(payload, 'to_json'):
                 payload = payload.to_json()
             status = 200
-        except KeyboardInterrupt:
-            raise
-        except Http404:
-            ex = NotFound()
-            status = ex.status_code
-            payload = ex.to_json()
-        except PermissionDenied as ex:
-            status = 403
-            payload = {
-                'type': ex.__class__.__name__,
-                'message': 'Permission Denied'
-            }
-        except GingerHttpError as ex:
-            status = ex.status_code
-            payload = ex.to_json()
-        except Exception as ex:
-            logger.exception(ex)
-            status = 500
-            payload = {'message': 'Internal server error', 'type': 'ServerError'}
-            if settings.DEBUG:
-                payload['type'] = ex.__class__.__name__
-                payload['message'] = str(ex)
-                payload['traceback'] = traceback.format_exc()
+        except Exception as exc:
+            status, payload = process_exception(exc)
         return self.render_to_response(payload, status=status)
 
     def get_serializers(self):

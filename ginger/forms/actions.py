@@ -1,13 +1,18 @@
 
 from django import forms
 import inspect
-from .exceptions import ValidationFailure
-from django.forms.forms import NON_FIELD_ERRORS
-from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator, Page
+from django.core.paginator import Page
+
+from ginger.exceptions import ValidationFailure
+from ginger.paginators import GingerPaginator
+from ginger import utils
 
 
-__all__ = ['ContextModelForm', 'ContextForm','SearchModelForm', 'SearchForm', 'SafeEmptyTuple']
+__all__ = ['ActionModelForm', 
+           'ActionForm',
+           'SearchModelForm', 
+           'SearchForm', 
+           'SafeEmptyTuple']
 
 
 class SafeEmptyTuple(tuple):
@@ -15,10 +20,11 @@ class SafeEmptyTuple(tuple):
         return 1
 
 
-class ContextFormMixin(object):
+class ActionFormMixin(object):
 
     failure_message = None
     success_message = None
+    result = None
 
     def __init__(self, **kwargs):
         constructor = forms.Form.__init__
@@ -30,11 +36,28 @@ class ContextFormMixin(object):
                 continue
             value = kwargs.pop(key)
             context[key] = value
-        super(ContextFormMixin, self).__init__(**kwargs)
+        super(ActionFormMixin, self).__init__(**kwargs)
         self.context = self.process_context(context)
 
     def process_context(self, context):
         return context
+
+    def get_success_message(self):
+        return self.success_message
+
+    def get_failure_message(self):
+        return self.failure_message
+
+    @classmethod
+    def uid(cls):
+        return utils.create_hash(utils.qualified_name(cls))
+
+    def is_submitted(self, data):
+        return self.submit_name() in data
+
+    @classmethod
+    def submit_name(cls):
+        return "submit-%s" % cls.uid()
 
     def run(self):
         if self.is_valid():
@@ -49,20 +72,20 @@ class ContextFormMixin(object):
 
     def to_json(self):
         return {
-            'message': self.success_message,
+            'message': self.get_success_message(),
             'data': self.run()
         }
 
 
-class ContextModelForm(ContextFormMixin, forms.ModelForm):
+class ActionModelForm(ActionFormMixin, forms.ModelForm):
     pass
 
 
-class ContextForm(ContextFormMixin, forms.Form):
+class ActionForm(ActionFormMixin, forms.Form):
     pass
 
 
-class SearchFormMixin(ContextFormMixin):
+class SearchFormMixin(ActionFormMixin):
 
     per_page = 20
 
@@ -103,7 +126,7 @@ class SearchFormMixin(ContextFormMixin):
         return queryset
 
     def paginate(self, queryset, page_num):
-        return Paginator(queryset, self.per_page).page(page_num)
+        return GingerPaginator(queryset, self.per_page).page(page_num)
 
     def is_paginated(self):
         return 'page' in self.context

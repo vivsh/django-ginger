@@ -64,7 +64,9 @@ class ValidationFailure(GingerHttpError):
     def to_json(self):
         data = super(ValidationFailure, self).to_json()
         errors = self.form.errors
-        data['message'] = getattr(self.form, 'failure_message', None)
+        func = getattr(self.form, 'get_failure_message', None)
+        if func:
+            data['message'] = func()
         data['data'] = {f: e.get_json_data(False) for f, e in errors.items()}
         return data
 
