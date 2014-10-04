@@ -43,6 +43,8 @@ class JSONView(View):
             status = 200
         except Exception as exc:
             status, payload = process_exception(exc)
+            if status == 500:
+                logger.exception("Operation failed")
         return self.render_to_response(payload, status=status)
 
     def get_serializers(self):

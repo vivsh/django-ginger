@@ -19,12 +19,19 @@ class GingerViewMixin(object):
     def redirect(self, to, **kwargs):
         response = redirect(to, **kwargs)
         if self.is_ajax():
-            return process_redirect(self.request, response)
+            status, content = process_redirect(self.request, response)
+            return self.render_to_response(content,
+                                           status=status,
+                                           content_type="application/json")
         else:
             return response
 
+    @classmethod
+    def class_oid(cls):
+        return utils.create_hash(utils.qualified_name(cls))
+
     def _get_session_key(self):
-        return utils.create_hash(utils.qualified_name(self.__class__))
+        return self.class_oid()
 
     @property
     def session_key(self):

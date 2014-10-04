@@ -1,5 +1,5 @@
 
-from collections import namedtuple
+from django.utils import six
 from django.core.paginator import Page, Paginator
 
 from ginger import utils
@@ -42,10 +42,13 @@ class GingerPaginator(Paginator):
         super(GingerPaginator, self).__init__(object_list, per_page, **kwargs)
 
     def page(self, request):
-        num = request.GET.get(self.parameter_name, 1)
-        page_obj = super(GingerPaginator, self).page(num)
-        page_obj.parameter_name = self.parameter_name
-        page_obj.request = request
+        if isinstance(request, (int, six.text_type)):
+            page_obj = super(GingerPaginator, self).page(int(request))
+        else:
+            num = request.GET.get(self.parameter_name, 1)
+            page_obj = super(GingerPaginator, self).page(num)
+            page_obj.parameter_name = self.parameter_name
+            page_obj.request = request
         return page_obj
 
     def _get_page(self, *args, **kwargs):

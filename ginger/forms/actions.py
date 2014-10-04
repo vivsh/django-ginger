@@ -27,12 +27,13 @@ class ActionFormMixin(object):
     result = None
 
     def __init__(self, **kwargs):
-        constructor = forms.Form.__init__
+        parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
+        constructor = parent_cls.__init__
         kwargs.setdefault('data', {})
         keywords = set(inspect.getargspec(constructor).args)
         context = {}
         for key in kwargs.copy():
-            if key in keywords or key == "instance":
+            if key in keywords:
                 continue
             value = kwargs.pop(key)
             context[key] = value
@@ -49,7 +50,11 @@ class ActionFormMixin(object):
         return self.failure_message
 
     @classmethod
-    def uid(cls):
+    def class_oid(cls):
+        """
+        Obfuscated class id
+        :return: str
+        """
         return utils.create_hash(utils.qualified_name(cls))
 
     def is_submitted(self, data):
@@ -150,25 +155,3 @@ class SearchModelForm(SearchFormMixin, forms.ModelForm):
 
 class SearchForm(SearchFormMixin, forms.Form):
     pass
-
-class DataFormMixin(object):
-
-    def execute(self, queryset, page=None):
-        result = self.apply_filter(queryset, page)
-        queryset = result.object_list if self.is_paginated() else result
-        columns = self.get_columns()
-        items = []
-        for obj in queryset:
-            row = self._create_row(obj)
-            items.append(row)
-        result.object_list = row
-
-    def _create_row(self, obj):
-        return
-
-
-    def get_field_names(self):
-        return []
-
-    def get_columns(self):
-        return []
