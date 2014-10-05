@@ -6,7 +6,7 @@ import os
 
 from django.template.response import TemplateResponse
 from django.conf import settings
-from django.http.response import HttpResponse
+from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.template.loaders import app_directories
 from django.template.loaders import filesystem
