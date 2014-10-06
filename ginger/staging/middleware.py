@@ -1,5 +1,6 @@
 
 from django.conf import settings
+from django.shortcuts import redirect
 from ginger.staging import views
 from django.core.exceptions import MiddlewareNotUsed, ImproperlyConfigured
 from ginger.staging import conf
@@ -18,5 +19,13 @@ class StagingMiddleware(object):
     
     def process_request(self, request):
         value = request.get_signed_cookie(conf.STAGING_SESSION_KEY, default=None)
-        if value != conf.STAGING_SECRET :
+        path_info = request.path_info.strip("/")
+        if value != conf.STAGING_SECRET:
             return views.stage(request)
+        elif path_info == "staging_reset":
+            response = redirect("/")
+            response.delete_cookie(conf.STAGING_SESSION_KEY)
+            return response
+
+
+
