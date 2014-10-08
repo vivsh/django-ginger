@@ -9,8 +9,9 @@ class GingerConfig(AppConfig):
 
     def ready(self):
         from django.conf import settings
+        from django_jinja import base
         if 'django_jinja' not in settings.INSTALLED_APPS:
-            from django_jinja import base
-            from ginger.extensions import URLExtension
-            base.env.add_extension(URLExtension)
             base.env.initialize()
+        from ginger.extensions import URLExtension
+        base.env.finalize = lambda val: "" if val is None else val
+        base.env.add_extension(URLExtension)
