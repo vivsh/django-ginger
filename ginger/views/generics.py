@@ -1,12 +1,11 @@
-from django.shortcuts import redirect
-from django.views.generic import DetailView
-from django.views.generic.base import View
-from django.views.generic.edit import FormView
 
+from django.shortcuts import redirect
 from ginger.exceptions import Http404
 from ginger import utils
 from ginger.serializers import process_redirect
 from templates import GingerResponse
+
+from django.views.generic import *
 
 
 class GingerViewMixin(object):

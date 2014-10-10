@@ -1,9 +1,54 @@
 
-
+import threading
 from django.utils import six
-
+import re
 import hashlib
 import inspect
+from django.contrib.auth import login
+from datetime import date
+
+
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+_context = threading.local()
+
+
+__all__ = [
+    'camel_to_hyphen',
+    'camel_to_underscore',
+    'underscore_to_camel',
+    'join_with_underscore',
+    'context',
+    'qualified_name',
+    'update_url_query',
+    'get_form_name',
+    'get_form_submit_name',
+    'get_url_with_modified_params',
+    'generate_pages',
+    'calculate_age',
+    'auth_login',
+]
+
+
+def camel_to_underscore(name):
+    s1 = first_cap_re.sub(r'\1_\2', name)
+    return all_cap_re.sub(r'\1_\2', s1).lower()
+
+
+def camel_to_hyphen(name):
+    s1 = first_cap_re.sub(r'\1-\2', name)
+    return all_cap_re.sub(r'\1-\2', s1).lower()
+
+
+def join_with_underscore(*args):
+    return '_'.join( str(a) for a in args if a )
+
+
+def underscore_to_camel(value):
+    return "".join([x.title() for x in value.split('_')])
+
 
 def generate_pages(index, limit, total):
     """
@@ -19,7 +64,7 @@ def generate_pages(index, limit, total):
     last = min(first+limit-1, total)
     if index+tail > last:
         first -= index+tail-last-1
-    return six.moves.range(max(first,1), last+1)
+    return six.moves.range(max(first, 1), last+1)
 
 
 def get_url_with_modified_params(request, values, append=False):
@@ -67,4 +112,48 @@ def create_hash(*args):
     for a in args:
         md.update(repr(a))
     return md.hexdigest()
+
+
+def get_form_name(form):
+    if hasattr(form, 'class_oid'):
+        return form.class_oid()
+    if not inspect.isclass(form): form = form.__class__
+    return create_hash(qualified_name(form))
+
+
+def get_form_submit_name(form):
+    if hasattr(form, 'submit_name'):
+        return form.submit_name()
+    return "submit-%s"%get_form_name(form)
+
+
+def context():
+    return _context
+
+
+def set_local(key, value):
+    ctx = context()
+    setattr(ctx, key, value)
+
+
+def get_local(key, default=None):
+    ctx = context()
+    return getattr(ctx, key, default)
+
+def auth_login(request,user):
+    user.backend = 'django.contrib.auth.backends.ModelBackend'
+    login(request,user)
+    return user
+
+def calculate_age(born):
+    today = date.today()
+    if not born: return 0
+    try: # raised when birth date is February 29 and the current year is not a leap year
+        birthday = born.replace(year=today.year)
+    except ValueError:
+        birthday = born.replace(year=today.year, day=born.day-1)
+    if birthday > today:
+        return today.year - born.year - 1
+    else:
+        return today.year - born.year
 

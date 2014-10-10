@@ -1,3 +1,21 @@
+from ginger import utils
+
+
+class CurrentRequestMiddleware(object):
+    """
+    This should be the first middleware
+    """
+
+    def process_request(self, request):
+        ctx = utils.context()
+        ctx.request = request
+
+    def process_response(self, request, response):
+        ctx = utils.context()
+        ctx.request = None
+        return response
+
+
 
 class MultipleProxyMiddleware(object):
     """
@@ -19,3 +37,4 @@ class MultipleProxyMiddleware(object):
                 if ',' in request.META[field]:
                     parts = request.META[field].split(',')
                     request.META[field] = parts[-1].strip()
+

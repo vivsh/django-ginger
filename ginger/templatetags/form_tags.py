@@ -1,17 +1,13 @@
 
 import json
 import re
-from ginger import template
+from ginger.templates import ginger_tag
 from ginger import utils as gutils
 
 from django.template.loader import render_to_string
-from django.forms.fields import ImageField
-from django.middleware.csrf import get_token  
-from django.forms.widgets import HiddenInput
+from django.middleware.csrf import get_token
 from django.conf import settings
 
-
-registry = template.Library()
 
 
 def make_css_class(*classes):
@@ -29,18 +25,18 @@ def make_css_class(*classes):
 def make_attrs(attrs):
     result = []
     css = []
-    for k,v in attrs.iteritems():
-        if k == 'css':
+    for k, v in attrs.iteritems():
+        if k == 'class':
             css.append(v)
             continue
-        if isinstance(v,basestring):
+        if isinstance(v, basestring):
             v = str(v).encode('string-escape')
         else:
             v = json.dumps(v)
         result.append("%s='%s'"% (k,v))
     css = make_css_class(*css)
     if css:
-        result.append("class=%s"% css)    
+        result.append("class=%s" % css)
     return " ".join(result)
 
                         
@@ -77,28 +73,28 @@ def create_csrf_tag(context):
     return "<div style='display:none'><input type='hidden' name='csrfmiddlewaretoken' value='%s' /></div>" % (csrf_token,)        
 
 
-@registry.tag(mark_safe=True)
+@ginger_tag(mark_safe=True)
 def ginger_form_attrs(form,**kwargs):
     return get_form_attrs(form,**kwargs)
 
 
-@registry.tag(mark_safe=True)
+@ginger_tag(mark_safe=True)
 def ginger_form_submit(form,  **kwargs):
     return create_submit_tag(form, **kwargs)
 
 
-@registry.tag()
+@ginger_tag()
 def ginger_form_submit_name(form):
     return gutils.get_form_submit_name(form)
 
-@registry.tag(takes_context=True, mark_safe=True)
+@ginger_tag(takes_context=True, mark_safe=True)
 def ginger_form_begin(context,form,**kwargs):
     kwargs = kwargs.copy() 
     content = [create_form_tag(form,**kwargs),create_csrf_tag(context)]
     return " ".join(content)
 
 
-@registry.tag(mark_safe=True)
+@ginger_tag(mark_safe=True)
 def ginger_form_end(form,submit=None,**kwargs):    
     tag = "</form>"
     content = [tag]
@@ -108,7 +104,7 @@ def ginger_form_end(form,submit=None,**kwargs):
     return " ".join(content)
 
 
-@registry.tag(takes_context=True, mark_safe=True)
+@ginger_tag(takes_context=True, mark_safe=True)
 def ginger_form(context,form,**kwargs):
     layout = kwargs.pop('layout',None)     
     csrf = create_csrf_tag(context)
@@ -123,7 +119,7 @@ def ginger_form(context,form,**kwargs):
     return "".join( fields )
 
 
-@registry.tag()
+@ginger_tag()
 def ginger_form_slice(first=None,last=None,form=None,**kwargs):
     if hasattr(first, 'fields'):
         form = first
@@ -136,13 +132,13 @@ def ginger_form_slice(first=None,last=None,form=None,**kwargs):
     return ginger_fields( *list(form[field] for field in  keys[first:last]), **kwargs)
 
         
-@registry.tag(mark_safe=True)        
+@ginger_tag(mark_safe=True)        
 def ginger_fields(*fields,**kwargs):
     content = map(lambda f : render_field(f, kwargs), fields)    
-    return "".join( content )
+    return "".join(content)
 
             
-@registry.tag(mark_safe=True)            
+@ginger_tag(mark_safe=True)            
 def ginger_field(field, **kwargs):      
     return render_field(field, kwargs)
 
@@ -159,7 +155,7 @@ def render_field(field, kwargs):
         return str(field) 
     layout = kwargs.pop("layout", None) or "default"     
     inject_validation_tags(field)  
-    process = lambda a: gutils.camel_to_hyphen( re.sub( r'widget|field', '',a.__class__.__name__) ).lower() 
+    process = lambda a: gutils.camel_to_hyphen(re.sub( r'widget|field', '',a.__class__.__name__)).lower()
     attrs = kwargs
     attrs =  make_attrs(attrs)    
     field_class_name = process(field.field)        
@@ -172,12 +168,12 @@ def render_field(field, kwargs):
                'is_valid': is_valid,
                'field_errors': format_errors(field.errors),
                'prefix': get_css_prefix(),
-               'field':field,
+               'field': field,
                'field_name': field_name,
-               'field_class':field_class_name,
-               'widget':widget,
-               'widget_class':widget_class_name,
-               'attributes':attrs
+               'field_class': field_class_name,
+               'widget': widget,
+               'widget_class': widget_class_name,
+               'attributes': attrs
     }    
     template = [template_name, "ginger/fields/%s.html"%layout]
     html = render_to_string(template, context)
@@ -208,7 +204,7 @@ def inject_validation_tags(bound_field):
             widget.attrs[v] = convert.get(k, convert['*'])(val)
     
 
-@registry.tag(mark_safe=True)
+@ginger_tag(mark_safe=True)
 def ginger_widget(field,**kwargs):
     wid = field.field.widget
     wid.attrs.update(kwargs)

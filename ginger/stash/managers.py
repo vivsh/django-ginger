@@ -7,16 +7,16 @@ from . import utils
 
 
 
-class FullyCachedQuerySet(QuerySet):
+class LocallyCachedQuerySet(QuerySet):
     
     def __init__(self, *args, **kw):
-        super(FullyCachedQuerySet, self).__init__(*args, **kw)
+        super(LocallyCachedQuerySet, self).__init__(*args, **kw)
 
     def flush_key(self):
         return flush_key(self.query_key())
 
     def iterator(self):
-        iterator = super(FullyCachedQuerySet, self).iterator
+        iterator = super(LocallyCachedQuerySet, self).iterator
         if self.timeout == NO_CACHE:
             return iter(iterator())
         else:
@@ -74,7 +74,7 @@ class FullyCachedQuerySet(QuerySet):
         return others
 
     def count(self):
-        super_count = super(FullyCachedQuerySet, self).count
+        super_count = super(LocallyCachedQuerySet, self).count
         try:
             query_string = 'count:%s' % self.query_key()
         except query.EmptyResultSet:
@@ -85,23 +85,23 @@ class FullyCachedQuerySet(QuerySet):
             return cached_with(self, super_count, query_string, TIMEOUT)
 
 
-class FullyCachedManagerMixin(object):
+class LocallyCachedManagerMixin(object):
     # Tell Django to use this manager when resolving foreign keys.
     use_for_related_fields = True
     
     def __init__(self, cache_name=None):
-        super(FullyCachedManagerMixin, self).__init__()
+        super(LocallyCachedManagerMixin, self).__init__()
     
     def get_cached_all(self):
         return 
 
     def get_queryset(self):
-        return FullyCachedQuerySet(self.model, using=self._db)
+        return LocallyCachedQuerySet(self.model, using=self._db)
 
     def contribute_to_class(self, cls, name):
         signals.post_save.connect(self.post_save, sender=cls)
         signals.post_delete.connect(self.post_delete, sender=cls)
-        return super(FullyCachedManagerMixin, self).contribute_to_class(cls, name)
+        return super(LocallyCachedManagerMixin, self).contribute_to_class(cls, name)
 
     def post_save(self, instance, **kwargs):
         self.invalidate(instance)
