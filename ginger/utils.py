@@ -157,3 +157,13 @@ def calculate_age(born):
     else:
         return today.year - born.year
 
+
+def settings_reloader(global_vars, prefix):
+    def refresh():
+        from django.conf import settings
+        for key in global_vars:
+            if key.startswith(prefix):
+                if hasattr(settings, key):
+                    global_vars[key] = getattr(settings, key)
+    refresh(globals, prefix)
+    return refresh

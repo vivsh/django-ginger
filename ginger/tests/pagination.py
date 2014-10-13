@@ -28,7 +28,7 @@ class TestGingerPaginator(test.SimpleTestCase):
 
     def test_valid_page(self):
         request = self.request()
-        paginator = GingerPaginator([], per_page=10, page_limit=limit, parameter_name=param)
+        # paginator = GingerPaginator([], per_page=10, page_limit=limit, parameter_name=param)
 
     def test_constructor(self):
         param = "pg"
@@ -46,7 +46,7 @@ class TestGingerPaginator(test.SimpleTestCase):
         self.assertEqual(page.request, req)
         self.assertEqual(page.parameter_name, param)
         self.assertEqual(page.number, page.number)
-        page_links = page.page_links
+        page_links = page.build_links()
         self.assertTrue(page_links)
 
 

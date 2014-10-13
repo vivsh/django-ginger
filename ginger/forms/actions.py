@@ -8,8 +8,8 @@ from ginger.paginators import GingerPaginator
 from ginger import utils
 
 
-__all__ = ['ActionModelForm', 
-           'ActionForm',
+__all__ = ['GingerModelForm', 
+           'GingerForm',
            'SearchModelForm', 
            'SearchForm', 
            'SafeEmptyTuple']
@@ -20,11 +20,10 @@ class SafeEmptyTuple(tuple):
         return 1
 
 
-class ActionFormMixin(object):
+class GingerFormMixin(object):
 
     failure_message = None
     success_message = None
-    result = None
 
     def __init__(self, **kwargs):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
@@ -37,8 +36,12 @@ class ActionFormMixin(object):
                 continue
             value = kwargs.pop(key)
             context[key] = value
-        super(ActionFormMixin, self).__init__(**kwargs)
+        super(GingerFormMixin, self).__init__(**kwargs)
         self.context = self.process_context(context)
+
+    @property
+    def result(self):
+        return self._result
 
     def process_context(self, context):
         return context
@@ -72,7 +75,7 @@ class ActionFormMixin(object):
                 self.add_error(None, ex)
         if not self.is_valid():
             raise ValidationFailure(self)
-        self.result = result
+        self._result = result
         return result
 
     def to_json(self):
@@ -82,15 +85,15 @@ class ActionFormMixin(object):
         }
 
 
-class ActionModelForm(ActionFormMixin, forms.ModelForm):
+class GingerModelForm(GingerFormMixin, forms.ModelForm):
     pass
 
 
-class ActionForm(ActionFormMixin, forms.Form):
+class GingerForm(GingerFormMixin, forms.Form):
     pass
 
 
-class SearchFormMixin(ActionFormMixin):
+class GingerSearchFormMixin(GingerFormMixin):
 
     per_page = 20
 
@@ -106,10 +109,14 @@ class SearchFormMixin(ActionFormMixin):
         choices.insert(0, (field.empty_value or "", label))
         field.choices = tuple(choices)
 
-    def execute(self, queryset, page=None):
-        return self.apply_filters(queryset, page)
+    def get_queryset(self):
+        return self.queryset
 
-    def apply_filters(self, queryset, page=None):
+    def execute(self, page=None, base_url=None):
+        return self.apply_filters(page, base_url)
+
+    def apply_filters(self, page=None, base_url=None):
+        queryset = self.get_queryset()
         data = self.cleaned_data
         for name, value in data.items():
             if not value:
@@ -149,9 +156,9 @@ class SearchFormMixin(ActionFormMixin):
             }
 
 
-class SearchModelForm(SearchFormMixin, forms.ModelForm):
+class GingerSearchModelForm(GingerSearchFormMixin, forms.ModelForm):
     pass
 
 
-class SearchForm(SearchFormMixin, forms.Form):
+class GingerSearchForm(GingerSearchFormMixin, forms.Form):
     pass

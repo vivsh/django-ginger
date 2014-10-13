@@ -1,5 +1,6 @@
 
 from django.shortcuts import redirect
+from exceptions import ValidationFailure
 from ginger.exceptions import Http404
 from ginger import utils
 from ginger.serializers import process_redirect
@@ -38,7 +39,22 @@ class GingerViewMixin(object):
 
 
 class GingerFormView(GingerViewMixin, FormView):
-    pass
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form_obj = self.get_form(form_class)
+        try:
+            form_obj.execute()
+            return self.form_valid(form_obj)
+        except ValidationFailure:
+            return self.form_invalid(form_obj)
+
+    def form_valid(self, form):
+        url = self.get_success_url()
+        return self.redirect(url)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class TwoStepFormView(GingerFormView):
@@ -51,6 +67,13 @@ class TwoStepFormView(GingerFormView):
 
     def is_done_step(self):
         pass
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        if self.is_done_step():
+            raise
 
     def get_context_data(self, **kwargs):
         if self.is_done_step():
@@ -65,6 +88,8 @@ class TwoStepFormView(GingerFormView):
     def serialize_data(self, data):
         pass
 
+    def unserialize_data(self, data):
+        pass
 
     def form_valid(self, form):
         result = form.result

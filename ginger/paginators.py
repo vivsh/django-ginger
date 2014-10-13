@@ -1,34 +1,24 @@
-
+from django.http.request import HttpRequest
 from django.utils import six
 from django.core.paginator import Page, Paginator
 
 from ginger import utils
+from ginger import ui
 
-__all__ = ["GingerPaginator"]
 
-
-class PageLink(object):
-
-    def __init__(self, page, index):
-        self.page = page
-        self.index = index
-        self.is_active = page.number == index
-
-    @property
-    def url(self):
-        request = self.page.request
-        name = self.page.parameter_name
-        return utils.get_url_with_modified_params(request, {name: self.index})
+__all__ = ["GingerPaginator", "GingerPage"]
 
 
 class GingerPage(Page):
 
-    @property
-    def page_links(self):
+    def build_links(self, request):
+        base_url = request.get_full_path()
+        param = self.paginator.parameter_name
         for i in utils.generate_pages(self.number,
                                       self.paginator.page_limit,
                                       self.paginator.count):
-            yield PageLink(self, i)
+            url = utils.get_url_with_modified_params(request, {param: i})
+            yield ui.Link(url, six.text_type(i), url==base_url)
 
 
 class GingerPaginator(Paginator):
@@ -41,14 +31,14 @@ class GingerPaginator(Paginator):
         self.page_limit = kwargs.pop("page_limit", self.page_limit)
         super(GingerPaginator, self).__init__(object_list, per_page, **kwargs)
 
-    def page(self, request):
-        if isinstance(request, (int, six.text_type)):
-            page_obj = super(GingerPaginator, self).page(int(request))
+    def page(self, value):
+        if isinstance(value, (int, six.text_type)):
+            num = int(value)
+        elif isinstance(value, HttpRequest):
+            num = value.GET.get(self.parameter_name, 1)
         else:
-            num = request.GET.get(self.parameter_name, 1)
-            page_obj = super(GingerPaginator, self).page(num)
-            page_obj.parameter_name = self.parameter_name
-            page_obj.request = request
+            num = value.get(self.parameter_name, 1)
+        page_obj = super(GingerPaginator, self).page(num)
         return page_obj
 
     def _get_page(self, *args, **kwargs):

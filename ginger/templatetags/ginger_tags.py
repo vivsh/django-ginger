@@ -1,12 +1,14 @@
-
+import collections
 import json
 import re
-from ginger.templates import ginger_tag
-from ginger import utils as gutils
 
 from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 from django.conf import settings
+
+from ginger.templates import ginger_tag
+from ginger import utils as gutils
+from ginger import ui
 
 
 
@@ -105,18 +107,17 @@ def ginger_form_end(form,submit=None,**kwargs):
 
 
 @ginger_tag(takes_context=True, mark_safe=True)
-def ginger_form(context,form,**kwargs):
-    layout = kwargs.pop('layout',None)     
+def ginger_form(context,form, submit_label="Submit", submit_name=None, css_classes=(), **kwargs):
     csrf = create_csrf_tag(context)
     name = gutils.get_form_submit_name(form)
     value = "Submit"
     submit = create_submit_tag(form,name=name,value=value,**kwargs)
-    fields = map(lambda f: render_field(f, {'layout': layout}),(form[key] for key in form.fields) )
+    fields = map(lambda f: ginger_field(f, **kwargs),(form[key] for key in form.fields) )
     fields.append(submit)
     fields.insert(0,csrf)
     fields.insert(0,create_form_tag(form))
     fields.append("</form>")
-    return "".join( fields )
+    return "".join(fields)
 
 
 @ginger_tag()
@@ -127,20 +128,20 @@ def ginger_form_slice(first=None,last=None,form=None,**kwargs):
     else:
         form = getattr(first,'form', getattr(last,'form',form)) 
     keys = form.fields.keys()
-    first = keys.index( first.name ) if first else None
-    last = keys.index( last.name ) + 1  if last else None
-    return ginger_fields( *list(form[field] for field in  keys[first:last]), **kwargs)
+    first = keys.index(first.name) if first else None
+    last = keys.index(last.name) + 1 if last else None
+    return ginger_fields(*list(form[field] for field in keys[first:last]), **kwargs)
 
         
 @ginger_tag(mark_safe=True)        
 def ginger_fields(*fields,**kwargs):
-    content = map(lambda f : render_field(f, kwargs), fields)    
+    content = map(lambda f : ginger_field(f, **kwargs), fields)
     return "".join(content)
 
             
 @ginger_tag(mark_safe=True)            
-def ginger_field(field, **kwargs):      
-    return render_field(field, kwargs)
+def ginger_field(field, **kwargs):
+    return field_to_html(field, kwargs)
 
 def get_css_prefix():
     return getattr(settings,"GINGER_CSS_PREFIX", "gui-")
@@ -150,14 +151,11 @@ def format_errors(error_list, **kwargs):
         return "<ul class='errorlist'></ul>"
     return str(error_list)
 
-def render_field(field, kwargs):
+def field_to_html(field, kwargs):
     if field.is_hidden:
         return str(field) 
-    layout = kwargs.pop("layout", None) or "default"     
-    inject_validation_tags(field)  
+    layout = kwargs.pop("template", None) or "default"
     process = lambda a: gutils.camel_to_hyphen(re.sub( r'widget|field', '',a.__class__.__name__)).lower()
-    attrs = kwargs
-    attrs =  make_attrs(attrs)    
     field_class_name = process(field.field)        
     widget = field.field.widget
     widget_class_name = process(widget)  
@@ -165,48 +163,33 @@ def render_field(field, kwargs):
     field_name = field.name
     is_valid = not field.errors
     context = {
-               'is_valid': is_valid,
-               'field_errors': format_errors(field.errors),
-               'prefix': get_css_prefix(),
-               'field': field,
-               'field_name': field_name,
-               'field_class': field_class_name,
-               'widget': widget,
-               'widget_class': widget_class_name,
-               'attributes': attrs
+        'is_valid': is_valid,
+        'field_errors': format_errors(field.errors),
+        'prefix': get_css_prefix(),
+        'field': field,
+        'field_name': field_name,
+        'field_class': field_class_name,
+        'widget': widget,
+        'widget_class': widget_class_name
     }    
     template = [template_name, "ginger/fields/%s.html"%layout]
     html = render_to_string(template, context)
     return html    
 
 
-def inject_validation_tags(bound_field):
-    field = bound_field.field    
-    widget = field.widget    
-        
-    attrs = {
-             'max_length':'maxlength',
-             'min_length':'minlength',
-#             'regex':'pattern',
-#             'required':'required'
-    }          
-    
-    convert = {
-               '*': lambda a : json.dumps(a), 
-#               'regex': lambda a: str(a.pattern).encode('string-escape') 
-    }
-    
-    if field.required: widget.attrs['required'] = 1
-    
-    for k,v in attrs.iteritems():
-        val = getattr(field, k, None)
-        if val is not None:                      
-            widget.attrs[v] = convert.get(k, convert['*'])(val)
-    
-
 @ginger_tag(mark_safe=True)
 def ginger_widget(field,**kwargs):
     wid = field.field.widget
     wid.attrs.update(kwargs)
     return unicode(field)
-    
+
+
+@ginger_tag(takes_context=True)
+def ginger_links(context, obj, **kwargs):
+    return ui.build_links(obj, context["request"], **kwargs)
+
+
+@ginger_tag(takes_context=True)
+def current_url(context, **kwargs):
+    request = context['request']
+    return gutils.get_url_with_modified_params(request, kwargs)

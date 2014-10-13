@@ -8,14 +8,14 @@
 			</div>	
 			<div class="{{prefix}}field-help">{{field.help_text}}</div>		
 			{{field_errors}}
-	{%else %}
+	{% else %}
 			<div class="{{prefix}}field-label"> 
 				{{field.label_tag()}}
 				<div class="{{prefix}}field-help">{{field.help_text}}</div> 
 			</div>	
-			<div class="{{prefix}}widget {{widget_class}}" {{attributes}}>
+			<div class="{{prefix}}widget {{widget_class}}">
 				{{field}}
 			</div>
 			{{field_errors}}
-	{%endif %}
+	{% endif %}
 </div>
