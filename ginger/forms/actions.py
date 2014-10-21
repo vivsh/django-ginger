@@ -10,12 +10,12 @@ from ginger import utils
 
 __all__ = ['GingerModelForm', 
            'GingerForm',
-           'SearchModelForm', 
-           'SearchForm', 
-           'SafeEmptyTuple']
+           'GingerSearchModelForm',
+           'GingerSearchForm',
+           'GingerSafeEmptyTuple']
 
 
-class SafeEmptyTuple(tuple):
+class GingerSafeEmptyTuple(tuple):
     def __len__(self):
         return 1
 
@@ -24,12 +24,15 @@ class GingerFormMixin(object):
 
     failure_message = None
     success_message = None
+    ignore_errors = False
 
     def __init__(self, **kwargs):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
         constructor = parent_cls.__init__
         kwargs.setdefault('data', {})
         keywords = set(inspect.getargspec(constructor).args)
+        if "ignore_errors" in kwargs:
+            self.ignore_errors = kwargs.pop("ignore_errors")
         context = {}
         for key in kwargs.copy():
             if key in keywords:
@@ -41,7 +44,7 @@ class GingerFormMixin(object):
 
     @property
     def result(self):
-        return self._result
+        return self.__result
 
     def process_context(self, context):
         return context
@@ -68,14 +71,14 @@ class GingerFormMixin(object):
         return "submit-%s" % cls.uid()
 
     def run(self):
-        if self.is_valid():
+        if self.is_valid() or self.ignore_errors:
             try:
                 result = self.execute(**self.context)
             except forms.ValidationError as ex:
                 self.add_error(None, ex)
         if not self.is_valid():
             raise ValidationFailure(self)
-        self._result = result
+        self.__result = result
         return result
 
     def to_json(self):
@@ -96,6 +99,9 @@ class GingerForm(GingerFormMixin, forms.Form):
 class GingerSearchFormMixin(GingerFormMixin):
 
     per_page = 20
+    page_limit = 10
+    parameter_name = "page"
+    ignore_errors = True
 
     def insert_null(self, field_name, label, initial=None):
         field = self.fields[field_name]
@@ -109,14 +115,15 @@ class GingerSearchFormMixin(GingerFormMixin):
         choices.insert(0, (field.empty_value or "", label))
         field.choices = tuple(choices)
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return self.queryset
 
-    def execute(self, page=None, base_url=None):
-        return self.apply_filters(page, base_url)
+    def execute(self, **kwargs):
+        return self.apply_filters(**kwargs)
 
-    def apply_filters(self, page=None, base_url=None):
-        queryset = self.get_queryset()
+    def apply_filters(self, page=None, base_url=None, parameter_name="page",
+                      page_limit=10, per_page=20, **kwargs):
+        queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data
         for name, value in data.items():
             if not value:
@@ -134,11 +141,13 @@ class GingerSearchFormMixin(GingerFormMixin):
             if result is not None:
                 queryset = result
         if page is not None:
-            return self.paginate(queryset, page)
+            return self.paginate(queryset, page, parameter_name=parameter_name,
+                                 page_limit=page_limit, per_page=per_page)
         return queryset
 
-    def paginate(self, queryset, page_num):
-        return GingerPaginator(queryset, self.per_page).page(page_num)
+    def paginate(self, queryset, page_num, parameter_name="page", page_limit=10, per_page=20):
+        return GingerPaginator(queryset, per_page, parameter_name=parameter_name,
+                               page_limit=page_limit).page(page_num)
 
     def is_paginated(self):
         return 'page' in self.context

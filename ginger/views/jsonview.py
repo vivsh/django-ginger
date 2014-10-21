@@ -12,7 +12,7 @@ from ginger.exceptions import (
     MethodNotFound, BadRequest, GingerHttpError, NotFound,
     PermissionDenied, Http404
 )
-from serializers import process_exception
+
 
 
 logger = logging.getLogger('ginger.views')

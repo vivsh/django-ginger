@@ -1,2 +1,0 @@
-
-from .jsonviews import JSONView

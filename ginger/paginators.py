@@ -11,14 +11,25 @@ __all__ = ["GingerPaginator", "GingerPage"]
 
 class GingerPage(Page):
 
-    def build_links(self, request):
+    def create_link(self, request, number):
         base_url = request.get_full_path()
         param = self.paginator.parameter_name
+        url = utils.get_url_with_modified_params(request, {param: number})
+        return ui.Link(url, six.text_type(number), url == base_url)
+
+    def build_links(self, request):
         for i in utils.generate_pages(self.number,
                                       self.paginator.page_limit,
                                       self.paginator.count):
-            url = utils.get_url_with_modified_params(request, {param: i})
-            yield ui.Link(url, six.text_type(i), url==base_url)
+            yield self.create_link(request, i)
+
+    def previous_link(self, request):
+        number = self.previous_page_number()
+        return self.create_link(request, number)
+
+    def next_link(self, request):
+        number = self.next_page_number()
+        return self.create_link(request, number)
 
 
 class GingerPaginator(Paginator):

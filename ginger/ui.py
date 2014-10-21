@@ -1,6 +1,9 @@
 
+import re
+import json
 import functools
 from django.forms.forms import BoundField
+from django.utils import six
 from ginger import utils
 
 
@@ -8,7 +11,9 @@ __all__ = [
     "add_link_builder",
     "get_link_builder",
     "GingerNav",
-    "build_links"
+    "build_links",
+    "flatten_attributes",
+    "create_css_class"
 ]
 
 _link_builders = {}
@@ -91,3 +96,31 @@ class GingerNav(object):
 
 add_link_builder(BoundField, bound_field_link_builder)
 
+
+def create_css_class(*classes):
+    history = set()
+    frags = re.split(r'\s+', " ".join(classes).strip())
+    result = []
+    for value in frags:
+        if value and value not in history:
+            result.append(value)
+            history.add(value)
+    return ' '.join(result)
+
+
+def flatten_attributes(attrs):
+    result = []
+    css = []
+    for k, v in six.iteritems(attrs):
+        if k == 'class':
+            css.append(v)
+            continue
+        if isinstance(v, basestring):
+            v = str(v).encode('string-escape')
+        else:
+            v = json.dumps(v)
+        result.append("%s='%s'"% (k,v))
+    css = create_css_class(*css)
+    if css:
+        result.append("class=%s" % css)
+    return " ".join(result)
