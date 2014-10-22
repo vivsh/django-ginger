@@ -6,7 +6,7 @@ from ginger import utils
 from ginger import ui
 
 
-__all__ = ["GingerPaginator", "GingerPage"]
+__all__ = ["GingerPaginator", "GingerPage", "paginate"]
 
 
 class GingerPage(Page):
@@ -84,3 +84,7 @@ class GingerPaginator(Paginator):
 
     def _get_page(self, *args, **kwargs):
         return GingerPage(*args, **kwargs)
+
+
+def paginate(queryset, page_num, **kwargs):
+    return GingerPaginator(queryset, **kwargs).page(page_num)

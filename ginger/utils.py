@@ -7,8 +7,6 @@ import inspect
 from django.contrib.auth import login
 from datetime import date
 
-from ginger.paginator import GingerPaginator
-
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 
@@ -31,7 +29,6 @@ __all__ = [
     'generate_pages',
     'calculate_age',
     'auth_login',
-    'paginate',
 ]
 
 
@@ -170,7 +167,3 @@ def settings_reloader(global_vars, prefix):
                     global_vars[key] = getattr(settings, key)
     refresh(globals, prefix)
     return refresh
-
-
-def paginate(queryset, page_num, **kwargs):
-    return GingerPaginator(queryset, **kwargs).page(page_num)

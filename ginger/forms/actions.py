@@ -4,7 +4,7 @@ import inspect
 from django.core.paginator import Page
 
 from ginger.exceptions import ValidationFailure
-from ginger import utils
+from ginger import utils, paginator
 
 
 __all__ = ['GingerModelForm', 
@@ -146,7 +146,7 @@ class GingerSearchFormMixin(GingerFormMixin):
 
     @staticmethod
     def paginate(queryset, page_num, **kwargs):
-        return utils.paginate(queryset, page_num, **kwargs)
+        return paginator.paginate(queryset, page_num, **kwargs)
 
     def is_paginated(self):
         return 'page' in self.context
