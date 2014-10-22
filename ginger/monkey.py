@@ -10,7 +10,7 @@ class MetaUser(type):
         cls  = User
         meta = cls._meta
         field_dict = {f.name: f for f in meta.fields }
-        for k,v in attrs.items():
+        for k, v in attrs.items():
             if k in field_dict:    
                 field = field_dict[k]
                 attrs = ('verbose_name','_unique','max_length', 'help_text')

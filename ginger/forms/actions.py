@@ -140,13 +140,14 @@ class GingerSearchFormMixin(GingerFormMixin):
             if result is not None:
                 queryset = result
         if page is not None:
-            return self.paginate(queryset, page, parameter_name=parameter_name,
+            return self.paginate(queryset, page,
+                                 parameter_name=parameter_name,
                                  page_limit=page_limit, per_page=per_page)
         return queryset
 
     @staticmethod
-    def paginate(queryset, page_num, **kwargs):
-        return paginator.paginate(queryset, page_num, **kwargs)
+    def paginate(object_list, page, **kwargs):
+        return paginator.paginate(object_list, page, **kwargs)
 
     def is_paginated(self):
         return 'page' in self.context

@@ -86,5 +86,5 @@ class GingerPaginator(Paginator):
         return GingerPage(*args, **kwargs)
 
 
-def paginate(queryset, page_num, **kwargs):
-    return GingerPaginator(queryset, **kwargs).page(page_num)
+def paginate(object_list, page, **kwargs):
+    return GingerPaginator(object_list, **kwargs).page(page)
