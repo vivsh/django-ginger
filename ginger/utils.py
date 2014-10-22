@@ -29,6 +29,9 @@ __all__ = [
     'generate_pages',
     'calculate_age',
     'auth_login',
+    'get_client_ip',
+    'get_client_latlng',
+    'model_from_dict',
 ]
 
 
@@ -167,3 +170,26 @@ def settings_reloader(global_vars, prefix):
                     global_vars[key] = getattr(settings, key)
     refresh(globals, prefix)
     return refresh
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+def get_client_latlng(request):
+    from django.contrib.gis.geoip import GeoIP
+    g = GeoIP()
+    ip = get_client_ip(request)
+    return g.lat_lon(ip)
+
+
+def model_from_dict(model, **kwargs):
+    meta = model._meta
+    names = set( meta.get_all_field_names() )
+    names.difference_update({a.name for a in meta.many_to_many})
+    return model( **dict( (k,v) for k,v in six.iteritems(kwargs) if k in names ) )
