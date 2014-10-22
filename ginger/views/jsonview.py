@@ -42,7 +42,7 @@ class JSONView(View):
                 payload = payload.to_json()
             status = 200
         except Exception as exc:
-            status, payload = process_exception(exc)
+            status, payload = serializers.process_exception(request, exc)
             if status == 500:
                 logger.exception("Operation failed")
         return self.render_to_response(payload, status=status)
