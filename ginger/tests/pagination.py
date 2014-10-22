@@ -4,7 +4,7 @@ import random
 from django import test
 from django.utils import six
 from ginger import utils
-from ginger.paginators import GingerPaginator, PageLink
+from ginger.paginator import GingerPaginator
 
 
 def parse_url(url):

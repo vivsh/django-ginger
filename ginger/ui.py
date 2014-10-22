@@ -6,14 +6,13 @@ from django.forms.forms import BoundField
 from django.utils import six
 from ginger import utils
 
-
 __all__ = [
     "add_link_builder",
     "get_link_builder",
     "GingerNav",
     "build_links",
     "flatten_attributes",
-    "create_css_class"
+    "create_css_class",
 ]
 
 _link_builders = {}
@@ -124,3 +123,4 @@ def flatten_attributes(attrs):
     if css:
         result.append("class=%s" % css)
     return " ".join(result)
+

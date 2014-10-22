@@ -4,7 +4,6 @@ import inspect
 from django.core.paginator import Page
 
 from ginger.exceptions import ValidationFailure
-from ginger.paginators import GingerPaginator
 from ginger import utils
 
 
@@ -130,7 +129,7 @@ class GingerSearchFormMixin(GingerFormMixin):
                 continue
             kwargs = {}
             try:
-                call = getattr(self,'handle_%s'%name)
+                call = getattr(self, 'handle_%s'%name)
             except AttributeError:
                 if isinstance(value, (tuple,list)):
                     name = '%s__in'%name
@@ -145,9 +144,9 @@ class GingerSearchFormMixin(GingerFormMixin):
                                  page_limit=page_limit, per_page=per_page)
         return queryset
 
-    def paginate(self, queryset, page_num, parameter_name="page", page_limit=10, per_page=20):
-        return GingerPaginator(queryset, per_page, parameter_name=parameter_name,
-                               page_limit=page_limit).page(page_num)
+    @staticmethod
+    def paginate(queryset, page_num, **kwargs):
+        return utils.paginate(queryset, page_num, **kwargs)
 
     def is_paginated(self):
         return 'page' in self.context
