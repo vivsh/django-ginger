@@ -2,7 +2,9 @@
 import inspect
 from django.core.urlresolvers import reverse
 from exceptions import ValidationFailure
-from .generics import GingerFormView
+from ginger.views.generic import GingerFormView
+
+__all__ = ['Step', 'GingerWizardView']
 
 
 class Step(object):
