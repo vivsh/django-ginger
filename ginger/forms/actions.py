@@ -28,7 +28,6 @@ class GingerFormMixin(object):
     def __init__(self, **kwargs):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
         constructor = parent_cls.__init__
-        kwargs.setdefault('data', {})
         keywords = set(inspect.getargspec(constructor).args)
         if "ignore_errors" in kwargs:
             self.ignore_errors = kwargs.pop("ignore_errors")
@@ -75,9 +74,10 @@ class GingerFormMixin(object):
                 result = self.execute(**self.context)
             except forms.ValidationError as ex:
                 self.add_error(None, ex)
+            else:
+                self.__result = result
         if not self.is_valid():
             raise ValidationFailure(self)
-        self.__result = result
         return result
 
     def to_json(self):

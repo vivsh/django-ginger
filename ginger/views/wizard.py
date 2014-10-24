@@ -1,6 +1,7 @@
 
 import inspect
 from django.core.urlresolvers import reverse
+from django.http.response import Http404
 from exceptions import ValidationFailure
 from ginger.views.generic import GingerFormView
 
@@ -164,13 +165,6 @@ class GingerWizardView(GingerFormView):
         super(GingerWizardView, self).__init__()
         self.steps = StepList(self)
 
-    def dispatch(self, request, *args, **kwargs):
-        self.current_step_name = kwargs.get('step')
-        if not self.current_step_name:
-            return self.redirect(self.steps.first.url)
-
-        super(GingerWizardView, self).dispatch(request, *args, **kwargs)
-
     @property
     def current_step_name(self):
         return self.kwargs['step']
@@ -181,6 +175,9 @@ class GingerWizardView(GingerFormView):
         kwargs['step'] = step_name
         return reverse(url_name, args=self.args, kwargs=kwargs)
 
+    def get_done_url(self):
+        return self.get_step_url(self.done_step)
+
     def get_form_class_list(self):
         for form_class in self.steps:
             yield form_class
@@ -188,39 +185,67 @@ class GingerWizardView(GingerFormView):
     def get_form_class(self):
         return self.steps.current.form_class
 
-    def is_end(self):
-        """
-        There are three ways to end a wizard:
-            1.) Go to url where step=end
-            2.) In the submitted data, next_step=end
-            3.) This is the last step within wizard
-        :return: True if the current request will end the wizard
-        """
+    def dispatch(self, request, *args, **kwargs):
+        step_name = kwargs.get('step')
+        self.current_step_name = step_name
+        if step_name is None:
+            return self.redirect(self.steps.first.url)
+        if step_name == self.done_step and request.method == 'GET':
+            return self.done(request, *args, **kwargs)
+        if step_name not in self.steps:
+            raise Http404
+        return super(GingerWizardView, self).dispatch(request, *args, **kwargs)
 
-    def process_end(self):
-        return
-
-    def render_commit(self):
-        try:
-            self.revalidate()
-        except ValidationFailure as ex:
-            return self.render_form(ex.form)
+    def get(self, request, *args, **kwargs):
+        data = request.GET
+        form_class = self.steps.current.form_class
+        if form_class.is_submitted(data):
+            return self.process_form(form_class, data=data)
         else:
-            self.prepare_commit()
+            return super(GingerWizardView, self).get(request, *args, **kwargs)
 
-    def process_commit(self, committed_data):
+    def form_valid(self, form):
+        step = self.steps.next
+        if step is None:
+            url = self.get_done_url()
+        else:
+            url = step.url
+        return self.redirect(url)
+
+    def serialize_form(self, form):
         pass
 
-    def process_submit(self):
-        pass
-
-    def render_step(self):
+    def unserialize_form(self, form_class):
         pass
 
     def revalidate(self):
         pass
 
+    def reset(self):
+        pass
 
+    def is_done(self):
+        pass
+
+    def mark_done(self):
+        pass
+
+    def done(self):
+        if not self.is_done():
+            try:
+                self.revalidate()
+            except ValidationFailure as ex:
+                return self.form_invalid(ex.form)
+            else:
+                self.commit()
+        self.mark_done()
+        return self.render_done()
+
+    def render_done(self):
+        pass
+
+    def commit(self):
+        pass
 
 
 
