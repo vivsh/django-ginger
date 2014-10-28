@@ -80,6 +80,9 @@ class GingerFormMixin(object):
             raise ValidationFailure(self)
         return result
 
+    def execute(self, **kwargs):
+        return {}
+
     def to_json(self):
         return {
             'message': self.get_success_message(),

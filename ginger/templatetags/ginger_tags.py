@@ -1,10 +1,11 @@
-
+from django.utils.encoding import force_text
+import re
+from jinja2 import Markup
 
 from django.forms.forms import BoundField
-import re
-
 from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
+
 from ginger.templates import ginger_tag
 from ginger import utils as gutils
 from ginger import ui
@@ -15,7 +16,7 @@ def ginger_form_attributes(form, **kwargs):
     return get_form_attrs(form, **kwargs)
 
 
-@ginger_tag()
+@ginger_tag(mark_safe=True)
 def ginger_form_slice(first=None,last=None,form=None,**kwargs):
     if hasattr(first, 'fields'):
         form = first
@@ -75,9 +76,10 @@ def get_form_attrs(form, **kwargs):
 
 def create_csrf_tag(context):
     request = context["request"]
-    csrf_token = context.get('csrf_token',get_token(request))
+    csrf_token = context.get('csrf_token', get_token(request))
     if not csrf_token: raise Exception("No csrf token provided in the context")
-    return "<div style='display:none'><input type='hidden' name='csrfmiddlewaretoken' value='%s' /></div>" % (csrf_token,)
+    return "<div style='display:none'><input type='hidden' name='csrfmiddlewaretoken' value='%s' /></div>" % (
+        force_text(csrf_token),)
 
 
 def field_to_html(field, kwargs):
@@ -107,8 +109,8 @@ def field_to_html(field, kwargs):
 
 def format_errors(error_list, **kwargs):
     if not error_list:
-        return "<ul class='errorlist'></ul>"
-    return str(error_list)
+        return Markup("<ul class='errorlist'></ul>")
+    return Markup(error_list)
 
 
 class FormRenderer(object):

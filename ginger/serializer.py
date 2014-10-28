@@ -55,16 +55,14 @@ def decode(payload):
 
 
 def process_page(page):
-    items = page.object_list
     top, bottom = page.start_index(), page.end_index()
     return {
-        'currentItemCount': len(items),
-        'totalItems': page.paginator.count,
-        'itemsPerPage': page.paginator.per_page,
-        'totalPages': page.paginator.num_pages,
-        'startIndex': top,
-        'endIndex': bottom,
-        'pageIndex': page.number
+        'count': page.paginator.count,
+        'per_page': page.paginator.per_page,
+        'total_pages': page.paginator.num_pages,
+        'start_page': top,
+        'end_page': bottom,
+        'number': page.number
     }
 
 
@@ -86,11 +84,15 @@ def process_exception(request, exc):
         payload = exc.to_json()
     else:
         status = 500
-        payload = {'message': 'Internal server error', 'type': 'ServerError'}
-        if settings.DEBUG:
-            payload['type'] = exc.__class__.__name__
-            payload['message'] = str(exc)
-            payload['traceback'] = traceback.format_exc()
+        payload = {
+            'message': 'Internal server error',
+            'type': 'ServerError'
+        }
+    if settings.DEBUG:
+        meta = payload
+        meta['type'] = exc.__class__.__name__
+        meta['message'] = str(exc)
+        meta['traceback'] = traceback.format_exc()
     return status, payload
 
 

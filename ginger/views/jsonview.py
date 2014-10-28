@@ -1,16 +1,14 @@
 
 import logging
-import traceback
 
+from django.utils.functional import cached_property
 from django.views.generic import View
 from django.http import HttpResponse
-from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-from ginger import serializers
+from ginger import serializer
 from ginger.exceptions import (
-    MethodNotFound, BadRequest, GingerHttpError, NotFound,
-    PermissionDenied, Http404
+    MethodNotFound, BadRequest
 )
 
 
@@ -18,17 +16,18 @@ from ginger.exceptions import (
 logger = logging.getLogger('ginger.views')
 
 
-class JSONView(View):
+class GingerJSONView(View):
 
     MAX_CONTENT_SIZE = 32 * 1024
+    user = None
 
-    def check_access(self, request):
-        return
+    def get_user(self):
+        return self.request.user
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
         try:
-            self.check_access(request)
+            self.user = self.get_user()
             method = request.method.lower()
             func = getattr(self, method, None)
             if not func:
@@ -42,7 +41,7 @@ class JSONView(View):
                 payload = payload.to_json()
             status = 200
         except Exception as exc:
-            status, payload = serializers.process_exception(request, exc)
+            status, payload = serializer.process_exception(request, exc)
             if status == 500:
                 logger.exception("Operation failed")
         return self.render_to_response(payload, status=status)
@@ -51,15 +50,16 @@ class JSONView(View):
         return getattr(self, 'serializers', {})
 
     def render_to_response(self, payload, **kwargs):
-        content = serializers.encode(payload, serializers=self.get_serializers())
+        content = serializer.encode(payload, serializers=self.get_serializers())
         kwargs.setdefault('status', 200)
         kwargs.setdefault('content_type', 'application/json')
         return HttpResponse(content, **kwargs)
 
     def get_params(self):
-        return self.get_json_data()
+        return self.JSON
 
-    def get_json_data(self):
+    @cached_property
+    def JSON(self):
         request = self.request
         limit = self.MAX_CONTENT_SIZE
         content = request.read(limit)
@@ -67,7 +67,7 @@ class JSONView(View):
             payload = {}
         else:
             try:
-                payload = serializers.decode(content)
+                payload = serializer.decode(content)
             except ValueError:
                 raise BadRequest
         return payload

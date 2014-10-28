@@ -74,6 +74,8 @@ def get_url_with_modified_params(request, values, append=False):
     parse = six.moves.urllib.parse
     if not isinstance(request, six.text_type):
         url = request.get_full_path()
+    else:
+        url = request
     parts = parse.urlsplit(url)
     params = parse.parse_qs(parts.query)
     for key, value in six.iteritems(values):

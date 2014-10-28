@@ -14,7 +14,7 @@ from django_jinja.base import env, Template
 from django_jinja import library
 
 
-from ginger.serializers import JSONTemplate
+from ginger.serializer import JSONTemplate
 
 
 __all__ = [
