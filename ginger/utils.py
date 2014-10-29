@@ -1,11 +1,15 @@
 
 import threading
-from django.utils import six
 import re
 import hashlib
 import inspect
-from django.contrib.auth import login
 from datetime import date
+import base64
+import pickle
+from django.utils.encoding import force_bytes
+from django.utils import six
+from django.contrib.auth import login
+from django.db import models
 
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
@@ -32,6 +36,8 @@ __all__ = [
     'get_client_ip',
     'get_client_latlng',
     'model_from_dict',
+    'base64pickle_dumps',
+    'base64pickle_loads',
 ]
 
 
@@ -194,4 +200,38 @@ def model_from_dict(model, **kwargs):
     meta = model._meta
     names = set( meta.get_all_field_names() )
     names.difference_update({a.name for a in meta.many_to_many})
-    return model( **dict( (k,v) for k,v in six.iteritems(kwargs) if k in names ) )
+    return model(**dict((k, v) for k, v in six.iteritems(kwargs) if k in names))
+
+
+def update_object(instance, data):
+    opts = instance._meta
+    file_field_list = []
+    # Wrap up the saving of m2m data as a function.
+    def save_m2m():
+        for f in opts.many_to_many:
+            if f.name in data:
+                f.save_form_data(instance, data[f.name])
+
+    for f in opts.fields:
+        if f.name not in data or isinstance(f, models.AutoField):
+            continue
+        if isinstance(f, models.FileField):
+            file_field_list.append(f)
+        else:
+            f.save_form_data(instance, data[f.name])
+
+    for f in file_field_list:
+        f.save_form_data(instance, data[f.name])
+
+    return save_m2m
+
+
+def base64pickle_loads(data):
+    encoded_data = base64.b64decode(force_bytes(data))
+    return pickle.loads(encoded_data)
+
+
+def base64pickle_dumps(data):
+    serialized = pickle.dumps(data)
+    return base64.b64encode(serialized).decode("ascii")
+

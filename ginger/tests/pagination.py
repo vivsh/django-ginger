@@ -43,46 +43,11 @@ class TestGingerPaginator(test.SimpleTestCase):
         page_num = random.randint(1, 9)
         req = self.request(**{param: page_num})
         page = paginator.page(req)
-        self.assertEqual(page.request, req)
-        self.assertEqual(page.parameter_name, param)
+        self.assertEqual(page.paginator.parameter_name, param)
         self.assertEqual(page.number, page.number)
-        page_links = page.build_links()
+        page_links = page.build_links(req)
         self.assertTrue(page_links)
 
-
-class TestPageLink(test.SimpleTestCase):
-
-    def setUp(self):
-        self.factory = test.RequestFactory()
-
-    def request(self, **kwargs):
-        return self.factory.get("/random/path/", data=kwargs)
-
-    def page_link(self, index, value, name="page"):
-        request = self.request(**{name: value})
-        page = mock.Mock()
-        page.number = value
-        page.request = request
-        page.parameter_name = name
-        return PageLink(page, index)
-
-    def test_url(self):
-        page_link = self.page_link(1, 5)
-        url = page_link.url
-        params = parse_url(url)
-        self.assertEqual(params["page"], ["1"])
-
-    def test_active(self):
-        page_link = self.page_link(5, 5)
-        self.assertTrue(page_link.is_active)
-
-    def test_inactive(self):
-        page_link = self.page_link(5, 5)
-        self.assertTrue(page_link.is_active)
-
-    def test_index(self):
-        page_link = self.page_link(5, 5)
-        self.assertEqual(page_link.index, 5)
 
 
 

@@ -1,5 +1,10 @@
 
 import os
+from datetime import timedelta
+
+from django.utils import timezone
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import ModelForm
 from django.utils.functional import cached_property
@@ -16,8 +21,9 @@ from ginger.templates import GingerResponse
 from . import storages, steps
 
 
-__all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView','GingerDetailView',
-           'GingerFormView', 'GingerWizardView', 'GingerFormDoneView']
+__all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
+           'GingerDetailView', 'GingerFormView', 'GingerWizardView',
+           'GingerFormDoneView']
 
 
 class GingerView(View):
@@ -35,17 +41,20 @@ class GingerView(View):
     def class_oid(cls):
         return utils.create_hash(utils.qualified_name(cls))
 
-    def _get_session_key(self):
-        return self.class_oid()
-
-    @property
-    def session_key(self):
-        return self._get_session_key()
-
     def get_context_data(self, **kwargs):
         if 'view' not in kwargs:
             kwargs['view'] = self
         return kwargs
+
+    def get_session_key(self):
+        host = self.request.get_host().replace(".", "-")
+        return "%s-%s" % (host, self.class_oid())
+
+    def get_session_data(self):
+        return self.request.session.get(self.get_session_key())
+
+    def set_session_data(self, data):
+        self.request.session[self.get_session_key()] = data
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
@@ -171,12 +180,8 @@ class GingerSearchView(GingerFormView):
 
 class GingerStepViewMixin(object):
 
-    step_storage = storages.SessionStorage
     step_parameter_name = "step"
     done_step = "done"
-
-    def get_storage(self):
-        return self.step_storage(self)
 
     def commit(self, form_data):
         raise NotImplementedError
@@ -187,9 +192,6 @@ class GingerStepViewMixin(object):
     def get_form_key(self):
         return self.current_step_name()
 
-    @cached_property
-    def storage(self):
-        return self.get_storage()
 
     def current_step_name(self):
         return self.kwargs.get(self.step_parameter_name)
@@ -205,27 +207,11 @@ class GingerStepViewMixin(object):
     def get_done_url(self):
         return self.get_step_url(self.done_step)
 
-    def validate_step(self, step_name):
-        data, files = self.storage.get_form_data(step_name)
-        form_obj = self.get_form(step_name, data, files)
-        try:
-            if hasattr(form_obj,"run"):
-                form_obj.run()
-        except ValidationFailure:
-            pass
-        return form_obj
-
-    def validate_steps(self, step_names=None):
-        if step_names is None:
-            step_names = self.get_step_names()
-        for step_name in step_names:
-            yield self.validate_step(step_name)
-
     def process_commit(self):
         raise NotImplementedError
 
     def render_done(self):
-        data = self.storage.get_data_for_done()
+        data = self.get_session_data()
         if data is None:
             response = self.process_commit()
             if response:
@@ -250,6 +236,12 @@ class GingerStepViewMixin(object):
         return super(GingerStepViewMixin, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
+        step_name = self.current_step_name()
+        method = getattr(self, "process_%s_step" % step_name, None)
+        if method:
+            response = method()
+            if response:
+                return response
         if self.is_done_step():
             return self.render_done()
         return super(GingerStepViewMixin, self).get(request, *args, **kwargs)
@@ -265,7 +257,7 @@ class GingerFormDoneView(GingerStepViewMixin, GingerFormView):
 
     def form_valid(self, form):
         result = form.result
-        self.storage.set_data_for_done(result)
+        self.set_session_data(result)
         return self.redirect(self.get_done_url())
 
     def get_template_names(self):
@@ -278,11 +270,25 @@ class GingerFormDoneView(GingerStepViewMixin, GingerFormView):
 
 class GingerWizardView(GingerStepViewMixin, GingerFormView):
 
+    template_format = None
+    file_upload_dir = "tmp/"
+    form_storage_class = storages.SessionFormStorage
 
     def __init__(self, *args, **kwargs):
         super(GingerWizardView, self).__init__(*args, **kwargs)
+        self.file_storage = self.get_file_storage()
         self.steps = steps.StepList(self)
-    template_format = None
+
+    @cached_property
+    def form_storage(self):
+        return self.get_form_storage()
+
+    def get_form_storage(self):
+        return self.form_storage_class(self)
+
+    def get_file_storage(self):
+        location = self.file_upload_dir or getattr(settings, "TEMP_MEDIA_DIR", "tmp")
+        return FileSystemStorage(os.path.join(settings.MEDIA_ROOT, location))
 
     def get_template_names(self):
         if self.template_format is None:
@@ -302,7 +308,7 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
 
     def form_valid(self, form):
         step_name = self.current_step_name()
-        self.storage.set_form_data(step_name, form.data, form.files)
+        self.form_storage.set(step_name, form.data, form.files)
         url = self.get_next_url()
         return self.redirect(url)
 
@@ -314,8 +320,8 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
                 return self.redirect(self.get_step_url(step_name))
             form_data.update(form_obj.cleaned_data)
         data = self.commit(form_data)
-        self.storage.set_data_for_done(data)
-        self.storage.clear_form_data()
+        self.set_session_data(data)
+        self.form_storage.clear()
 
     def get_step_names(self):
         return self.steps.names()
@@ -323,9 +329,51 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
     def commit(self, form_data):
         return {}
 
+    def get_cleaned_data_for_step(self, step_name):
+        return self.validate_step(step_name).cleaned_data
+
+    def get_cleaned_data(self, step_names=None):
+        result = {}
+        for form_obj in self.validate_step(step_names):
+            data = form_obj.cleaned_data
+            result.update(data)
+        return result
+
     def can_submit(self):
         method = self.steps.current.method
         request = self.request
         if request.method == "POST" or (method == "GET" and request.method == "GET" and request.GET):
             return True
-        return  False
+        return False
+
+    def validate_step(self, step_name):
+        data, files = self.form_storage.get(step_name)
+        form_obj = self.get_form(step_name, data, files)
+        try:
+            if hasattr(form_obj, "run"):
+                form_obj.run()
+        except ValidationFailure:
+            pass
+        return form_obj
+
+    def validate_steps(self, step_names=None):
+        if step_names is None:
+            step_names = self.get_step_names()
+        for step_name in step_names:
+            yield self.validate_step(step_name)
+
+    @classmethod
+    def delete_old_files(cls, **kwargs):
+        wiz = cls()
+        expired = timezone.now() - timedelta(**kwargs)
+        file_storage = wiz.get_file_storage()
+        try:
+            files = file_storage.listdir("")[-1]
+        except OSError:
+            return
+        for filename in files:
+            access_time = file_storage.accessed_time(filename)
+            if access_time < expired:
+                file_storage.delete(filename)
+
+

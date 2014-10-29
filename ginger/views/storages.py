@@ -1,23 +1,18 @@
 
-from django.utils import six
 import abc
 import copy
+
+from django.utils import six
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.base import File
+
+
+__all__ = ['FormStorageBase', 'SessionFormStorage']
 
 
 class StorageFile(object):
 
     data = None
-
-    def delete(self, file_storage):
-        field_dict = self.data
-        if isinstance(field_dict, File):
-            file_name = field_dict.name
-        else:
-            field_dict = field_dict.copy()
-            file_name = field_dict.pop('tmp_name')
-        file_storage.delete(file_name)
 
     def load(self, file_storage):
         field_dict = self.data
@@ -35,124 +30,86 @@ class StorageFile(object):
             'charset': getattr(field_file,'charset',None)
         }
         self.data = file_dict
-#         field_file.close()
 
-    def is_stored(self):
+    def has_file(self):
         return isinstance(self.data, dict)
 
 
-def store_files(file_storage, data):
-    for k,v in data.items():
-        if isinstance(v, File):
-            pfile = StorageFile()
-            pfile.store(file_storage, v)
-            data[k]= pfile
-    return data
-
-def load_files(file_storage, form_data):
-    data = copy.copy(form_data)
-    for k,v in form_data.iteritems():
-        if isinstance(v, StorageFile):
-            data[k]= v.load(file_storage)
-    return data
-
-def delete_files(file_storage, data):
-    for _,v in data.items():
-        if isinstance(v, File):
-            file_name = v.name
-            file_storage.delete(file_name)
-        elif isinstance(v, StorageFile):
-            v.delete(file_storage)
-    return data
-
-
-@six.add_metaclass(abc.ABCMeta)
-class Storage(object):
-
-    @abc.abstractmethod
-    def get_form_data(self, step_name):
-        """
-
-        :param step_name:
-        :return:
-        """
-
-    @abc.abstractmethod
-    def set_form_data(self, step_name, data, files):
-        """
-
-        :param step_name:
-        :param data:
-        :param files:
-        :return:
-        """
-
-    @abc.abstractmethod
-    def clear_form_data(self):
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
-    def get_data_for_done(self):
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
-    def set_data_for_done(self, data):
-        """
-
-        :param data:
-        :return:
-        """
-
-
-
-class SessionStorage(Storage):
+class FormStorageBase(object):
 
     data = None
 
-    def __init__(self, wizard, prefix=""):
+    def __init__(self, wizard, autocommit=False, prefix=""):
         self.wizard = wizard
-        self.request = wizard.request
-        self.prefix = prefix
-        self.done_key = self.create_key("done")
-        self.step_key = self.create_key("step")
+        self.file_storage = wizard.file_storage
+        self.autocommit = autocommit
+        self.prefix = ""
+        self.step_key = self.create_key("steps")
         self._load_data()
 
-    def _load_data(self):
-        session = self.request.session
-        self.data = session.get(self.step_key)
-        if not isinstance(self.data, dict):
-            self.data = {}
+    def reduce_files(self, data):
+        for k, v in six.iteritems(data.copy()):
+            if isinstance(v, File):
+                pfile = StorageFile()
+                pfile.store(self.file_storage, v)
+                data[k]= pfile
+        return data
 
-    def _save_data(self):
-        self.request.session[self.step_key] = self.data
-        self.request.session.modified = True
+    def restore_files(self, form_data):
+        data = copy.copy(form_data)
+        for k, v in form_data.iteritems():
+            if isinstance(v, StorageFile):
+                data[k]= v.load(self.file_storage)
+        return data
 
     def create_key(self, suffix):
         oid = self.wizard.class_oid()
         return "%s%s-%s" % (self.prefix, oid, suffix)
 
-    def get_data_for_done(self):
-        return self.request.session.get(self.done_key)
+    def set(self, step_name, data, files=None):
+        if files:
+            data = data.copy()
+            data.update(files)
+        self.data[step_name] = self.reduce_files(self.file_storage, data)
+        if self.autocommit:
+            self._save_data()
 
-    def set_data_for_done(self, data):
-        self.request.session[self.done_key] = data
+    def get(self, step_name):
+        try:
+            return self.restore_files(self.file_storage, self.data[step_name]), None
+        except KeyError:
+            return None, None
 
-    def set_form_data(self, step_name, data, files):
-        self.data[step_name] = data, files
-        self._save_data()
-
-    def get_form_data(self, step_name):
-        if step_name in self.data:
-            return self.data[step_name]
-        return None, None
-
-    def clear_form_data(self):
+    def clear(self):
         self.data.clear()
-        self._save_data()
+        if self.autocommit:
+            self._save_data()
 
+    def _load_data(self):
+        self.data = self.load()
+        if not isinstance(self.data, dict):
+            self.data = {}
+
+    def _save_data(self):
+        self.store(self.data)
+
+    def store(self, data):
+        raise NotImplementedError
+
+    def load(self):
+        raise NotImplementedError
+
+
+
+class SessionFormStorage(FormStorageBase):
+
+    @property
+    def session(self):
+        return self.wizard.request.session
+
+    def load(self):
+        return self.session.get(self.step_key)
+
+    def store(self, data):
+        self.session[self.step_key] = data
+        self.session.modified = True

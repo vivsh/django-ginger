@@ -3,6 +3,8 @@
 import inspect
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
+from django.forms.fields import FileField
+from django.utils import six
 
 from ginger.forms import GingerForm
 
@@ -49,6 +51,10 @@ class BoundStep(object):
         self.container = container
         self.step = step
         self._name = name
+        if not getattr(self.wizard, 'file_storage'):
+            form_class = self.get_form_class()
+            if any(isinstance(f, FileField) for f in six.itervalues(form_class.base_fields)):
+                raise ImproperlyConfigured("No file_storage specified for WizardView")
 
     @property
     def can_skip(self):

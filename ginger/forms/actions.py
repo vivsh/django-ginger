@@ -11,7 +11,9 @@ __all__ = ['GingerModelForm',
            'GingerForm',
            'GingerSearchModelForm',
            'GingerSearchForm',
-           'GingerSafeEmptyTuple']
+           'GingerSafeEmptyTuple',
+           'GingerFormMixin',
+           'GingerSearchFormMixin']
 
 
 class GingerSafeEmptyTuple(tuple):

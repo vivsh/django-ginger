@@ -65,13 +65,11 @@ class GingerPaginator(Paginator):
         """
         Returns a Page object for the given 1-based page number.
         """
-        if isinstance(value, (int, six.text_type)):
-            num = int(value)
-        elif isinstance(value, HttpRequest):
-            num = value.GET.get(self.parameter_name, 1)
-        else:
-            num = value.get(self.parameter_name, 1)
-        number = self.validate_number(num)
+        if isinstance(value, HttpRequest):
+            value = value.GET.get(self.parameter_name, 1)
+        elif isinstance(value, dict):
+            value = value.get(self.parameter_name, 1)
+        number = self.validate_number(value)
         if number > self.num_pages:
             result = self.object_list.none() if hasattr(self.object_list, "none") else []
         else:

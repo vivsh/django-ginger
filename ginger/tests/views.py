@@ -14,7 +14,11 @@ from ginger.forms import GingerForm
 from ginger.templates import GingerResponse
 from ginger import templates, views
 
-TEMPLATE_DIR = joinpath(dirname(realpath(__file__)), "templates")
+
+_root = dirname(realpath(__file__))
+TEMPLATE_DIR = joinpath(_root, "templates")
+MEDIA_ROOT = joinpath(_root, "media")
+
 
 class TestGingerResponse(test.SimpleTestCase):
 
@@ -227,8 +231,7 @@ class TestGingerFormDone(test.SimpleTestCase):
         response = self.view(request, step=FakeFormDone.done_step)
         self.assertEqual(response.status_code, 200)
 
-        storage = response.context_data["view"].storage
-        key = storage.done_key
+        key = response.context_data["view"].get_session_key()
 
         self.assertEqual(response.context_data["name"], name, response.context_data)
         self.assertEqual(session[key]["name"], name)
@@ -240,7 +243,9 @@ class FakeWizard2(FakeWizard):
         return "/wizard/%s/"%step_name
 
 
-@override_settings(TEMPLATE_DIRS=(joinpath(dirname(realpath(__file__)), "templates"),))
+@override_settings(
+    MEDIA_ROOT=MEDIA_ROOT,
+    TEMPLATE_DIRS=(joinpath(dirname(realpath(__file__)), "templates"),))
 class TestWizard(test.SimpleTestCase):
 
     def setUp(self):
@@ -294,4 +299,7 @@ class TestWizard(test.SimpleTestCase):
         request = self.request()
         response = self.view2(request, step=FakeWizard2.done_step)
         self.assertEqual(response.status_code, 302)
+
+    def test_delete_old_files(self):
+        FakeWizard2.delete_old_files(seconds=10)
 
