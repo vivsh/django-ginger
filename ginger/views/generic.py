@@ -316,7 +316,8 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         form_data = {}
         for step_name in self.get_step_names():
             form_obj = self.validate_step(step_name)
-            if not form_obj.is_valid():
+            step = self.steps[step_name]
+            if not form_obj.is_valid() and (not step.can_skip or form_obj.is_bound):
                 return self.redirect(self.get_step_url(step_name))
             form_data.update(form_obj.cleaned_data)
         data = self.commit(form_data)
@@ -349,6 +350,7 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
     def validate_step(self, step_name):
         data, files = self.form_storage.get(step_name)
         form_obj = self.get_form(step_name, data, files)
+        form_obj.step_name = step_name
         try:
             if hasattr(form_obj, "run"):
                 form_obj.run()
