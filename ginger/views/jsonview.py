@@ -1,5 +1,7 @@
 
 import logging
+from django.core.exceptions import ObjectDoesNotExist
+from django.http.response import Http404
 
 from django.utils.functional import cached_property
 from django.views.generic import View
@@ -11,12 +13,14 @@ from ginger.exceptions import (
     MethodNotFound, BadRequest
 )
 
+from .generic import GingerSessionDataMixin
+
 
 
 logger = logging.getLogger('ginger.views')
 
 
-class GingerJSONView(View):
+class GingerJSONView(View, GingerSessionDataMixin):
 
     MAX_CONTENT_SIZE = 32 * 1024
     user = None
@@ -24,10 +28,21 @@ class GingerJSONView(View):
     def get_user(self):
         return self.request.user
 
+    def get_object(self):
+        return
+
+    def _create_object(self):
+        if hasattr(self, 'get_object'):
+            try:
+                return self.get_object()
+            except ObjectDoesNotExist:
+                raise Http404
+
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
         try:
             self.user = self.get_user()
+            self.object = self._create_object()
             method = request.method.lower()
             func = getattr(self, method, None)
             if not func:

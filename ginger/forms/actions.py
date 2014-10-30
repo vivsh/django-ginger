@@ -71,16 +71,25 @@ class GingerFormMixin(object):
         return "submit-%s" % cls.uid()
 
     def run(self):
-        if self.is_valid() or self.ignore_errors:
+        if not self.is_valid():
+            raise ValidationFailure(self)
+        return self.result
+
+    def is_valid(self):
+        func = super(GingerFormMixin, self).is_valid
+        try:
+            return self.result
+        except AttributeError:
+            pass
+        result = None
+        if func() or self.ignore_errors:
             try:
                 result = self.execute(**self.context)
             except forms.ValidationError as ex:
                 self.add_error(None, ex)
-            else:
+            finally:
                 self.__result = result
-        if not self.is_valid():
-            raise ValidationFailure(self)
-        return result
+        return func()
 
     def execute(self, **kwargs):
         return {}

@@ -26,7 +26,24 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerFormDoneView']
 
 
-class GingerView(View):
+class GingerSessionDataMixin(object):
+
+    def get_session_key(self):
+        host = self.request.get_host()
+        return "%s-%s" % (host, self.class_oid())
+
+    def get_session_data(self):
+        return self.request.session.get(self.get_session_key())
+
+    def set_session_data(self, data):
+        self.request.session[self.get_session_key()] = data
+
+    @classmethod
+    def class_oid(cls):
+        return utils.create_hash(utils.qualified_name(cls))
+
+
+class GingerView(View, GingerSessionDataMixin):
 
     user = None
 
@@ -37,24 +54,12 @@ class GingerView(View):
         self.user = self.get_user()
         return super(GingerView, self).dispatch(request, *args, **kwargs)
 
-    @classmethod
-    def class_oid(cls):
-        return utils.create_hash(utils.qualified_name(cls))
-
     def get_context_data(self, **kwargs):
         if 'view' not in kwargs:
             kwargs['view'] = self
         return kwargs
 
-    def get_session_key(self):
-        host = self.request.get_host().replace(".", "-")
-        return "%s-%s" % (host, self.class_oid())
 
-    def get_session_data(self):
-        return self.request.session.get(self.get_session_key())
-
-    def set_session_data(self, data):
-        self.request.session[self.get_session_key()] = data
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
