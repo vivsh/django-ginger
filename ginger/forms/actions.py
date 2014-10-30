@@ -71,7 +71,7 @@ class GingerFormMixin(object):
         return "submit-%s" % cls.uid()
 
     def run(self):
-        if not self.is_valid():
+        if not self.is_valid() and not self.ignore_errors:
             raise ValidationFailure(self)
         return self.result
 
@@ -103,7 +103,6 @@ class GingerFormMixin(object):
 
 class GingerModelForm(GingerFormMixin, forms.ModelForm):
     pass
-
 
 class GingerForm(GingerFormMixin, forms.Form):
     pass
@@ -180,7 +179,13 @@ class GingerSearchFormMixin(GingerFormMixin):
 
 
 class GingerSearchModelForm(GingerSearchFormMixin, forms.ModelForm):
-    pass
+
+    def _post_clean(self):
+        """
+            This override is needed so as to avoid modelform validation during clean
+        """
+        pass
+
 
 
 class GingerSearchForm(GingerSearchFormMixin, forms.Form):
