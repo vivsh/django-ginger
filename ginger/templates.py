@@ -42,6 +42,9 @@ JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 class LoaderMixin(object):
     is_usable = True
 
+    def process_template_name(self, template_name):
+        return template_name
+
     def load_template(self, template_name, template_dirs=None):
         """
         In the root directory, use jinja only for files with jinja extension
@@ -51,7 +54,8 @@ class LoaderMixin(object):
         _, ext = os.path.splitext(template_name)
         if root not in JINJA2_EXCLUDE_FOLDERS or ext == JINJA2_TEMPLATE_EXTENSION:
             try:
-                template = env.get_template(template_name)
+                template_name = self.process_template_name(template_name)
+                template = env.get_or_select_template(template_name)
                 return template, template.filename
             except jinja2.TemplateNotFound:            
                 raise TemplateDoesNotExist(template_name)                    
