@@ -70,13 +70,13 @@ class FormStorageBase(object):
         if files:
             data = data.copy()
             data.update(files)
-        self.data[step_name] = self.reduce_files(self.file_storage, data)
+        self.data[step_name] = self.reduce_files(data)
         if self.autocommit:
             self._save_data()
 
     def get(self, step_name):
         try:
-            return self.restore_files(self.file_storage, self.data[step_name]), None
+            return self.restore_files(self.data[step_name]), None
         except KeyError:
             return None, None
 

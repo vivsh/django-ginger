@@ -51,7 +51,7 @@ class GingerJSONView(View, GingerSessionDataMixin):
             if isinstance(params, dict):
                 payload = func(**params)
             elif params:
-                raise BadRequest
+                raise BadRequest("Invalid parameters format")
             if hasattr(payload, 'to_json'):
                 payload = payload.to_json()
             status = 200
@@ -84,5 +84,5 @@ class GingerJSONView(View, GingerSessionDataMixin):
             try:
                 payload = serializer.decode(content)
             except ValueError:
-                raise BadRequest
+                raise BadRequest("Invalid json format")
         return payload
