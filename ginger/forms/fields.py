@@ -1,14 +1,18 @@
 
 import mimetypes
 import urllib2
+from django.utils.encoding import force_text
 import os
 from urlparse import urlparse
 
 from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
+from ginger import ui, utils
 
-__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget"]
+
+__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField"]
+
 
 class FileOrUrlInput(forms.ClearableFileInput):
     
@@ -80,3 +84,33 @@ class HeightField(forms.MultiValueField):
             feet,inches = data_list
             return int((feet*12 + inches) * 2.54)
         return None
+
+
+class SortField(forms.ChoiceField):
+
+    def __init__(self, choices=(), toggle=True, *args, **kwargs):
+        super(SortField, self).__init__(choices=choices, *args, **kwargs)
+        self.toggle = toggle
+
+    def valid_value(self, value):
+        "Check to see if the provided value is a valid choice"
+        text_value = force_text(value)
+        if text_value.startswith("-"):
+            text_value = text_value[1:]
+        return super(SortField, self).valid_value(text_value)
+
+    def build_links(self, value, request):
+        text_value = force_text(value) if value is not None else None
+        for k, v in self.choices:
+            content = force_text(v)
+            key = force_text(k)
+            is_active = text_value and text_value == key
+            if is_active and self.toggle:
+                next_value = key if text_value.startswith("-") else "-%s" % key
+            else:
+                next_value = key
+            url = utils.get_url_with_modified_params(request, {self.name: next_value})
+            yield ui.Link(url, content, is_active=is_active)
+
+    def handle_queryset(self, value, queryset, data):
+        return queryset.order_by(value)

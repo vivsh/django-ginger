@@ -1,4 +1,4 @@
-
+from django.core.files.uploadedfile import UploadedFile
 import os
 from datetime import timedelta
 
@@ -28,15 +28,20 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
 
 class GingerSessionDataMixin(object):
 
+    session_key_prefix = ""
+
     def get_session_key(self):
         host = self.request.get_host()
-        return "%s-%s" % (host, self.class_oid())
+        return "%s-%s-%s" % (self.session_key_prefix, host, self.class_oid())
 
     def get_session_data(self):
         return self.request.session.get(self.get_session_key())
 
     def set_session_data(self, data):
         self.request.session[self.get_session_key()] = data
+
+    def clear_session_data(self):
+        self.request.session.pop(self.get_session_key(), None)
 
     @classmethod
     def class_oid(cls):
@@ -112,10 +117,18 @@ class GingerFormView(GingerTemplateView):
             )
         return self.redirect(request.get_full_path())
 
+    def get_form_data(self, form_key):
+        return None, None
+
+    def set_form_data(self, form_key, data, files=None):
+        raise NotImplementedError
+
     def get(self, request, *args, **kwargs):
+        form_key = self.get_form_key()
         if self.can_submit():
-            return self.process_submit(form_key=self.get_form_key(), data=request.GET)
-        form = self.get_form(form_key=self.get_form_key())
+            return self.process_submit(form_key=form_key, data=request.GET)
+        data, files = self.get_form_data(form_key)
+        form = self.get_form(form_key=form_key, data=data, files=files)
         context = self.get_context_data(form=form, **kwargs)
         return self.render_to_response(context)
 
@@ -215,16 +228,20 @@ class GingerStepViewMixin(object):
     def process_commit(self):
         raise NotImplementedError
 
+    def process_submit(self, *args, **kwargs):
+        self.clear_session_data()
+        return super(GingerStepViewMixin, self).process_submit(*args, **kwargs)
+
     def render_done(self):
         data = self.get_session_data()
         if data is None:
             response = self.process_commit()
             if response:
                 return response
-        kwargs = self.kwargs.copy()
-        if data:
-            kwargs.update(data)
-        context = self.get_context_data(**kwargs)
+            else:
+                data = self.get_session_data()
+        kwargs = self.kwargs
+        context = self.get_context_data(object=data, **kwargs)
         return self.render_to_response(context)
 
     def is_done_step(self):
@@ -301,6 +318,12 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         step_name = self.current_step_name()
         return self.template_format % {"step": step_name}
 
+    def get_form_data(self, form_key):
+        return self.form_storage.get(form_key)
+
+    def set_form_data(self, form_key, data, files=None):
+        self.form_storage.set(form_key, data, files)
+
     def get_form_class(self, form_key=None):
         step_name = form_key
         if step_name is None:
@@ -313,7 +336,7 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
 
     def form_valid(self, form):
         step_name = self.current_step_name()
-        self.form_storage.set(step_name, form.data, form.files)
+        self.set_form_data(step_name, form.data, form.files)
         url = self.get_next_url()
         return self.redirect(url)
 
@@ -336,13 +359,20 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         return {}
 
     def get_cleaned_data_for_step(self, step_name):
-        return self.validate_step(step_name).cleaned_data
+        form_obj = self.validate_step(step_name)
+        try:
+            return form_obj.cleaned_data
+        except AttributeError:
+            return None
 
     def get_cleaned_data(self, step_names=None):
         result = {}
-        for form_obj in self.validate_step(step_names):
-            data = form_obj.cleaned_data
-            result.update(data)
+        for form_obj in self.validate_steps(step_names):
+            try:
+                data = form_obj.cleaned_data
+                result.update(data)
+            except AttributeError:
+                continue
         return result
 
     def can_submit(self):
@@ -353,14 +383,10 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         return False
 
     def validate_step(self, step_name):
-        data, files = self.form_storage.get(step_name)
+        data, files = self.get_form_data(step_name)
         form_obj = self.get_form(step_name, data, files)
         form_obj.step_name = step_name
-        try:
-            if hasattr(form_obj, "run"):
-                form_obj.run()
-        except ValidationFailure:
-            pass
+        form_obj.is_valid()
         return form_obj
 
     def validate_steps(self, step_names=None):

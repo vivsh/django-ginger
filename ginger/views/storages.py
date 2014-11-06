@@ -39,20 +39,20 @@ class FormStorageBase(object):
 
     data = None
 
-    def __init__(self, wizard, autocommit=False, prefix=""):
+    def __init__(self, wizard, autocommit=True, prefix=""):
         self.wizard = wizard
         self.file_storage = wizard.file_storage
         self.autocommit = autocommit
-        self.prefix = ""
+        self.prefix = prefix
         self.step_key = self.create_key("steps")
         self._load_data()
 
     def reduce_files(self, data):
         for k, v in six.iteritems(data.copy()):
             if isinstance(v, File):
-                pfile = StorageFile()
-                pfile.store(self.file_storage, v)
-                data[k]= pfile
+                file = StorageFile()
+                file.store(self.file_storage, v)
+                data[k] = file
         return data
 
     def restore_files(self, form_data):
@@ -76,7 +76,8 @@ class FormStorageBase(object):
 
     def get(self, step_name):
         try:
-            return self.restore_files(self.data[step_name]), None
+            data = self.restore_files(self.data[step_name])
+            return data, data
         except KeyError:
             return None, None
 

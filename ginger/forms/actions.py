@@ -1,6 +1,7 @@
 
-from django import forms
 import inspect
+from django.utils import six
+from django import forms
 from django.core.paginator import Page
 
 from ginger.exceptions import ValidationFailure
@@ -78,9 +79,11 @@ class GingerFormMixin(object):
     def is_valid(self):
         func = super(GingerFormMixin, self).is_valid
         try:
-            return self.result
+            _ = self.result
         except AttributeError:
             pass
+        else:
+            return func()
         result = None
         if func() or self.ignore_errors:
             try:
@@ -137,12 +140,13 @@ class GingerSearchFormMixin(GingerFormMixin):
                       page_limit=10, per_page=20, **kwargs):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data
-        for name, value in data.items():
+        for name, value in six.iteritems(data):
             if not value:
                 continue
             kwargs = {}
             try:
-                call = getattr(self, 'handle_%s'%name)
+                field = self.fields[name].field
+                call = getattr(self, 'handle_%s'%name, getattr(field, "handle_queryset"))
             except AttributeError:
                 if isinstance(value, (tuple,list)):
                     name = '%s__in'%name
