@@ -1,6 +1,7 @@
 
 import abc
 import copy
+from django.http.request import QueryDict
 
 from django.utils import six
 from django.core.files.uploadedfile import UploadedFile
@@ -18,7 +19,9 @@ class StorageFile(object):
         field_dict = self.data
         field_dict = field_dict.copy()
         tmp_name = field_dict.pop('tmp_name')
-        return UploadedFile(file=file_storage.open(tmp_name), **field_dict)
+        file_obj = UploadedFile(file=file_storage.open(tmp_name), **field_dict)
+        file_obj.url = file_storage.url(tmp_name)
+        return file_obj
 
     def store(self, file_storage, field_file):
         tmp_filename = file_storage.save(field_file.name, field_file)
@@ -66,20 +69,18 @@ class FormStorageBase(object):
         oid = self.wizard.class_oid()
         return "%s%s-%s" % (self.prefix, oid, suffix)
 
-    def set(self, step_name, data, files=None):
-        if files:
-            data = data.copy()
-            data.update(files)
-        self.data[step_name] = self.reduce_files(data)
+    def set(self, step_name, data, files):
+        self.data[step_name] = data, self.reduce_files(files)
         if self.autocommit:
             self._save_data()
 
     def get(self, step_name):
         try:
-            data = self.restore_files(self.data[step_name])
-            return data, data
+            data, files = self.data[step_name]
         except KeyError:
             return None, None
+        else:
+            return data, self.restore_files(files)
 
     def clear(self):
         self.data.clear()
