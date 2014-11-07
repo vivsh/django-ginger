@@ -1,5 +1,6 @@
 
 import threading
+from django.http.request import HttpRequest
 import re
 import hashlib
 import inspect
@@ -78,7 +79,7 @@ def generate_pages(index, limit, total):
 
 def get_url_with_modified_params(request, values, append=False):
     parse = six.moves.urllib.parse
-    if not isinstance(request, six.text_type):
+    if isinstance(request, HttpRequest):
         url = request.get_full_path()
     else:
         url = request

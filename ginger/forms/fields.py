@@ -2,6 +2,7 @@
 import mimetypes
 import urllib2
 from django.utils.encoding import force_text
+from django.utils import six
 import os
 from urlparse import urlparse
 
@@ -37,7 +38,7 @@ class FileOrUrlInput(forms.ClearableFileInput):
             return super(FileOrUrlInput, self).value_from_datadict(data,files,name)        
         else:
             url = forms.HiddenInput().value_from_datadict(data, files, name)
-            result = self.extract_url(name, url) if url else None
+            result = self.extract_url(name, url) if url and isinstance(url, six.text_type) else None
             return result
 
 

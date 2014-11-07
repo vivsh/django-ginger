@@ -144,16 +144,15 @@ class GingerSearchFormMixin(GingerFormMixin):
             if not value:
                 continue
             kwargs = {}
-            try:
-                field = self.fields[name].field
-                call = getattr(self, 'handle_%s'%name, getattr(field, "handle_queryset"))
-            except AttributeError:
+            field = self.fields[name]
+            call = getattr(self, 'handle_%s'%name, getattr(field, "handle_queryset", None))
+            if call is not None:
+                result = call(queryset, value, data)
+            else:
                 if isinstance(value, (tuple,list)):
-                    name = '%s__in'%name
+                    name = '%s__in' % name
                 kwargs[name] = value
                 result = queryset.filter(**kwargs)
-            else:
-                result = call(queryset, value, data)
             if result is not None:
                 queryset = result
         if page is not None:
