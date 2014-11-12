@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.forms.models import ModelForm
 from django.utils.functional import cached_property
 from django.views.generic.base import TemplateResponseMixin, View
@@ -89,7 +89,10 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
 class GingerDetailView(GingerTemplateView):
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
+        try:
+            self.object = self.get_object()
+        except ObjectDoesNotExist:
+            raise Http404
         context = self.get_context_data(object=self.object, **kwargs)
         return self.render_to_response(context)
 
