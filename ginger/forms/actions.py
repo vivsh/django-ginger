@@ -118,6 +118,13 @@ class GingerSearchFormMixin(GingerFormMixin):
     parameter_name = "page"
     ignore_errors = True
 
+    def _post_clean(self):
+        """
+            This override is needed so as to avoid modelform validation during clean
+        """
+        pass
+
+
     def insert_null(self, field_name, label, initial=None):
         field = self.fields[field_name]
         if initial is None:
@@ -136,12 +143,16 @@ class GingerSearchFormMixin(GingerFormMixin):
     def execute(self, **kwargs):
         return self.apply_filters(**kwargs)
 
+    def get_non_filter_fields(self):
+        return ()
+
     def apply_filters(self, page=None, base_url=None, parameter_name="page",
                       page_limit=10, per_page=20, **kwargs):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data
+        ignored = set(self.get_non_filter_fields())
         for name, value in six.iteritems(data):
-            if not value:
+            if name in ignored or not value:
                 continue
             kwargs = {}
             field = self.fields[name]
@@ -182,14 +193,42 @@ class GingerSearchFormMixin(GingerFormMixin):
 
 
 class GingerSearchModelForm(GingerSearchFormMixin, forms.ModelForm):
-
-    def _post_clean(self):
-        """
-            This override is needed so as to avoid modelform validation during clean
-        """
-        pass
-
+    pass
 
 
 class GingerSearchForm(GingerSearchFormMixin, forms.Form):
+    pass
+
+
+class GingerDataFormMixin(GingerSearchFormMixin):
+
+    def execute(self, **kwargs):
+        result = super(GingerDataFormMixin, self).execute(**kwargs)
+        schema_cls = self.get_schema_class()
+        return schema_cls(result)
+
+    def get_schema_class(self):
+        return self.data_schema
+
+    def get_non_filter_fields(self):
+        try:
+            return getattr(self, "non_filter_fields")
+        except AttributeError:
+            return ()
+
+    def to_json(self):
+        result = self.run()
+        return {
+            "data": result.rows,
+            "aggregates": result.aggregator.rows,
+            "page": result.page,
+            "schema": [col.to_json() for col in result.columns]
+        }
+
+
+class GingerDataModelForm(GingerDataFormMixin, forms.ModelForm):
+    pass
+
+
+class GingerDataForm(GingerDataFormMixin, forms.Form):
     pass
