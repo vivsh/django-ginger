@@ -100,7 +100,9 @@ class SortField(forms.ChoiceField):
             text_value = text_value[1:]
         return super(SortField, self).valid_value(text_value)
 
-    def build_links(self, value, request):
+    def build_links(self, request, bound_field):
+        value = bound_field.value
+        field_name = bound_field.name
         text_value = force_text(value) if value is not None else None
         for k, v in self.choices:
             content = force_text(v)
@@ -110,8 +112,37 @@ class SortField(forms.ChoiceField):
                 next_value = key if text_value.startswith("-") else "-%s" % key
             else:
                 next_value = key
-            url = utils.get_url_with_modified_params(request, {self.name: next_value})
+            url = utils.get_url_with_modified_params(request, {field_name: next_value})
             yield ui.Link(url, content, is_active=is_active)
 
-    def handle_queryset(self, value, queryset, data):
+    def handle_queryset(self, queryset, value, bound_field):
         return queryset.order_by(value)
+
+
+class DataSetSortField(SortField):
+
+    def __init__(self, dataset_class, process_list=False, **kwargs):
+        column_dict = dataset_class.get_column_dict()
+        choices = [(name, col.label or name.title()) for name, col in six.iteritems(column_dict)]
+        super(DataSetSortField, self).__init__(choices=choices, **kwargs)
+        self.dataset_class = dataset_class
+        self.process_list = process_list
+
+    def handle_dataset(self, dataset, value, bound_field):
+        field_name = bound_field.name
+        text_value = force_text(value) if value is not None else None
+        if not text_value:
+            return
+        reverse = text_value.startswith("-")
+        name = text_value[1:] if reverse else text_value
+        column = dataset.columns[name]
+        column.sort(reverse=reverse)
+        for col in dataset.columns:
+            col.is_active = col is column
+            col.sort_parameter_name = field_name
+            if col.is_active and self.toggle:
+                next_value = col.name if text_value.startswith("-") else "-%s" % col.name
+            else:
+                next_value = col.name
+            col.sort_parameter_value = next_value
+

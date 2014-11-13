@@ -60,7 +60,7 @@ def bound_field_link_builder(field, request):
     form_field = field.field
     field_value = field.value
     if hasattr(form_field, 'build_links'):
-        for value in form_field.build_links(field_value, request):
+        for value in form_field.build_links(request, field):
             yield value
     else:
         for code, label in form_field.choices:

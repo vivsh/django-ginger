@@ -14,7 +14,9 @@ __all__ = ['GingerModelForm',
            'GingerSearchForm',
            'GingerSafeEmptyTuple',
            'GingerFormMixin',
-           'GingerSearchFormMixin']
+           'GingerSearchFormMixin',
+           'GingerDataForm',
+           'GingerDataModelForm']
 
 
 class GingerSafeEmptyTuple(tuple):
@@ -141,24 +143,25 @@ class GingerSearchFormMixin(GingerFormMixin):
         return self.queryset
 
     def execute(self, **kwargs):
-        return self.apply_filters(**kwargs)
+        return self.process_queryset_filters(**kwargs)
 
-    def get_non_filter_fields(self):
-        return ()
+    def get_queryset_filter_names(self):
+        return self.fields.keys()
 
-    def apply_filters(self, page=None, base_url=None, parameter_name="page",
+    def process_queryset_filters(self, page=None, base_url=None, parameter_name="page",
                       page_limit=10, per_page=20, **kwargs):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data
-        ignored = set(self.get_non_filter_fields())
+        allowed = set(self.get_queryset_filter_names())
         for name, value in six.iteritems(data):
-            if name in ignored or not value:
+            if name not in allowed or not value:
                 continue
             kwargs = {}
             field = self.fields[name]
-            call = getattr(self, 'handle_%s'%name, getattr(field, "handle_queryset", None))
-            if call is not None:
-                result = call(queryset, value, data)
+            if hasattr(self, "handle_%s" % name):
+                getattr(self,"handle_%s" % name)(queryset, value, data)
+            elif hasattr(field, "handle_queryset"):
+                field.handle_queryset(queryset, value, self[name])
             else:
                 if isinstance(value, (tuple,list)):
                     name = '%s__in' % name
@@ -204,23 +207,47 @@ class GingerDataFormMixin(GingerSearchFormMixin):
 
     def execute(self, **kwargs):
         result = super(GingerDataFormMixin, self).execute(**kwargs)
-        schema_cls = self.get_schema_class()
-        return schema_cls(result)
+        schema_cls = self.get_dataset_class()
+        dataset = schema_cls(result)
+        self.process_dataset_filters(dataset)
+        return dataset
 
-    def get_schema_class(self):
-        return self.data_schema
+    def process_dataset_filters(self, dataset, **kwargs):
+        cleaned_data = self.cleaned_data
+        for name in self.get_dataset_filter_names():
+            value = cleaned_data.get(name)
+            field = self.fields[name]
+            if value is None or value == "":
+                continue
+            if hasattr(self, "handle_%s" % name):
+                getattr(self,"handle_%s" % name)(dataset, value, cleaned_data)
+            elif hasattr(field, "handle_dataset"):
+                field.handle_dataset(dataset, value, self[name])
+        return dataset
 
-    def get_non_filter_fields(self):
+    def get_dataset_class(self):
         try:
-            return getattr(self, "non_filter_fields")
-        except AttributeError:
-            return ()
+            return next(f.dataset_class for f in six.itervalues(self.fields)
+                        if hasattr(f, "dataset_class"))
+        except StopIteration:
+            return self.dataset_class
+
+    def get_dataset_filter_names(self):
+        names = set(name for name, f in six.iteritems(self.fields)
+                    if getattr(f, "process_list", False))
+        names.update(getattr(self, "dataset_filters", ()))
+        return names
+
+    def get_queryset_filter_names(self):
+        names = super(GingerDataFormMixin, self).get_queryset_filter_names()
+        dataset_filters = set(self.get_dataset_filter_names())
+        return [name for name in names if name not in dataset_filters]
 
     def to_json(self):
         result = self.run()
         return {
             "data": result.rows,
-            "aggregates": result.aggregator.rows,
+            "aggregates": result.aggregates.rows,
             "page": result.page,
             "schema": [col.to_json() for col in result.columns]
         }
