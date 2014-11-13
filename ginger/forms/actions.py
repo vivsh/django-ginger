@@ -159,9 +159,9 @@ class GingerSearchFormMixin(GingerFormMixin):
             kwargs = {}
             field = self.fields[name]
             if hasattr(self, "handle_%s" % name):
-                getattr(self,"handle_%s" % name)(queryset, value, data)
+                result = getattr(self,"handle_%s" % name)(queryset, value, data)
             elif hasattr(field, "handle_queryset"):
-                field.handle_queryset(queryset, value, self[name])
+                result = field.handle_queryset(queryset, value, self[name])
             else:
                 if isinstance(value, (tuple,list)):
                     name = '%s__in' % name
