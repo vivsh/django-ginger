@@ -183,13 +183,21 @@ class GingerDataSet(DataSetBase):
             return func(value)
 
     def build_links(self, request):
+        data = request.GET
+        sort_name = getattr(self, "sort_parameter_name", None)
         for col in self.columns:
-            try:
-                url = get_url_with_modified_params(request, {col.sort_parameter_name: col.sort_parameter_value})
-                is_active = col.is_active
-            except AttributeError:
-                url = get_url_with_modified_params(request, {})
+            if sort_name and sort_name in data:
+                value = data[sort_name]
+                reverse = value.startswith("-")
+                if reverse:
+                    value = value[1:]
+                is_active = col.name == value
+                next_value = "-%s" % col.name if not reverse and is_active else col.name
+                mods = {sort_name: next_value}
+            else:
                 is_active = False
+                mods = {}
+            url = get_url_with_modified_params(request, mods)
             yield ui.Link(content=col.label, url=url, is_active=is_active)
 
 

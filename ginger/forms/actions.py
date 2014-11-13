@@ -139,6 +139,13 @@ class GingerSearchFormMixin(GingerFormMixin):
         choices.insert(0, (field.empty_value or "", label))
         field.choices = tuple(choices)
 
+    def get_sort_field(self):
+        from .fields import SortField
+        try:
+            return next(self[name] for name, f in six.iteritems(self.fields) if isinstance(f, SortField))
+        except StopIteration:
+            return None
+
     def get_queryset(self, **kwargs):
         return self.queryset
 
@@ -223,7 +230,11 @@ class GingerDataFormMixin(GingerSearchFormMixin):
                 getattr(self,"handle_%s" % name)(dataset, value, cleaned_data)
             elif hasattr(field, "handle_dataset"):
                 field.handle_dataset(dataset, value, self[name])
+        sort_field = self.get_sort_field()
+        if sort_field:
+            dataset.sort_parameter_name = sort_field.html_name
         return dataset
+
 
     def get_dataset_class(self):
         try:

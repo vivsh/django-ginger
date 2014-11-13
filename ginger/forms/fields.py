@@ -129,7 +129,6 @@ class DataSetSortField(SortField):
         self.process_list = process_list
 
     def handle_dataset(self, dataset, value, bound_field):
-        field_name = bound_field.name
         text_value = force_text(value) if value is not None else None
         if not text_value:
             return
@@ -137,12 +136,4 @@ class DataSetSortField(SortField):
         name = text_value[1:] if reverse else text_value
         column = dataset.columns[name]
         column.sort(reverse=reverse)
-        for col in dataset.columns:
-            col.is_active = col is column
-            col.sort_parameter_name = field_name
-            if col.is_active and self.toggle:
-                next_value = col.name if text_value.startswith("-") else "-%s" % col.name
-            else:
-                next_value = col.name
-            col.sort_parameter_value = next_value
 
