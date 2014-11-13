@@ -69,6 +69,7 @@ def current_url(context, **kwargs):
 
 def get_form_attrs(form, **kwargs):
     attrs = kwargs.copy()
+    attrs.setdefault("method", "post")
     attrs['enctype']='multipart/form-data' if form.is_multipart() else 'application/x-www-form-urlencoded'
     return ui.flatten_attributes(attrs)
 
