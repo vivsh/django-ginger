@@ -177,7 +177,7 @@ class GingerSearchFormMixin(GingerFormMixin):
             if result is not None:
                 queryset = result
         if page is not None:
-            return self.paginate(queryset, page,
+            queryset = self.paginate(queryset, page,
                                  parameter_name=parameter_name,
                                  page_limit=page_limit, per_page=per_page)
         return queryset
@@ -215,9 +215,13 @@ class GingerDataFormMixin(GingerSearchFormMixin):
     def execute(self, **kwargs):
         result = super(GingerDataFormMixin, self).execute(**kwargs)
         schema_cls = self.get_dataset_class()
-        dataset = schema_cls(result)
+        dataset = schema_cls()
+        self.load_dataset(dataset, result)
         self.process_dataset_filters(dataset)
         return dataset
+
+    def load_dataset(self, dataset, data_source):
+        dataset.extend(data_source)
 
     def process_dataset_filters(self, dataset, **kwargs):
         cleaned_data = self.cleaned_data
@@ -259,7 +263,7 @@ class GingerDataFormMixin(GingerSearchFormMixin):
         return {
             "data": result.rows,
             "aggregates": result.aggregates.rows,
-            "page": result.page,
+            "page": result.object_list if result.is_paginated() else None,
             "schema": [col.to_json() for col in result.columns]
         }
 

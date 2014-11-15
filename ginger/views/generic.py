@@ -1,3 +1,4 @@
+from ginger.dataset import GingerDataSet
 from django.core.files.uploadedfile import UploadedFile
 import os
 from datetime import timedelta
@@ -180,16 +181,25 @@ class GingerFormView(GingerTemplateView):
 
 class GingerSearchView(GingerFormView):
 
-    per_page = None
+    per_page = 20
     page_parameter_name = "page"
     page_limit = 10
+    paginate = True
 
     def get_form_kwargs(self, form_key):
         ctx = super(GingerSearchView, self).get_form_kwargs(form_key)
-        ctx["parameter_name"] = self.page_parameter_name
-        ctx["page_limit"] = self.page_limit
-        ctx["per_page"] = self.per_page
-        ctx["page"] = self.request
+        if self.paginate:
+            ctx["parameter_name"] = self.page_parameter_name
+            ctx["page_limit"] = self.page_limit
+            ctx["per_page"] = self.per_page
+            ctx["page"] = self.request
+        return ctx
+
+    def get_context_data(self, **kwargs):
+        ctx = super(GingerSearchView, self).get_context_data(**kwargs)
+        form = ctx["form"]
+        if isinstance(form.result, GingerDataSet):
+            ctx["dataset"] = form.result
         return ctx
 
     def can_submit(self):

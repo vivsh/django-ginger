@@ -12,7 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from ginger import ui, utils
 
 
-__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField"]
+__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField"]
 
 
 class FileOrUrlInput(forms.ClearableFileInput):
@@ -89,8 +89,10 @@ class HeightField(forms.MultiValueField):
 
 class SortField(forms.ChoiceField):
 
-    def __init__(self, choices=(), toggle=True, *args, **kwargs):
-        super(SortField, self).__init__(choices=choices, *args, **kwargs)
+    def __init__(self, choices=(), toggle=True, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("widget", forms.HiddenInput)
+        super(SortField, self).__init__(choices=choices, **kwargs)
         self.toggle = toggle
 
     def valid_value(self, value):
@@ -119,12 +121,12 @@ class SortField(forms.ChoiceField):
         return queryset.order_by(value)
 
 
-class DataSetSortField(SortField):
+class GingerDataSetField(SortField):
 
     def __init__(self, dataset_class, process_list=False, **kwargs):
         column_dict = dataset_class.get_column_dict()
         choices = [(name, col.label or name.title()) for name, col in six.iteritems(column_dict)]
-        super(DataSetSortField, self).__init__(choices=choices, **kwargs)
+        super(GingerDataSetField, self).__init__(choices=choices, **kwargs)
         self.dataset_class = dataset_class
         self.process_list = process_list
 

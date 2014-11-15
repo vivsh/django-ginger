@@ -1,27 +1,29 @@
-
+from __future__ import division
 
 import itertools
 import inspect
 import weakref
 from collections import OrderedDict
+import collections
 from django.utils import six
 from ginger import ui
 from ginger.utils import get_url_with_modified_params
 
 
-__all__ = ["Column", "DataSet"]
+__all__ = ["Column", "GingerDataSet"]
 
 
 class Column(object):
 
     __position = 1
 
-    def __init__(self, label=None, kind=None, model_attr=None):
+    def __init__(self, label=None, kind=None, model_attr=None, hidden=False):
         self.__position += 1
         Column.__position += 1
         self.label = label
         self.kind = kind
         self.model_attr = model_attr
+        self.hidden = hidden
 
     @property
     def position(self):
@@ -35,6 +37,19 @@ class BoundColumn(object):
         self.column = column
         self.name = name
         self.position = position
+        self.hidden = column.hidden
+
+    def is_hidden(self):
+        return self.hidden
+
+    def toggle(self):
+        return self.show() if self.is_hidden() else self.hide()
+
+    def hide(self):
+        self.hidden = True
+
+    def show(self):
+        self.hidden = False
 
     @property
     def kind(self):
@@ -74,14 +89,82 @@ class BoundColumn(object):
         self.schema.rows.sort(reverse=reverse,
                               key=lambda row: key(row[i]) if key is not None else row[i])
 
-    def build_link(self, request):
-        return
+    def __repr__(self):
+        return "BoundColumn<name: %s, position:  %s>"%(self.name, self.position)
+
+
+class DataRow(object):
+
+    __inited = False
+
+    def __init__(self, owner, data):
+        self.data = data
+        self.owner = weakref.ref(owner)
+        assert len(self.data) == len(self.columns)
+        self.__inited = True
+
+    @property
+    def columns(self):
+        return self.owner()._get_schema().columns
+
+    def items(self):
+        return self.cells(columns=True)
+
+    def cells(self, columns=False):
+        cols = self.columns.visible()
+        formatter = self.owner()._format_cell
+        for col in cols:
+            i = col.position
+            value = formatter(i, self.data[i])
+            yield (col, value) if columns else value
+
+    def __getattr__(self, item):
+        try:
+            col = self.columns[item]
+        except KeyError:
+            raise AttributeError(item)
+        else:
+            return self.data[col.position]
+
+    def __setattr__(self, key, value):
+        if not self.__inited:
+            self.__dict__[key] = value
+        else:
+            try:
+                col = self.columns[key]
+            except KeyError:
+                raise AttributeError(key)
+            else:
+                data = list(self.data)
+                data[col.position] = value
+                self.__dict__['data'] = tuple(data)
+
+    def __iter__(self):
+        """
+        iterates over non-hidden columns only
+        """
+        for col in self.columns.visible():
+            yield self.data[col.position]
+
+    def __len__(self):
+        return len(self.columns.visible())
+
+    def __getitem__(self, item):
+        col = self.columns[item]
+        return self.data[col.position]
+
+    def to_json(self):
+        return self.data
 
 
 class DataSetBase(object):
 
     def __init__(self):
         self.__rows = []
+        self.object_list = None
+
+    def _get_schema(self):
+        raise NotImplementedError
 
     def sort(self, *args, **kwargs):
         self.rows.sort(*args, **kwargs)
@@ -90,27 +173,50 @@ class DataSetBase(object):
     def rows(self):
         return self.__rows
 
-    def format_cell(self, i, value):
+    def _format_cell(self, i, value):
         raise NotImplementedError
 
-    def format_rows(self):
-        formatter = self.format_cell
-        for row in self.rows:
-            yield (formatter(i, value) for i, value in enumerate(row))
+    def empty_row(self):
+        data = [None] * len(self._get_schema().columns)
+        return self.append(data)
 
     def append(self, data):
-        self.rows.append(tuple(data))
-
-    def to_json(self):
-        return self.rows
+        row = self._make_row(data)
+        self.rows.append(row)
+        return row
 
     def extend(self, items):
+        self.object_list = items
         for d in items:
             self.append(d)
 
     def insert(self, i, data):
-        row = tuple(data)
+        row = self._make_row(data)
         self.rows.insert(i, row)
+
+    def _make_row(self, obj):
+        if isinstance(obj, DataRow):
+            return obj
+        if not inspect.isgenerator(obj) and not isinstance(obj, collections.Sequence):
+            result = []
+            for column in self.columns:
+                attr = column.model_attr or column.name
+                try:
+                    method = getattr(self, "prepare_%s" % column.name)
+                except AttributeError:
+                    if isinstance(obj, collections.Mapping):
+                        value = obj[attr]
+                    else:
+                        value = getattr(obj, attr)
+                else:
+                    value = method(obj)
+                result.append(value)
+        else:
+            result = obj
+        return DataRow(self, tuple(result))
+
+    def to_json(self):
+        return self.rows
 
     def __getitem__(self, item):
         return self.rows[item]
@@ -128,19 +234,25 @@ class DataAggregates(DataSetBase):
         super(DataAggregates, self).__init__()
         self.schema = weakref.ref(schema)
 
-    def format_cell(self, i, value):
-        return self.schema.format_cell(i, value)
+    def _format_cell(self, i, value):
+        return self._get_schema()._format_cell(i, value, True)
+
+    def _get_schema(self):
+        return self.schema()
 
 
 class DictList(list):
 
     def __getitem__(self, item):
-        if isinstance(item, six.text_type):
+        if isinstance(item, six.string_types):
             try:
                 return next(col for col in self if item == col.name)
             except StopIteration:
                 raise KeyError("%r is not a key" % item)
         return super(DictList, self).__getitem__(item)
+
+    def visible(self):
+        return [col for col in self if not col.is_hidden()]
 
 
 class GingerDataSet(DataSetBase):
@@ -148,10 +260,18 @@ class GingerDataSet(DataSetBase):
     List of tuples
     """
 
-    def __init__(self):
+    def __init__(self, object_list=None):
         super(GingerDataSet, self).__init__()
         self.__columns = self.setup_columns()
         self.aggregates = DataAggregates(self)
+        if object_list:
+            self.extend(object_list)
+
+    def is_paginated(self):
+        return hasattr(self.object_list, "paginator")
+
+    def _get_schema(self):
+        return self
 
     @classmethod
     def get_column_dict(cls):
@@ -172,22 +292,21 @@ class GingerDataSet(DataSetBase):
     def columns(self):
         return self.__columns
 
-    def format_cell(self, index, value):
+    def _format_cell(self, index, value, aggregate=False):
         column = self.columns[index]
-        kind = column.kind
-        try:
-            func = getattr(self, "render_%s" % kind)
-        except AttributeError:
-            return str(value)
-        else:
-            return func(value)
+        suffixes = (column.name, column.kind)
+        for suffix in suffixes:
+            func = getattr(self, "render_%s" % suffix, None)
+            if func:
+                return func(value, index, aggregate)
+        return str(value) if value is not None else ""
 
     def build_links(self, request):
         data = request.GET
         sort_name = getattr(self, "sort_parameter_name", None)
-        for col in self.columns:
-            if sort_name and sort_name in data:
-                value = data[sort_name]
+        for col in self.columns.visible():
+            if sort_name:
+                value = data.get(sort_name, "")
                 reverse = value.startswith("-")
                 if reverse:
                     value = value[1:]
@@ -196,34 +315,34 @@ class GingerDataSet(DataSetBase):
                 mods = {sort_name: next_value}
             else:
                 is_active = False
+                reverse = False
                 mods = {}
             url = get_url_with_modified_params(request, mods)
-            yield ui.Link(content=col.label, url=url, is_active=is_active)
+            yield ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse)
 
+    def export_csv(self, response, header=False, hidden=True):
+        import csv
+        writer = csv.writer(response)
+        columns = tuple(col for col in self.columns if hidden or not col.is_hidden())
+        if header:
+            writer.writerow([col.label for col in columns])
+        for row in self.rows:
+            writer.writerow([row[col.position] for col in columns])
 
-class GingerModelDataSet(GingerDataSet):
+    def export_xlsx(self, response, header=False, hidden=True):
+        from openpyxl import Workbook
+        book = Workbook(encoding="utf-8")
+        columns = tuple(col for col in self.columns if hidden or not col.is_hidden())
+        sheet = book.create_sheet(index=0)
+        if header:
+            sheet.append([col.label for col in columns])
+        for row in self.rows:
+            sheet.append([row[col.position] for col in columns])
+        book.save(response)
 
-    def __init__(self, object_list):
-        super(GingerModelDataSet, self).__init__()
-        self.object_list = object_list
-        self.page = object_list if hasattr(object_list, "paginator") else None
-        self._fill_rows(object_list)
-
-    def is_paginated(self):
-        return self.page is not None
-
-    def _fill_rows(self, object_list):
-        self.extend(self._make_row(obj) for obj in object_list)
-
-    def _make_row(self, obj):
-        result = []
-        for column in self.columns:
-            try:
-                method = getattr(self, "prepare_%s" % column.name)
-            except AttributeError:
-                value = getattr(obj, column.model_attr or column.name)
-            else:
-                value = method(obj)
-            result.append(value)
-        return tuple(result)
-
+    @staticmethod
+    def export_formats():
+        return (
+            ("csv", "CSV"),
+            ("xlsx", "XLSX")
+        )
