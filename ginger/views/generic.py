@@ -1,8 +1,8 @@
-from ginger.dataset import GingerDataSet
-from django.core.files.uploadedfile import UploadedFile
+
 import os
 from datetime import timedelta
 
+from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -13,6 +13,7 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
+from ginger.dataset import GingerDataSet
 from ginger.exceptions import ValidationFailure
 from ginger.exceptions import Http404
 from ginger import utils
@@ -65,7 +66,10 @@ class GingerView(View, GingerSessionDataMixin):
             kwargs['view'] = self
         return kwargs
 
-
+    def add_message(self, level, message, **kwargs):
+        if self.request.is_ajax() or not message:
+            return
+        messages.add_message(self.request, level, message, **kwargs)
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
@@ -89,18 +93,24 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
 
 class GingerDetailView(GingerTemplateView):
 
+    context_object_name = "object"
+
     def get(self, request, *args, **kwargs):
         try:
             self.object = self.get_object()
         except ObjectDoesNotExist:
             raise Http404
-        context = self.get_context_data(object=self.object, **kwargs)
+        kwargs[self.context_object_name] = self.object
+        context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
 
 class GingerFormView(GingerTemplateView):
 
-    def get_success_url(self, form_class):
+    success_url = None
+    form_class = None
+
+    def get_success_url(self, form):
         return self.success_url
 
     def get_form_class(self, form_key=None):
@@ -137,7 +147,9 @@ class GingerFormView(GingerTemplateView):
         return self.render_to_response(context)
 
     def form_valid(self, form):
-        url = self.get_success_url()
+        url = self.get_success_url(form)
+        msg = form.get_success_message()
+        self.add_message(level=messages.SUCCESS, message=msg)
         return self.redirect(url)
 
     def form_invalid(self, form):
@@ -185,6 +197,7 @@ class GingerSearchView(GingerFormView):
     page_parameter_name = "page"
     page_limit = 10
     paginate = True
+    context_object_name = "object_list"
 
     def get_form_kwargs(self, form_key):
         ctx = super(GingerSearchView, self).get_form_kwargs(form_key)
@@ -198,8 +211,7 @@ class GingerSearchView(GingerFormView):
     def get_context_data(self, **kwargs):
         ctx = super(GingerSearchView, self).get_context_data(**kwargs)
         form = ctx["form"]
-        if isinstance(form.result, GingerDataSet):
-            ctx["dataset"] = form.result
+        ctx[self.context_object_name] = form.result
         return ctx
 
     def can_submit(self):

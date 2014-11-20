@@ -125,7 +125,7 @@ class GingerDataSetField(SortField):
 
     def __init__(self, dataset_class, process_list=False, **kwargs):
         column_dict = dataset_class.get_column_dict()
-        choices = [(name, col.label or name.title()) for name, col in six.iteritems(column_dict)]
+        choices = [(col.model_attr or name, col.label or name.title()) for name, col in six.iteritems(column_dict) if not col.hidden]
         super(GingerDataSetField, self).__init__(choices=choices, **kwargs)
         self.dataset_class = dataset_class
         self.process_list = process_list

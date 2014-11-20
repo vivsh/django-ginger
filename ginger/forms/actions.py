@@ -1,4 +1,5 @@
 
+import datetime
 import inspect
 from django.utils import six
 from django import forms
@@ -44,6 +45,20 @@ class GingerFormMixin(object):
             context[key] = value
         super(GingerFormMixin, self).__init__(**kwargs)
         self.context = self.process_context(context)
+
+    @property
+    def initial_data(self):
+        fields = self.fields
+        result = {}
+        for name,field in six.iteritems(fields):
+            data = self.initial.get(name, field.initial)
+            if callable(data):
+                data = data()
+                if (isinstance(data, (datetime.datetime, datetime.time)) and
+                        not getattr(field.widget, 'supports_microseconds', True)):
+                    data = data.replace(microsecond=0)
+            result[name] = data
+        return result
 
     @property
     def result(self):
@@ -119,13 +134,28 @@ class GingerSearchFormMixin(GingerFormMixin):
     page_limit = 10
     parameter_name = "page"
     ignore_errors = True
+    use_defaults = True
+
+    def __init__(self, **kwargs):
+        super(GingerSearchFormMixin, self).__init__(**kwargs)
+        self.use_defaults = kwargs.pop("use_defaults", self.use_defaults)
+        self._merge_defaults()
+
+    def _merge_defaults(self):
+        if self.use_defaults:
+            data = self.data.copy() if self.data is not None else {}
+            initial = self.initial_data
+            for key in initial:
+                value = initial[key]
+                name = self.add_prefix(key)
+                if name not in data:
+                    data[name] = value
+            self.data = data
 
     def _post_clean(self):
         """
             This override is needed so as to avoid modelform validation during clean
         """
-        pass
-
 
     def insert_null(self, field_name, label, initial=None):
         field = self.fields[field_name]
@@ -134,9 +164,10 @@ class GingerSearchFormMixin(GingerFormMixin):
         field.required = False
         field.initial = initial
         choices = list(field.choices)
-        if choices[0][0] == field.empty_value or not choices[0][0]:
+        top = choices[0][0]
+        if top == field.empty_value or not top:
             choices = choices[1:]
-        choices.insert(0, (field.empty_value or "", label))
+        choices.insert(0, (initial, label))
         field.choices = tuple(choices)
 
     def get_sort_field(self):
@@ -155,10 +186,10 @@ class GingerSearchFormMixin(GingerFormMixin):
     def get_queryset_filter_names(self):
         return self.fields.keys()
 
-    def process_queryset_filters(self, page=None, base_url=None, parameter_name="page",
+    def process_queryset_filters(self, page=None, parameter_name="page",
                       page_limit=10, per_page=20, **kwargs):
         queryset = self.get_queryset(**kwargs)
-        data = self.cleaned_data
+        data = self.cleaned_data if self.is_bound else self.initial_data
         allowed = set(self.get_queryset_filter_names())
         for name, value in six.iteritems(data):
             if name not in allowed or not value:
@@ -224,7 +255,7 @@ class GingerDataFormMixin(GingerSearchFormMixin):
         dataset.extend(data_source)
 
     def process_dataset_filters(self, dataset, **kwargs):
-        cleaned_data = self.cleaned_data
+        cleaned_data = self.cleaned_data if self.is_bound else self.initial_data
         for name in self.get_dataset_filter_names():
             value = cleaned_data.get(name)
             field = self.fields[name]
