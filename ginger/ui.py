@@ -88,9 +88,8 @@ class GingerNav(object):
         base_url = request.get_full_path()
         for link in self.links:
             url = link['url']
-            content = link["content"]
             is_active = url == base_url
-            yield Link(url, content, is_active)
+            yield Link(is_active=is_active, **link)
 
 
 add_link_builder(BoundField, bound_field_link_builder)
