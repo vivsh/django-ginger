@@ -1,14 +1,15 @@
+
 from django.utils.encoding import force_text
 import re
-from jinja2 import Markup
+from jinja2 import Markup, escape
 
 from django.forms.forms import BoundField
 from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 
-from ginger.templates import ginger_tag
+from ginger.templates import ginger_tag, filter_tag
 from ginger import utils as gutils
-from ginger import ui
+from ginger import ui, serializer
 
 
 @ginger_tag(mark_safe=True)
@@ -155,3 +156,10 @@ class FormRenderer(object):
 
     def slice(self, first, last=None, step=None):
         return
+
+
+
+@filter_tag
+def json(values):
+    content = serializer.encode(values)
+    return Markup(content)
