@@ -1,4 +1,4 @@
-
+from django.core.paginator import EmptyPage
 import os
 from datetime import timedelta
 
@@ -219,6 +219,12 @@ class GingerSearchView(GingerFormView):
 
     def form_valid(self, form):
         return self.render_to_response(self.get_context_data(form=form))
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(GingerSearchView, self).get(request, *args, **kwargs)
+        except EmptyPage:
+            raise Http404
 
 
 class GingerStepViewMixin(object):

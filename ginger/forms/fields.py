@@ -17,7 +17,7 @@ __all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "Ginger
 
 class FileOrUrlInput(forms.ClearableFileInput):
     
-    def extract_url(self, name, url):      
+    def download_url(self, name, url):
         validate = URLValidator()
         try:
             validate(url)
@@ -31,15 +31,17 @@ class FileOrUrlInput(forms.ClearableFileInput):
         opener = urllib2.build_opener()
         opener.addheaders = [('User-agent', 'Mozilla/5.0')]
         ze_file = opener.open(url).read()
-        return SimpleUploadedFile(name=name, content=ze_file, content_type=mimetypes.guess_type(name))  
+        file_obj = SimpleUploadedFile(name=name, content=ze_file, content_type=mimetypes.guess_type(name))
+        file_obj.url = url
+        return file_obj
 
     def value_from_datadict(self, data, files, name):
-        if name in files:
-            return super(FileOrUrlInput, self).value_from_datadict(data,files,name)        
-        else:
+        if name in data and name not in files:
             url = forms.HiddenInput().value_from_datadict(data, files, name)
-            result = self.extract_url(name, url) if url and isinstance(url, six.text_type) else None
-            return result
+            result = self.download_url(name, url) if url and isinstance(url, six.string_types) else None
+            files = files.copy() if files else {}
+            files[name] = result
+        return super(FileOrUrlInput, self).value_from_datadict(data, files, name)
 
 
 class HeightWidget(forms.MultiWidget):
