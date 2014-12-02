@@ -11,7 +11,7 @@ setup(
     name="django_ginger",
     description="Set of django utilities",
     long_description=long_description,
-    version="0.4.4",
+    version="0.4.6",
     url="https://github.com/vivsh/django-ginger",
     author="Vivek Sharma",
     author_email="vivek@17thstep.com",
@@ -29,6 +29,7 @@ setup(
     install_requires=[
         "django>=1.7.1",
         "jinja2",
+        "django-pods>=1.1",
         "django_jinja>=1",
         "django_nose",
         "mock",

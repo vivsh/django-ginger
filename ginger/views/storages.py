@@ -1,8 +1,5 @@
 
-import abc
 import copy
-from django.http.request import QueryDict
-
 from django.utils import six
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.base import File

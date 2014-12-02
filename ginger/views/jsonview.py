@@ -13,8 +13,9 @@ from ginger.exceptions import (
     MethodNotFound, BadRequest
 )
 
-from .generic import GingerSessionDataMixin
+from .base import GingerSessionDataMixin
 
+__all__ = ['GingerJSONView']
 
 
 logger = logging.getLogger('ginger.views')
@@ -28,21 +29,20 @@ class GingerJSONView(View, GingerSessionDataMixin):
     def get_user(self):
         return self.request.user
 
-    def get_object(self):
-        return
-
-    def _create_object(self):
+    def process_request(self, request):
+        self.user = self.get_user()
         if hasattr(self, 'get_object'):
             try:
-                return self.get_object()
+                self.object = self.get_object()
             except ObjectDoesNotExist:
                 raise Http404
+        elif hasattr(self, 'get_queryset'):
+            self.queryset = self.get_queryset()
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
         try:
-            self.user = self.get_user()
-            self.object = self._create_object()
+            self.process_request(request)
             method = request.method.lower()
             func = getattr(self, method, None)
             if not func:

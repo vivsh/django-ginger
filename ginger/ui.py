@@ -1,4 +1,7 @@
-
+import inspect
+import operator
+from django.core.urlresolvers import reverse
+from jinja2 import Markup
 import re
 import json
 import functools
@@ -58,7 +61,7 @@ def build_links(obj, request, unique=True):
 def bound_field_link_builder(field, request):
     url = request.get_full_path()
     form_field = field.field
-    field_value = field.value
+    field_value = field.value()
     if hasattr(form_field, 'build_links'):
         for value in form_field.build_links(request, field):
             yield value
@@ -66,7 +69,7 @@ def bound_field_link_builder(field, request):
         for code, label in form_field.choices:
             is_active = code == field_value
             link_url = utils.get_url_with_modified_params(url, {field.name: code})
-            yield Link(link_url, label, is_active)
+            yield Link(link_url, label, is_active, value=code)
 
 
 class GingerNav(object):
@@ -123,3 +126,52 @@ def flatten_attributes(attrs):
         result.append("class=%s" % css)
     return " ".join(result)
 
+
+def choices_to_options(request, bound_field):
+    tags = []
+    for link in build_links(bound_field, request):
+        selected = "selected" if link.is_active else ""
+        html = "<option value='%s' %s> %s <option>" % (link.value, selected, link.content)
+        tags.append(html)
+    return Markup("".join(tags))
+
+
+class Entry(object):
+
+    __position = 1
+
+    def __init__(self, view, **kwargs):
+        self.view = view
+        Entry.__position += 1
+        self.position = self.__position
+        for k in kwargs:
+            setattr(self, k, kwargs[k])
+
+    def __getattr__(self, key):
+        return getattr(self.view, key)
+
+    def get_url(self, request, *args, **kwargs):
+        return reverse(self.view)
+
+
+class Navigation(object):
+
+    def __init__(self, request, args, kwargs):
+        super(Navigation, self).__init__()
+        self.request = request
+        self.args = args
+        self.kwargs = kwargs
+
+    def _get_entries(self):
+        return sorted(inspect.getmembers(self, lambda v: isinstance(v, Entry)), key=operator.attrgetter("position"))
+
+    def entries(self):
+        for entry in self._get_entries():
+         if self.accept(entry, self.request):
+             yield entry
+
+    def __iter__(self):
+        return self.entries()
+
+    def accept(self, entry, request):
+        return True

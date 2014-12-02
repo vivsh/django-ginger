@@ -1,3 +1,4 @@
+from django.conf.urls import url
 from django.core.paginator import EmptyPage
 import os
 from datetime import timedelta
@@ -13,12 +14,12 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
-from ginger.dataset import GingerDataSet
 from ginger.exceptions import ValidationFailure
 from ginger.exceptions import Http404
 from ginger import utils
 from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
+
 
 from . import storages, steps
 
@@ -27,49 +28,7 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerDetailView', 'GingerFormView', 'GingerWizardView',
            'GingerFormDoneView']
 
-
-class GingerSessionDataMixin(object):
-
-    session_key_prefix = ""
-
-    def get_session_key(self):
-        host = self.request.get_host()
-        return "%s-%s-%s" % (self.session_key_prefix, host, self.class_oid())
-
-    def get_session_data(self):
-        return self.request.session.get(self.get_session_key())
-
-    def set_session_data(self, data):
-        self.request.session[self.get_session_key()] = data
-
-    def clear_session_data(self):
-        self.request.session.pop(self.get_session_key(), None)
-
-    @classmethod
-    def class_oid(cls):
-        return utils.create_hash(utils.qualified_name(cls))
-
-
-class GingerView(View, GingerSessionDataMixin):
-
-    user = None
-
-    def get_user(self):
-        return self.request.user
-
-    def dispatch(self, request, *args, **kwargs):
-        self.user = self.get_user()
-        return super(GingerView, self).dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        if 'view' not in kwargs:
-            kwargs['view'] = self
-        return kwargs
-
-    def add_message(self, level, message, **kwargs):
-        if self.request.is_ajax() or not message:
-            return
-        messages.add_message(self.request, level, message, **kwargs)
+from .base import GingerView, P
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
@@ -91,15 +50,15 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
             return response
 
 
+
 class GingerDetailView(GingerTemplateView):
 
     context_object_name = "object"
 
+    def get_object(self):
+        raise NotImplementedError
+
     def get(self, request, *args, **kwargs):
-        try:
-            self.object = self.get_object()
-        except ObjectDoesNotExist:
-            raise Http404
         kwargs[self.context_object_name] = self.object
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -439,5 +398,4 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
             access_time = file_storage.accessed_time(filename)
             if access_time < expired:
                 file_storage.delete(filename)
-
 
