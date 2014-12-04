@@ -11,7 +11,7 @@ setup(
     name="django_ginger",
     description="Set of django utilities",
     long_description=long_description,
-    version="0.4.6",
+    version="0.4.7",
     url="https://github.com/vivsh/django-ginger",
     author="Vivek Sharma",
     author_email="vivek@17thstep.com",

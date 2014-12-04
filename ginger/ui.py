@@ -151,7 +151,13 @@ class Entry(object):
         return getattr(self.view, key)
 
     def get_url(self, request, *args, **kwargs):
-        return reverse(self.view)
+        return self.view.reverse(*args, **kwargs)
+
+
+class BoundEntry(object):
+
+    def __init__(self, entry):
+        self.entry = entry
 
 
 class Navigation(object):
@@ -175,3 +181,9 @@ class Navigation(object):
 
     def accept(self, entry, request):
         return True
+
+
+class UIFormField(object):
+
+    def __init__(self, field):
+        self.field = field

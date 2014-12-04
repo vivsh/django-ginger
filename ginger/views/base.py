@@ -3,7 +3,7 @@ import re
 import os
 
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.views.generic.base import View
@@ -114,26 +114,32 @@ class ViewMeta(object):
         app = apps.get_containing_app_config(utils.qualified_name(self.view))
         return app
 
+    @property
     def url_name(self):
         name = utils.camel_to_underscore(self.view.__name__).replace("_view", "").strip("_")
         return name
 
+    @property
     def template_dir(self):
         folder = self.app.path
         return os.path.join(folder, "templates")
 
+    @property
     def template_name(self):
-        name = "%s/%s.html" % (self.app.label, self.url_name())
+        name = "%s/%s.html" % (self.app.label, self.url_name)
         return name
 
+    @property
     def template_path(self):
-        return os.path.join(self.template_dir(), self.template_name())
+        return os.path.join(self.template_dir, self.template_name)
 
+    @property
     def form_name(self):
-        parts = self.url_name().split("_")
+        parts = self.url_name.split("_")
         parts.append("Form")
         return "".join(p.capitalize() for p in parts)
 
+    @property
     def form_path(self):
         return os.path.join(self.app.path, "forms.py")
 
@@ -141,17 +147,21 @@ class ViewMeta(object):
     def verb(self):
         return self.name.split("-")[-1]
 
+    @property
     def url_regex(self):
-        return self.view.url_regex
+        try:
+            return Pattern(self.view.url_regex)
+        except AttributeError as ex:
+            raise ImproperlyConfigured(ex)
 
     def as_url(self):
         view_func = self.view.as_view()
-        regex = self.url_regex()
-        url_name = self.url_name()
+        regex = self.url_regex
+        url_name = self.url_name
         return url(str(regex), view_func, name=url_name)
 
     def reverse(self, args, kwargs):
-        return reverse(self.url_name(), args=args, kwargs=kwargs)
+        return reverse(self.url_name, args=args, kwargs=kwargs)
 
 
 

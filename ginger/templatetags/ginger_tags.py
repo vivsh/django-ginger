@@ -114,6 +114,46 @@ def format_errors(error_list, **kwargs):
     return Markup(error_list)
 
 
+class RenderField(object):
+
+    def __init__(self, request, field):
+        self.field = field
+        self.request = request
+
+    def widget(self):
+        return self.widget
+
+    def help(self):
+        return self.field.field.help_text
+
+    def error_tag(self):
+        return self.field.errors()
+
+    def label(self):
+        return self.field
+
+    def label_tag(self):
+        return
+
+    def help_tag(self):
+        return
+
+    def value(self):
+        pass
+
+    def data(self):
+        pass
+
+    def choices(self):
+        pass
+
+    def links(self):
+        pass
+
+    def options(self):
+        pass
+
+
 class FormRenderer(object):
 
     def __init__(self, form):

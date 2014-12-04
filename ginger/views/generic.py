@@ -49,6 +49,12 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
         else:
             return response
 
+    def get_template_names(self):
+        template_name = getattr(self, "template_name", None)
+        if template_name is None:
+            return self.meta.template_name
+        return template_name
+
 
 
 class GingerDetailView(GingerTemplateView):
