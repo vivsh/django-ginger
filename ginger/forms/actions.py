@@ -1,6 +1,7 @@
 
 import datetime
 import inspect
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from django import forms
 from django.core.paginator import Page
@@ -18,6 +19,7 @@ __all__ = ['GingerModelForm',
            'GingerSearchFormMixin',
            'GingerDataForm',
            'GingerDataModelForm']
+
 
 
 class GingerSafeEmptyTuple(tuple):
@@ -46,6 +48,15 @@ class GingerFormMixin(object):
         super(GingerFormMixin, self).__init__(**kwargs)
         self.context = self.process_context(context)
 
+    def process_context(self, context):
+        spec = inspect.getargspec(self.execute)
+        if spec.varargs:
+            raise ImproperlyConfigured("Form.execute cannot have variable arguments")
+        if spec.keywords:
+            return context
+        return {k: context[k] for k in spec.args[1:]}
+
+
     @property
     def initial_data(self):
         fields = self.fields
@@ -63,9 +74,6 @@ class GingerFormMixin(object):
     @property
     def result(self):
         return self.__result
-
-    def process_context(self, context):
-        return context
 
     def get_success_message(self):
         return self.success_message

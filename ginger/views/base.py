@@ -215,7 +215,7 @@ class GingerView(View, GingerSessionDataMixin):
 
     @classmethod
     def reverse(cls, *args, **kwargs):
-        return cls.meta.reverse(*args, **kwargs)
+        return cls.meta.reverse(args, kwargs)
 
     @classmethod
     def as_view(cls, **initkwargs):
@@ -229,6 +229,9 @@ class GingerView(View, GingerSessionDataMixin):
 
     def get_user(self):
         return self.request.user
+
+    def get_ip(self):
+        return utils.get_client_ip(self.request)
 
     def process_request(self, request):
         self.user = self.get_user()

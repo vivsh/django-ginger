@@ -121,13 +121,19 @@ class GingerFormView(GingerTemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
     def get_form_initial(self, form_key):
-        return
+        return None
 
     def get_form_prefix(self, form_key):
-        return
+        return None
 
     def get_form_instance(self, form_key):
-        return
+        return None
+
+    def get_form_context(self, form_key):
+        return {
+            "user": self.user,
+            "ip": self.get_ip()
+        }
 
     def get_form_kwargs(self, form_key):
         kwargs = {
@@ -137,6 +143,9 @@ class GingerFormView(GingerTemplateView):
         form_class = self.get_form_class(form_key)
         if form_class and issubclass(form_class, ModelForm):
             kwargs['instance'] = self.get_form_instance(form_key)
+        ctx = self.get_form_context(form_key)
+        if ctx:
+            kwargs.update(ctx)
         return kwargs
 
     def process_submit(self, form_key, data=None, files=None):

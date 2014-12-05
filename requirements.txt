@@ -1,0 +1,16 @@
+Django==1.7
+Fabric==1.10.0
+Jinja2==2.7.3
+MarkupSafe==0.23
+Pillow==2.6.0
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@b8522ac4f041b21a6a92957c6cd0797ee45e608f#egg=django_ginger-master
+django-jinja==1.0.4
+django-nose==1.2
+django-pods==1.1
+ecdsa==0.11
+mock==1.0.1
+nose==1.3.4
+paramiko==1.15.1
+pycrypto==2.6.1
+requests==2.4.1
+wsgiref==0.1.2
