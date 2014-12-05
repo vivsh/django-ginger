@@ -32,11 +32,13 @@ class GingerFormMixin(object):
     failure_message = None
     success_message = None
     ignore_errors = False
+    use_defaults = False
 
     def __init__(self, **kwargs):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
         constructor = parent_cls.__init__
         keywords = set(inspect.getargspec(constructor).args)
+        self.use_defaults = kwargs.pop("use_defaults", self.use_defaults)
         if "ignore_errors" in kwargs:
             self.ignore_errors = kwargs.pop("ignore_errors")
         context = {}
@@ -47,6 +49,18 @@ class GingerFormMixin(object):
             context[key] = value
         super(GingerFormMixin, self).__init__(**kwargs)
         self.context = self.process_context(context)
+        self.merge_defaults()
+
+    def merge_defaults(self):
+        if self.use_defaults:
+            data = self.data.copy() if self.data is not None else {}
+            initial = self.initial_data
+            for key in initial:
+                value = initial[key]
+                name = self.add_prefix(key)
+                if name not in data:
+                    data[name] = value
+            self.data = data
 
     def process_context(self, context):
         spec = inspect.getargspec(self.execute)
@@ -68,7 +82,11 @@ class GingerFormMixin(object):
                 if (isinstance(data, (datetime.datetime, datetime.time)) and
                         not getattr(field.widget, 'supports_microseconds', True)):
                     data = data.replace(microsecond=0)
-            result[name] = data
+            if isinstance(field, forms.MultiValueField):
+                for i, f in enumerate(field.fields):
+                    result["%s_%s" % (name, i)] = data
+            else:
+                result[name] = data
         return result
 
     @property
@@ -143,22 +161,6 @@ class GingerSearchFormMixin(GingerFormMixin):
     parameter_name = "page"
     ignore_errors = True
     use_defaults = True
-
-    def __init__(self, **kwargs):
-        super(GingerSearchFormMixin, self).__init__(**kwargs)
-        self.use_defaults = kwargs.pop("use_defaults", self.use_defaults)
-        self._merge_defaults()
-
-    def _merge_defaults(self):
-        if self.use_defaults:
-            data = self.data.copy() if self.data is not None else {}
-            initial = self.initial_data
-            for key in initial:
-                value = initial[key]
-                name = self.add_prefix(key)
-                if name not in data:
-                    data[name] = value
-            self.data = data
 
     def _post_clean(self):
         """
