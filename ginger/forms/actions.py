@@ -84,7 +84,7 @@ class GingerFormMixin(object):
                     data = data.replace(microsecond=0)
             if isinstance(field, forms.MultiValueField):
                 for i, f in enumerate(field.fields):
-                    result["%s_%s" % (name, i)] = data
+                    result["%s_%s" % (name, i)] = data[i]
             else:
                 result[name] = data
         return result
