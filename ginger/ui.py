@@ -7,7 +7,7 @@ import json
 import functools
 from django.forms.forms import BoundField
 from django.utils import six
-from ginger import utils
+from ginger import utils, serializer
 
 __all__ = [
     "add_link_builder",
@@ -187,3 +187,7 @@ class UIFormField(object):
 
     def __init__(self, field):
         self.field = field
+
+def as_json(values):
+    content = serializer.encode(values)
+    return Markup(content)

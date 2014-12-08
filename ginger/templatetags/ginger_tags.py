@@ -201,5 +201,4 @@ class FormRenderer(object):
 
 @filter_tag
 def json(values):
-    content = serializer.encode(values)
-    return Markup(content)
+    return ui.as_json(values)

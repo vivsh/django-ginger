@@ -68,8 +68,7 @@ class GingerFormMixin(object):
             raise ImproperlyConfigured("Form.execute cannot have variable arguments")
         if spec.keywords:
             return context
-        return {k: context[k] for k in spec.args[1:]}
-
+        return {k: context[k] for k in spec.args[1:] if k in context}
 
     @property
     def initial_data(self):
@@ -83,8 +82,10 @@ class GingerFormMixin(object):
                         not getattr(field.widget, 'supports_microseconds', True)):
                     data = data.replace(microsecond=0)
             if isinstance(field, forms.MultiValueField):
-                for i, f in enumerate(field.fields):
-                    result["%s_%s" % (name, i)] = data[i]
+                if data:
+                    for i, f in enumerate(field.fields):
+                        key = "%s_%s" % (name, i)
+                        result[key] = data[i]
             else:
                 result[name] = data
         return result

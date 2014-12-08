@@ -18,7 +18,7 @@ __all__ = ["P", "GingerView"]
 class Num(object):
 
     def match(self, value):
-        return value == 'num'
+        return value in {'num', 'int'}
 
     def pattern(self, value):
         return r'\d+'
@@ -149,16 +149,17 @@ class ViewMeta(object):
 
     @property
     def url_regex(self):
-        try:
-            return Pattern(self.view.url_regex)
-        except AttributeError as ex:
-            raise ImproperlyConfigured(ex)
+        regex = self.view.url_regex
+        if regex is None:
+            raise ImproperlyConfigured("%s cannot have a None url pattern" % self.view.__name__)
+        return regex
 
     def as_url(self):
         view_func = self.view.as_view()
         regex = self.url_regex
         url_name = self.url_name
-        return url(str(regex), view_func, name=url_name)
+        regex = Pattern(regex).create() if not isinstance(regex, Pattern) else regex.create()
+        return url(regex, view_func, name=url_name)
 
     def reverse(self, args, kwargs):
         return reverse(self.url_name, args=args, kwargs=kwargs)
@@ -204,7 +205,7 @@ class GingerView(View, GingerSessionDataMixin):
 
     user = None
 
-    url_regex = P("home/")
+    url_regex = None
 
     meta = ViewMetaDescriptor()
 
