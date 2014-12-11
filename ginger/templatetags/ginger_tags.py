@@ -202,3 +202,7 @@ class FormRenderer(object):
 @filter_tag
 def json(values):
     return ui.as_json(values)
+
+@ginger_tag(takes_context=True)
+def ginger_field_options(context, field):
+    return ui.choices_to_options(context["request"], field)

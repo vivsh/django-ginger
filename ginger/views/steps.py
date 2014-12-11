@@ -37,6 +37,7 @@ class Step(object):
         self.skip = skip
         self.method = method.upper()
         self.template = template
+        self.form_class.use_defaults = True
         if not isinstance(form_class, type) or not issubclass(form_class, (forms.Form, forms.ModelForm)):
             raise ImproperlyConfigured("%r is not a valid form class for wizard steps" % form_class)
 

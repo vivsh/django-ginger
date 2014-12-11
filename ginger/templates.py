@@ -110,8 +110,7 @@ def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
                 t = env.get_template(template)
                 values = orig_func(*args,**kwargs)
                 result = t.render( values )
-                if mark_safe:
-                    result = jinja2.Markup(result)
+                result = jinja2.Markup(result)
                 return result
             func = functools.update_wrapper(wrapper, func)
         elif mark_safe:

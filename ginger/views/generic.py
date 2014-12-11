@@ -1,10 +1,11 @@
-from django.conf.urls import url
-from django.core.paginator import EmptyPage
+
 import os
 from datetime import timedelta
-
+from django.utils.six.moves.urllib.parse import urljoin
+from django.core.paginator import EmptyPage
+from django.forms.fields import FileField
 from django.contrib import messages
-from django.utils import timezone
+from django.utils import timezone, six
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -16,7 +17,6 @@ from django.shortcuts import redirect
 
 from ginger.exceptions import ValidationFailure
 from ginger.exceptions import Http404
-from ginger import utils
 from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
 
@@ -306,6 +306,17 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         self.file_storage = self.get_file_storage()
         self.steps = steps.StepList(self)
 
+    def is_submitted(self, form_key):
+        return form_key == self.current_step_name() and self.can_submit()
+
+    def get_form_initial(self, form_key):
+        initial = {}
+        if self.is_submitted(form_key):
+            _, files = self.get_form_data(form_key)
+            if files:
+                initial.update(files)
+        return initial
+
     @cached_property
     def form_storage(self):
         return self.get_form_storage()
@@ -315,7 +326,10 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
 
     def get_file_storage(self):
         location = self.file_upload_dir or getattr(settings, "TEMP_MEDIA_DIR", "tmp")
-        return FileSystemStorage(os.path.join(settings.MEDIA_ROOT, location))
+        return FileSystemStorage(
+            os.path.join(settings.MEDIA_ROOT, location),
+            base_url=urljoin(settings.MEDIA_URL, location)
+        )
 
     def get_template_names(self):
         if self.template_format is None:
@@ -341,7 +355,16 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
 
     def form_valid(self, form):
         step_name = self.current_step_name()
-        self.set_form_data(step_name, form.data, form.files)
+        files = form.files.copy()
+        data = form.data.copy()
+        cleaned_data = form.cleaned_data
+        for name, f in six.iteritems(form.fields):
+            if isinstance(f, FileField) and name not in files and name in cleaned_data:
+                file_obj = cleaned_data[name]
+                if file_obj is not None:
+                    files[name] = cleaned_data[name]
+                    data.pop(name, None)
+        self.set_form_data(step_name, data, files)
         url = self.get_next_url()
         return self.redirect(url)
 
@@ -381,6 +404,8 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
         return result
 
     def can_submit(self):
+        if self.is_done_step():
+            return False
         method = self.steps.current.method
         request = self.request
         if request.method == "POST" or (method == "GET" and request.method == "GET" and request.GET):

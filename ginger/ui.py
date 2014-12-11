@@ -67,7 +67,8 @@ def bound_field_link_builder(field, request):
             yield value
     else:
         for code, label in form_field.choices:
-            is_active = code == field_value
+            text_code = six.text_type(code)
+            is_active = text_code in field_value if isinstance(field_value, (list, tuple)) else text_code == field_value
             link_url = utils.get_url_with_modified_params(url, {field.name: code})
             yield Link(link_url, label, is_active, value=code)
 
@@ -131,7 +132,7 @@ def choices_to_options(request, bound_field):
     tags = []
     for link in build_links(bound_field, request):
         selected = "selected" if link.is_active else ""
-        html = "<option value='%s' %s> %s <option>" % (link.value, selected, link.content)
+        html = "<option value='%s' %s> %s </option>" % (link.value, selected, link.content)
         tags.append(html)
     return Markup("".join(tags))
 

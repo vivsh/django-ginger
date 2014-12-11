@@ -268,7 +268,7 @@ class GingerView(View, GingerSessionDataMixin):
             kwargs['view'] = self
         return kwargs
 
-    def add_message(self, level, message, **kwargs):
+    def add_message(self,  message, level=messages.INFO, **kwargs):
         if not message:
             return
         messages.add_message(self.request, level, message, **kwargs)

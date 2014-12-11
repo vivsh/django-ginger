@@ -59,7 +59,7 @@ class FormStorageBase(object):
         data = copy.copy(form_data)
         for k, v in form_data.iteritems():
             if isinstance(v, StorageFile):
-                data[k]= v.load(self.file_storage)
+                data[k] = v.load(self.file_storage)
         return data
 
     def create_key(self, suffix):

@@ -81,11 +81,10 @@ class GingerFormMixin(object):
                 if (isinstance(data, (datetime.datetime, datetime.time)) and
                         not getattr(field.widget, 'supports_microseconds', True)):
                     data = data.replace(microsecond=0)
-            if isinstance(field, forms.MultiValueField):
-                if data:
-                    for i, f in enumerate(field.fields):
-                        key = "%s_%s" % (name, i)
-                        result[key] = data[i]
+            if data and isinstance(field, forms.MultiValueField):
+                for i, f in enumerate(field.fields):
+                    key = "%s_%s" % (name, i)
+                    result[key] = data[i]
             else:
                 result[name] = data
         return result
@@ -168,7 +167,7 @@ class GingerSearchFormMixin(GingerFormMixin):
             This override is needed so as to avoid modelform validation during clean
         """
 
-    def insert_null(self, field_name, label, initial=None):
+    def insert_null(self, field_name, label, initial=""):
         field = self.fields[field_name]
         if initial is None:
             initial = field.empty_value
