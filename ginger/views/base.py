@@ -9,97 +9,14 @@ from django.http.response import Http404
 from django.views.generic.base import View
 from django.conf.urls import url
 
-from ginger import utils
+from ginger import utils, pattern
 
 
 __all__ = ["P", "GingerView"]
 
 
-class Num(object):
 
-    def match(self, value):
-        return value in {'num', 'int'}
-
-    def pattern(self, value):
-        return r'\d+'
-
-
-class Slug:
-
-    def match(self, value):
-        return value == "slug"
-
-    def pattern(self, value):
-        return r'[a-z0-9A-Z][a-zA-Z0-9\-]*'
-
-
-class Name:
-
-    def match(self, value):
-        return value == "name"
-
-    def pattern(self, value):
-        return r'[a-zA-Z]\w+'
-
-
-class Choice:
-
-     def match(self, value):
-         return value.startswith("(") and value.endswith(")")
-
-     def pattern(self, value):
-         parts = value.strip("()").split(",")
-         return "|".join(p.strip() for p in parts)
-
-
-class Pattern(object):
-
-    pattern_types = [Num, Slug, Name, Choice]
-
-    def __init__(self, value):
-        self.value = value
-
-    def match(self, value):
-        for cls in self.pattern_types:
-            p = cls()
-            if p.match(value):
-                return p.pattern(value)
-        return value
-
-    def __str__(self):
-        return self.create()
-
-    def create(self):
-        parts = re.sub("/+", "/", self.value).lstrip("/").split("/")
-        result = []
-        size = len(parts)
-        for i, p in enumerate(parts):
-            slash = "" if i == size-1 else "/"
-            if ":" not in p:
-                if p:
-                    p = "%s%s" % (p, slash)
-                result.append(p)
-            else:
-                opt = False
-                name, pattern = p.split(":", 1)
-                if name.endswith("?"):
-                    name = name[:-1]
-                    opt = True
-                pattern = self.match(pattern)
-                pattern = r"(?P<%s>%s)%s" % (name, pattern, slash)
-                if opt:
-                    pattern = r"(?:%s)?" % pattern
-                result.append(pattern)
-        return r"^%s$" % "".join(result)
-
-    def compile(self, **kwargs):
-        return re.compile(self.create(), **kwargs)
-
-    def findall(self, text, **kwargs):
-        rx = self.compile(**kwargs)
-        return rx.findall(text)
-
-P = Pattern
+P = pattern.Pattern
 
 
 class ViewMeta(object):
@@ -158,7 +75,7 @@ class ViewMeta(object):
         view_func = self.view.as_view()
         regex = self.url_regex
         url_name = self.url_name
-        regex = Pattern(regex).create() if not isinstance(regex, Pattern) else regex.create()
+        regex = pattern.Pattern(regex).create() if not isinstance(regex, pattern.Pattern) else regex.create()
         return url(regex, view_func, name=url_name)
 
     def reverse(self, args, kwargs):
@@ -170,12 +87,13 @@ class ViewMetaDescriptor(object):
 
     def __get__(self, obj, owner=None):
         instance = owner or obj
-        try:
-            result = instance.__meta
-        except AttributeError:
-            result = ViewMeta(instance)
-            instance.__meta = result
-        return result
+        return ViewMeta(instance)
+        # try:
+        #     result = instance.__meta
+        # except AttributeError:
+        #     result = ViewMeta(instance)
+        #     instance.__meta = result
+        # return result
 
 
 
@@ -212,7 +130,8 @@ class GingerView(View, GingerSessionDataMixin):
 
     @classmethod
     def as_url(cls):
-        return cls.meta.as_url()
+        url = cls.meta.as_url()
+        return url
 
     @classmethod
     def reverse(cls, *args, **kwargs):

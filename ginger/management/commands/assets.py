@@ -254,16 +254,16 @@ class Command(BaseCommand):
             raise ValueError("Unknown target: %r"%target)
         else:
             method()
-            
-    def syncs3(self):
-        from hobbyist.settings import erotq
-        aws_attrs = ('STATICFILES_STORAGE', 'STATIC_URL', 'MEDIA_URL', 'DEFAULT_FILE_STORAGE', 'INSTALLED_APPS', 'STATICFILES_DIRS')
-        for attr in aws_attrs:
-            value = getattr(erotq, attr, None)
-            if value:
-                setattr(settings, attr, value)
-        storage.staticfiles_storage = storage.ConfiguredStorage()
-        call_command("collectstatic", interactive=False)
+    #
+    # def syncs3(self):
+    #     from hobbyist.settings import erotq
+    #     aws_attrs = ('STATICFILES_STORAGE', 'STATIC_URL', 'MEDIA_URL', 'DEFAULT_FILE_STORAGE', 'INSTALLED_APPS', 'STATICFILES_DIRS')
+    #     for attr in aws_attrs:
+    #         value = getattr(erotq, attr, None)
+    #         if value:
+    #             setattr(settings, attr, value)
+    #     storage.staticfiles_storage = storage.ConfiguredStorage()
+    #     call_command("collectstatic", interactive=False)
         
     def install_deps(self):
         subprocess.check_call("npm -g install requirejs")

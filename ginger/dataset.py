@@ -6,6 +6,7 @@ import weakref
 from collections import OrderedDict
 import collections
 from django.utils import six
+from django.utils.safestring import mark_safe
 from ginger import ui
 from ginger.utils import get_url_with_modified_params
 
@@ -97,11 +98,39 @@ class DataRow(object):
 
     __inited = False
 
-    def __init__(self, owner, data):
-        self.data = data
+    def __init__(self, owner, obj):
+        self.obj = obj
+        self._data = None
         self.owner = weakref.ref(owner)
-        assert len(self.data) == len(self.columns)
         self.__inited = True
+
+    @property
+    def schema(self):
+        return self.owner()._get_schema()
+
+    @property
+    def data(self):
+        obj = self.obj
+        if self._data is None:
+            schema = self.owner()._get_schema()
+            if not inspect.isgenerator(obj) and not isinstance(obj, collections.Sequence):
+                result = []
+                for column in schema.columns:
+                    attr = column.model_attr or column.name
+                    try:
+                        method = getattr(schema, "prepare_%s" % column.name)
+                    except AttributeError:
+                        if isinstance(obj, collections.Mapping):
+                            value = obj[attr]
+                        else:
+                            value = getattr(obj, attr)
+                    else:
+                        value = method(obj)
+                    result.append(value)
+            else:
+                result = obj
+            self._data = result
+        return self._data
 
     @property
     def columns(self):
@@ -115,8 +144,15 @@ class DataRow(object):
         formatter = self.owner()._format_cell
         for col in cols:
             i = col.position
-            value = formatter(i, self.data[i])
+            value = mark_safe(formatter(i, self.data[i]))
             yield (col, value) if columns else value
+
+    @property
+    def object(self):
+        return self.obj
+
+    def __getitem__(self, item):
+        return getattr(self.obj, item)
 
     def __getattr__(self, item):
         try:
@@ -127,7 +163,7 @@ class DataRow(object):
             return self.data[col.position]
 
     def __setattr__(self, key, value):
-        if not self.__inited:
+        if not self.__inited or key in self.__dict__:
             self.__dict__[key] = value
         else:
             try:
@@ -137,7 +173,7 @@ class DataRow(object):
             else:
                 data = list(self.data)
                 data[col.position] = value
-                self.__dict__['data'] = tuple(data)
+                self.__dict__['_data'] = tuple(data)
 
     def __iter__(self):
         """
@@ -166,12 +202,16 @@ class DataSetBase(object):
     def _get_schema(self):
         raise NotImplementedError
 
-    def sort(self, *args, **kwargs):
-        self.rows.sort(*args, **kwargs)
+    @property
+    def schema(self):
+        return self._get_schema()
 
     @property
     def rows(self):
         return self.__rows
+
+    def sort(self, *args, **kwargs):
+        self.rows.sort(*args, **kwargs)
 
     def _format_cell(self, i, value):
         raise NotImplementedError
@@ -195,25 +235,10 @@ class DataSetBase(object):
         self.rows.insert(i, row)
 
     def _make_row(self, obj):
-        if isinstance(obj, DataRow):
+        row_class = self.schema.datarow_class
+        if isinstance(obj, row_class):
             return obj
-        if not inspect.isgenerator(obj) and not isinstance(obj, collections.Sequence):
-            result = []
-            for column in self.columns:
-                attr = column.model_attr or column.name
-                try:
-                    method = getattr(self, "prepare_%s" % column.name)
-                except AttributeError:
-                    if isinstance(obj, collections.Mapping):
-                        value = obj[attr]
-                    else:
-                        value = getattr(obj, attr)
-                else:
-                    value = method(obj)
-                result.append(value)
-        else:
-            result = obj
-        return DataRow(self, tuple(result))
+        return row_class(self, obj)
 
     def to_json(self):
         return self.rows
@@ -232,13 +257,13 @@ class DataAggregates(DataSetBase):
 
     def __init__(self, schema):
         super(DataAggregates, self).__init__()
-        self.schema = weakref.ref(schema)
+        self._schema = weakref.ref(schema)
 
     def _format_cell(self, i, value):
-        return self._get_schema()._format_cell(i, value, True)
+        return self.schema._format_cell(i, value, True)
 
     def _get_schema(self):
-        return self.schema()
+        return self._schema()
 
 
 class DictList(list):
@@ -259,6 +284,8 @@ class GingerDataSet(DataSetBase):
     """
     List of tuples
     """
+
+    datarow_class = DataRow
 
     def __init__(self, object_list=None):
         super(GingerDataSet, self).__init__()

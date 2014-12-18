@@ -1,0 +1,172 @@
+
+
+.clearfix:before,
+.clearfix:after {
+    content: "";
+    display: table;
+}
+.clearfix:after {
+    clear: both;
+}
+.clearfix {
+    zoom: 1; /* For IE 6/7 (trigger hasLayout) */
+}
+
+.pull-left{
+    float: left;
+}
+
+.pull-right{
+    float: right
+}
+
+.center-block > .cell{
+    display: block;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.center-inline{
+    text-align: center;
+}
+
+.center-inline > .cell{
+    display: inline-block;
+    text-align: center;
+}
+
+.hbox-wrapped, .hbox-justified, .hbox-inline{
+    list-style: none !important;
+    padding: 0;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.cell{
+    border: none !important;
+    box-shadow: none !important;
+    -moz-box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+
+    margin: 0 !important;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.hbox-wrapped{
+    overflow: hidden;
+}
+
+.hbox-wrapped > .cell{
+    float: left;
+}
+
+.hbox-wrapped >.cell.left{
+    float: left;
+}
+
+.hbox-wrapped >.cell.right{
+    float: right;
+}
+
+
+/**
+Justified horizontal list
+*/
+.hbox-justified{
+    display: table;
+}
+
+.hbox-justified > .cell{
+    display: table-cell;
+}
+
+/**
+Vertically aligns the content within cell
+*/
+.vbox-aligned{
+    display: table;
+}
+
+.vbox-aligned > .cell{
+    display: table-cell;
+}
+
+.text-overflow{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hbox-inline {
+    letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
+    *letter-spacing: normal; /* reset IE < 8 */
+    *word-spacing: -0.43em; /* IE < 8: collapse white-space between units */
+    text-rendering: optimizespeed; /* Webkit: fixes text-rendering: optimizeLegibility */
+
+    /*
+    Sets the font stack to fonts known to work properly with the above letter
+    and word spacings. See: https://github.com/yahoo/pure/issues/41/
+    The following font stack makes Pure Grids work on all known environments.
+    * FreeSans: Ships with many Linux distros, including Ubuntu
+    * Arimo: Ships with Chrome OS. Arimo has to be defined before Helvetica and
+      Arial to get picked up by the browser, even though neither is available
+      in Chrome OS.
+    * Droid Sans: Ships with all versions of Android.
+    * Helvetica, Arial, sans-serif: Common font stack on OS X and Windows.
+    */
+    font-family: FreeSans, Arimo, "Droid Sans", Helvetica, Arial, sans-serif;
+
+    /*
+    Use flexbox when possible to avoid `letter-spacing` side-effects.
+    NOTE: Firefox (as of 25) does not currently support flex-wrap, so the
+    `-moz-` prefix version is omitted.
+    */
+
+    display: -webkit-flex;
+    -webkit-flex-flow: row wrap;
+
+    /* IE10 uses display: flexbox */
+    display: -ms-flexbox;
+    -ms-flex-flow: row wrap;
+}
+
+/* Opera as of 12 on Windows needs word-spacing.
+   The ".opera-only" selector is used to prevent actual prefocus styling
+   and is not required in markup.
+*/
+.opera-only :-o-prefocus,
+.hbox-inline {
+    word-spacing: -0.43em;
+}
+
+.hbox-inline > .cell {
+    display: inline-block;
+    *display: inline; /* IE < 8: fake inline-block */
+    zoom: 1;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
+}
+
+
+/**
+    Trial styles
+*/
+.content{
+    border: 1px solid black;
+    padding: 8px;
+    margin: 4px;
+}
+
+/**
+
+Table Layout:
+
+
+**/
