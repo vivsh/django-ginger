@@ -18,12 +18,12 @@ class Column(object):
 
     __position = 1
 
-    def __init__(self, label=None, kind=None, model_attr=None, hidden=False):
+    def __init__(self, label=None, kind=None, hidden=False, attr=None):
         self.__position += 1
         Column.__position += 1
         self.label = label
         self.kind = kind
-        self.model_attr = model_attr
+        self.attr = attr
         self.hidden = hidden
 
     @property
@@ -57,8 +57,8 @@ class BoundColumn(object):
         return self.column.kind
 
     @property
-    def model_attr(self):
-        return self.column.model_attr
+    def attr(self):
+        return self.column.attr or self.name
 
     @property
     def label(self):
@@ -116,7 +116,7 @@ class DataRow(object):
             if not inspect.isgenerator(obj) and not isinstance(obj, collections.Sequence):
                 result = []
                 for column in schema.columns:
-                    attr = column.model_attr or column.name
+                    attr = column.attr or column.name
                     try:
                         method = getattr(schema, "prepare_%s" % column.name)
                     except AttributeError:
@@ -345,7 +345,8 @@ class GingerDataSet(DataSetBase):
                 reverse = False
                 mods = {}
             url = get_url_with_modified_params(request, mods)
-            yield ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse)
+            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse)
+            yield link
 
     def export_csv(self, response, header=False, hidden=True):
         import csv

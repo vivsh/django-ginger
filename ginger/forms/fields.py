@@ -127,10 +127,23 @@ class GingerDataSetField(SortField):
 
     def __init__(self, dataset_class, process_list=False, **kwargs):
         column_dict = dataset_class.get_column_dict()
-        choices = [(col.model_attr or name, col.label or name.title()) for name, col in six.iteritems(column_dict) if not col.hidden]
+        choices = [(name, col.label or name.title()) for name, col in six.iteritems(column_dict) if not col.hidden]
         super(GingerDataSetField, self).__init__(choices=choices, **kwargs)
         self.dataset_class = dataset_class
         self.process_list = process_list
+
+    def handle_queryset(self, queryset, value, bound_field):
+        text_value = force_text(value) if value is not None else None
+        if not text_value:
+            return queryset
+        reverse = text_value.startswith("-")
+        column_dict = self.dataset_class.get_column_dict()
+        name = text_value[1:] if reverse else text_value
+        col = column_dict[name]
+        attr = col.attr or name
+        if reverse:
+            attr = "-%s" % attr
+        return queryset.order_by(attr)
 
     def handle_dataset(self, dataset, value, bound_field):
         text_value = force_text(value) if value is not None else None

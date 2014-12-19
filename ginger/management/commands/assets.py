@@ -118,7 +118,7 @@ def hashdir(dirname, ext="js"):
     return "%s.min.%s"%(hasher.hexdigest()[:16], ext)
 
 def get_requirejs_path():
-    requirejs_path = getattr(settings, "REQUIREJS_PATH", "js/require.js")
+    requirejs_path = getattr(settings, "REQUIREJS_PATH")
     if not asset(requirejs_path):
         raise AttributeError("No REQUIREJS_PATH has been specified in settings")
     return requirejs_path
@@ -130,6 +130,7 @@ def get_lesscss_path():
     return lesscss_path
 
 def pack_js():
+    call_command("collectstatic", interactive=False, verbosity=0)
     root = asset("js")
     hashjs = hashdir(root,"js")
     outfile = find_asset("js", hashjs)
@@ -248,7 +249,6 @@ class Command(BaseCommand):
         if not self.local:
             raise Exception("These commands should be run only on local filesystems")
         try:
-            call_command("collectstatic", interactive=False, verbosity=0)
             method = globals()[method_name]
         except KeyError:
             raise ValueError("Unknown target: %r"%target)
