@@ -1,4 +1,6 @@
 
+import ast
+import re
 from os import path
 from setuptools import setup, find_packages
 
@@ -7,11 +9,18 @@ base_dir = path.abspath(path.dirname(__file__))
 with open(path.join(base_dir, "DESCRIPTION.md")) as f:
     long_description = f.read()
 
+with file(path.join(base_dir, "ginger/__init__.py")) as f:
+    for line in f:
+        matches = re.findall(r'^__version__\s*=\s*(.+)$', line)
+        if matches:
+            version = ast.literal_eval(matches[0])
+            break
+
 setup(
     name="django_ginger",
     description="Set of django utilities",
     long_description=long_description,
-    version="0.5.0",
+    version=version,
     url="https://github.com/vivsh/django-ginger",
     author="Vivek Sharma",
     author_email="vivek@17thstep.com",
