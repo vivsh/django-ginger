@@ -35,7 +35,6 @@ setup(
         "django_nose",
         "mock",
     ],
-    packages=[
-        "ginger",
-    ]
+    include_package_data=True,
+    packages=find_packages()
 )
