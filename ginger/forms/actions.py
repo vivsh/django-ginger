@@ -58,7 +58,7 @@ class GingerFormMixin(object):
             for key in initial:
                 value = initial[key]
                 name = self.add_prefix(key)
-                if name not in data:
+                if name not in data and value is not None:
                     data[name] = value
             self.data = data
 
@@ -85,7 +85,7 @@ class GingerFormMixin(object):
                 for i, f in enumerate(field.fields):
                     key = "%s_%s" % (name, i)
                     result[key] = data[i]
-            else:
+            elif data is not None:
                 result[name] = data
         return result
 
