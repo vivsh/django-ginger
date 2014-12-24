@@ -62,13 +62,14 @@ def bound_field_link_builder(field, request):
     url = request.get_full_path()
     form_field = field.field
     field_value = field.value()
+    field_text = six.text_type(field_value) if isinstance(field_value, (list, tuple)) else map(six.text_type, field_value)
     if hasattr(form_field, 'build_links'):
         for value in form_field.build_links(request, field):
             yield value
     else:
         for code, label in form_field.choices:
             text_code = six.text_type(code)
-            is_active = text_code in field_value if isinstance(field_value, (list, tuple)) else text_code == field_value
+            is_active = text_code in field_text if isinstance(field_value, (list, tuple)) else text_code == field_text
             link_url = utils.get_url_with_modified_params(url, {field.name: code})
             yield Link(link_url, label, is_active, value=code)
 
