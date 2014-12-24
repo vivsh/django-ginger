@@ -62,7 +62,7 @@ def bound_field_link_builder(field, request):
     url = request.get_full_path()
     form_field = field.field
     field_value = field.value()
-    field_text = six.text_type(field_value) if isinstance(field_value, (list, tuple)) else map(six.text_type, field_value)
+    field_text = six.text_type(field_value) if not isinstance(field_value, (list, tuple)) else map(six.text_type, field_value)
     if hasattr(form_field, 'build_links'):
         for value in form_field.build_links(request, field):
             yield value
