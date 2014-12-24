@@ -186,7 +186,7 @@ class GingerView(View, GingerSessionDataMixin):
     def get_context_data(self, **kwargs):
         if 'view' not in kwargs:
             kwargs['view'] = self
-        if hasattr(self, "object"):
+        if hasattr(self, "object") and "object" not in kwargs:
             kwargs["object"] = self.object
         return kwargs
 
