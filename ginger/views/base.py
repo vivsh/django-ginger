@@ -186,6 +186,8 @@ class GingerView(View, GingerSessionDataMixin):
     def get_context_data(self, **kwargs):
         if 'view' not in kwargs:
             kwargs['view'] = self
+        if hasattr(self, "object"):
+            kwargs["object"] = self.object
         return kwargs
 
     def add_message(self,  message, level=messages.INFO, **kwargs):
