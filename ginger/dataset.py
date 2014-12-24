@@ -98,10 +98,11 @@ class DataRow(object):
 
     __inited = False
 
-    def __init__(self, owner, obj):
+    def __init__(self, owner, obj, aggregate=False):
         self.obj = obj
         self._data = None
         self.owner = weakref.ref(owner)
+        self.is_aggregate = aggregate
         self.__inited = True
 
     @property
@@ -144,7 +145,7 @@ class DataRow(object):
         formatter = self.owner()._format_cell
         for col in cols:
             i = col.position
-            value = mark_safe(formatter(i, self.data[i]))
+            value = mark_safe(formatter(self.data[i], i, self))
             yield (col, value) if columns else value
 
     @property
@@ -259,11 +260,16 @@ class DataAggregates(DataSetBase):
         super(DataAggregates, self).__init__()
         self._schema = weakref.ref(schema)
 
-    def _format_cell(self, i, value):
-        return self.schema._format_cell(i, value, True)
+    def _format_cell(self, *args, **kwargs):
+        return self.schema._format_cell(*args, **kwargs)
 
     def _get_schema(self):
         return self._schema()
+
+    def _make_row(self, obj):
+        row = super(DataAggregates, self)._make_row(obj)
+        row.is_aggregate = True
+        return row
 
 
 class DictList(list):
@@ -319,13 +325,13 @@ class GingerDataSet(DataSetBase):
     def columns(self):
         return self.__columns
 
-    def _format_cell(self, index, value, aggregate=False):
+    def _format_cell(self, value, index, row):
         column = self.columns[index]
         suffixes = (column.name, column.kind)
         for suffix in suffixes:
             func = getattr(self, "render_%s" % suffix, None)
             if func:
-                return func(value, index, aggregate)
+                return func(value, index, row)
         return str(value) if value is not None else ""
 
     def build_links(self, request):
