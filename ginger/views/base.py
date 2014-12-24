@@ -140,6 +140,7 @@ class GingerView(View, GingerSessionDataMixin):
     @classmethod
     def as_view(cls, **initkwargs):
         func = super(GingerView, cls).as_view(**initkwargs)
+        func.view_class = cls
         cls.setup_resource()
         return func
 
