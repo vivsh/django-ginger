@@ -1,6 +1,7 @@
 import inspect
 import operator
 from django.core.urlresolvers import reverse
+from django.utils.encoding import force_text
 from jinja2 import Markup
 import re
 import json
@@ -58,18 +59,26 @@ def build_links(obj, request, unique=True):
         yield link
 
 
+def is_selected_choice(values, choice):
+    if not isinstance(values, (list, tuple)):
+        values = (values, )
+    text_choice = force_text(choice)
+    for v in values:
+        if v == choice or text_choice == force_text(v):
+            return True
+    return False
+
+
 def bound_field_link_builder(field, request):
     url = request.get_full_path()
     form_field = field.field
     field_value = field.value()
-    field_text = six.text_type(field_value) if not isinstance(field_value, (list, tuple)) else map(six.text_type, field_value)
     if hasattr(form_field, 'build_links'):
         for value in form_field.build_links(request, field):
             yield value
     else:
         for code, label in form_field.choices:
-            text_code = six.text_type(code)
-            is_active = text_code in field_text if isinstance(field_value, (list, tuple)) else text_code == field_text
+            is_active = is_selected_choice(field_value, code)
             link_url = utils.get_url_with_modified_params(url, {field.name: code})
             yield Link(link_url, label, is_active, value=code)
 

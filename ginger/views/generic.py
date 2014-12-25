@@ -118,6 +118,8 @@ class GingerFormView(GingerTemplateView):
         return self.redirect(url)
 
     def form_invalid(self, form):
+        msg = form.get_failure_message()
+        self.add_message(level=messages.ERROR, message=msg)
         return self.render_to_response(self.get_context_data(form=form))
 
     def get_form_initial(self, form_key):

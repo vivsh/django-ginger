@@ -2,6 +2,7 @@
 import datetime
 import inspect
 from django.core.exceptions import ImproperlyConfigured
+from django.http.request import QueryDict
 from django.utils import six
 from django import forms
 from django.core.paginator import Page
@@ -53,14 +54,20 @@ class GingerFormMixin(object):
 
     def merge_defaults(self):
         if self.use_defaults:
-            data = self.data.copy() if self.data is not None else {}
+            data = QueryDict('', mutable=True)
+            if self.data:
+                data.update(self.data)
             initial = self.initial_data
             for key in initial:
                 value = initial[key]
                 name = self.add_prefix(key)
-                if name not in data and value is not None:
-                    data[name] = value
+                if value is not None:
+                    if hasattr(value, "__iter__"):
+                        data.setlistdefault(name, value)
+                    else:
+                        data.setdefault(name, value)
             self.data = data
+            print(self.data)
 
     def process_context(self, context):
         spec = inspect.getargspec(self.execute)

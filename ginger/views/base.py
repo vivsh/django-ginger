@@ -194,12 +194,3 @@ class GingerView(View, GingerSessionDataMixin):
         if not message:
             return
         messages.add_message(self.request, level, message, **kwargs)
-
-if __name__ == '__main__':
-    val = r"/any/any:num/some:slug/another:(first,second,third)/block/"
-    p = Pattern(val)
-    rx = p.compile()
-    print p
-    print rx.findall("any/1234/Thirs-343-67-90-yuyu/first/block/")
-
-
