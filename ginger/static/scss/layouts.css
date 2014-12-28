@@ -1,0 +1,66 @@
+.clearfix:before,
+.clearfix:after {
+  content: "";
+  display: table; }
+
+.clearfix:after {
+  clear: both; }
+
+.clearfix {
+  zoom: 1;
+  /* For IE 6/7 (trigger hasLayout) */ }
+
+.center-block > .cell {
+  display: block;
+  margin-right: auto;
+  margin-left: auto; }
+
+.center-inline {
+  text-align: center; }
+
+.center-inline > .cell {
+  display: inline-block;
+  text-align: center; }
+
+.box-flow, .box-table, .box-inline {
+  list-style: none !important;
+  padding: 0;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+
+.box-flow {
+  overflow: hidden; }
+
+.box-flow > .cell {
+  float: left; }
+
+.box-flow > .cell.left {
+  float: left; }
+
+.box-flow > .cell.right {
+  float: right; }
+
+.text-overflow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; }
+
+.layout-cell, .box-grid > .layoutcell {
+  border: none !important;
+  box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  margin: 0 !important;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  text-align: left; }
+
+.box-grid {
+  display: table; }
+  .box-grid > .layoutcell {
+    display: table-cell; }
+
+/*# sourceMappingURL=layouts.css.map */

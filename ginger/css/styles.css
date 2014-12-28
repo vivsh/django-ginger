@@ -1,24 +1,21 @@
 
 
 .clearfix:before,
-.clearfix:after {
+.clearfix:after,
+.box:after,
+.box:before {
     content: "";
     display: table;
 }
-.clearfix:after {
+.clearfix:after,
+.box:after {
     clear: both;
 }
-.clearfix {
+.clearfix,
+.box {
     zoom: 1; /* For IE 6/7 (trigger hasLayout) */
 }
 
-.pull-left{
-    float: left;
-}
-
-.pull-right{
-    float: right
-}
 
 .center-block > .cell{
     display: block;
@@ -35,66 +32,78 @@
     text-align: center;
 }
 
-.hbox-wrapped, .hbox-justified, .hbox-inline{
+.box,
+.box-flow,
+.box-table,
+.box-inline,
+.box-flow > .cell,
+.box-table > .cell,
+.box-inline > .cell,
+.box > .cell{
     list-style: none !important;
-    padding: 0;
-    width: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-.cell{
     border: none !important;
     box-shadow: none !important;
     -moz-box-shadow: none !important;
     -webkit-box-shadow: none !important;
-
     margin: 0 !important;
+
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+    padding: 0;
+}
+
+.box,
+.box-flow,
+.box-table,
+.box-inline{
+    width: 100%;
+}
+
+.box-flow > .cell,
+.box-table > .cell,
+.box-inline > .cell,
+.box > .cell{
     text-align: left;
 }
 
-.hbox-wrapped{
+.box-flow{
     overflow: hidden;
 }
 
-.hbox-wrapped > .cell{
+.box-flow > .cell{
+    float: left !important;
+}
+
+.box-flow.right >.cell{
+    float: right !important;
+}
+
+.box, .box-flow{
+    display: block;
+}
+
+.box > .cell.left{
     float: left;
 }
 
-.hbox-wrapped >.cell.left{
+.box > .cell.right{
     float: left;
-}
-
-.hbox-wrapped >.cell.right{
-    float: right;
 }
 
 
 /**
 Justified horizontal list
 */
-.hbox-justified{
+.box-table{
     display: table;
 }
 
-.hbox-justified > .cell{
+.box-table > .cell{
     display: table-cell;
 }
 
-/**
-Vertically aligns the content within cell
-*/
-.vbox-aligned{
-    display: table;
-}
 
-.vbox-aligned > .cell{
-    display: table-cell;
-}
 
 .text-overflow{
   white-space: nowrap;
@@ -102,7 +111,7 @@ Vertically aligns the content within cell
   text-overflow: ellipsis;
 }
 
-.hbox-inline {
+.box-inline {
     letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
     *letter-spacing: normal; /* reset IE < 8 */
     *word-spacing: -0.43em; /* IE < 8: collapse white-space between units */
@@ -140,11 +149,11 @@ Vertically aligns the content within cell
    and is not required in markup.
 */
 .opera-only :-o-prefocus,
-.hbox-inline {
+.box-inline {
     word-spacing: -0.43em;
 }
 
-.hbox-inline > .cell {
+.box-inline > .cell {
     display: inline-block;
     *display: inline; /* IE < 8: fake inline-block */
     zoom: 1;

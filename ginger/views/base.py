@@ -71,12 +71,12 @@ class ViewMeta(object):
             raise ImproperlyConfigured("%s cannot have a None url pattern" % self.view.__name__)
         return regex
 
-    def as_url(self):
+    def as_url(self, **kwargs):
         view_func = self.view.as_view()
         regex = self.url_regex
         url_name = self.url_name
         regex = pattern.Pattern(regex).create() if not isinstance(regex, pattern.Pattern) else regex.create()
-        return url(regex, view_func, name=url_name)
+        return url(regex, view_func, name=url_name, kwargs=kwargs)
 
     def reverse(self, args, kwargs):
         return reverse(self.url_name, args=args, kwargs=kwargs)
@@ -87,13 +87,13 @@ class ViewMetaDescriptor(object):
 
     def __get__(self, obj, owner=None):
         instance = owner or obj
-        return ViewMeta(instance)
-        # try:
-        #     result = instance.__meta
-        # except AttributeError:
-        #     result = ViewMeta(instance)
-        #     instance.__meta = result
-        # return result
+        key = "_%s_%s" % (instance.__name__, self.__class__.__name__)
+        try:
+            result = getattr(instance, key)
+        except AttributeError:
+            result = ViewMeta(instance)
+            setattr(instance, key, result)
+        return result
 
 
 
@@ -129,8 +129,8 @@ class GingerView(View, GingerSessionDataMixin):
 
 
     @classmethod
-    def as_url(cls):
-        url = cls.meta.as_url()
+    def as_url(cls, **kwargs):
+        url = cls.meta.as_url(**kwargs)
         return url
 
     @classmethod

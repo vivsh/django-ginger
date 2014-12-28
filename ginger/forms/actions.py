@@ -67,7 +67,6 @@ class GingerFormMixin(object):
                     else:
                         data.setdefault(name, value)
             self.data = data
-            print(self.data)
 
     def process_context(self, context):
         spec = inspect.getargspec(self.execute)
@@ -126,23 +125,36 @@ class GingerFormMixin(object):
             raise ValidationFailure(self)
         return self.result
 
-    def is_valid(self):
-        func = super(GingerFormMixin, self).is_valid
+    def full_clean(self):
+        super(GingerFormMixin, self).full_clean()
         try:
             _ = self.result
         except AttributeError:
-            pass
-        else:
-            return func()
-        result = None
-        if func() or self.ignore_errors:
-            try:
-                result = self.execute(**self.context)
-            except forms.ValidationError as ex:
-                self.add_error(None, ex)
-            finally:
-                self.__result = result
-        return func()
+            if not self._errors or self.ignore_errors:
+                try:
+                    result = self.execute(**self.context)
+                except forms.ValidationError as ex:
+                    self.add_error(None, ex)
+                finally:
+                    self.__result = result
+
+    # def is_valid(self):
+    #     func = super(GingerFormMixin, self).is_valid
+    #     try:
+    #         _ = self.result
+    #     except AttributeError:
+    #         pass
+    #     else:
+    #         return func()
+    #     result = None
+    #     if func() or self.ignore_errors:
+    #         try:
+    #             result = self.execute(**self.context)
+    #         except forms.ValidationError as ex:
+    #             self.add_error(None, ex)
+    #         finally:
+    #             self.__result = result
+    #     return func()
 
     def execute(self, **kwargs):
         return {}
