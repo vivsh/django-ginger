@@ -62,7 +62,7 @@ class ViewMeta(object):
 
     @property
     def verb(self):
-        return self.url_name.split("-")[-1]
+        return self.url_name.split("_")[-1]
 
     @property
     def url_verb(self):

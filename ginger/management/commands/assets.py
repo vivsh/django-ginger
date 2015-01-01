@@ -118,7 +118,8 @@ def hashdir(dirname, ext="js"):
     return "%s.min.%s"%(hasher.hexdigest()[:16], ext)
 
 def get_requirejs_path():
-    requirejs_path = getattr(settings, "REQUIREJS_PATH")
+    default_path = "bower_components/requirejs/require.js"
+    requirejs_path = getattr(settings, "REQUIREJS_PATH", default_path)
     if not asset(requirejs_path):
         raise AttributeError("No REQUIREJS_PATH has been specified in settings")
     return requirejs_path
@@ -240,9 +241,6 @@ class Command(BaseCommand):
             self.local = True
     
     def handle(self, mode, target="all", **options):
-        if mode in {'syncs3'}:
-            getattr(self,mode)()
-            return
         if mode not in {'pack', 'unpack'}:
             raise ValueError("Unknown directive: %r"%mode)
         method_name = "%s_%s"%(mode, target)
@@ -254,17 +252,7 @@ class Command(BaseCommand):
             raise ValueError("Unknown target: %r"%target)
         else:
             method()
-    #
-    # def syncs3(self):
-    #     from hobbyist.settings import erotq
-    #     aws_attrs = ('STATICFILES_STORAGE', 'STATIC_URL', 'MEDIA_URL', 'DEFAULT_FILE_STORAGE', 'INSTALLED_APPS', 'STATICFILES_DIRS')
-    #     for attr in aws_attrs:
-    #         value = getattr(erotq, attr, None)
-    #         if value:
-    #             setattr(settings, attr, value)
-    #     storage.staticfiles_storage = storage.ConfiguredStorage()
-    #     call_command("collectstatic", interactive=False)
-        
+
     def install_deps(self):
         subprocess.check_call("npm -g install requirejs")
         subprocess.check_call("npm -g install lesscss")

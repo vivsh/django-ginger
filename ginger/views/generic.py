@@ -25,7 +25,9 @@ from . import storages, steps
 
 __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerDetailView', 'GingerFormView', 'GingerWizardView',
-           'GingerFormDoneView']
+           'GingerFormDoneView', 'GingerListView', 'GingerDeleteView',
+           'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView']
+
 
 from .base import GingerView, P
 

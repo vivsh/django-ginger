@@ -111,4 +111,4 @@ class Pattern(object):
 
 
 if __name__ == "__main__":
-    print Pattern("/hello/g/?:(ds|fgfh|fgh|gh){5 ,9}/\d+/").regex()
+    print Pattern("  ").regex()
