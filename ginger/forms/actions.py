@@ -97,6 +97,7 @@ class GingerFormMixin(object):
 
     @property
     def result(self):
+        self.is_valid()
         return self.__result
 
     def get_success_message(self):
@@ -104,6 +105,9 @@ class GingerFormMixin(object):
 
     def get_failure_message(self):
         return self.failure_message
+
+    def get_confirmation_message(self):
+        return self.confirmation_message
 
     @classmethod
     def class_oid(cls):
@@ -128,9 +132,10 @@ class GingerFormMixin(object):
     def full_clean(self):
         super(GingerFormMixin, self).full_clean()
         try:
-            _ = self.result
+            _ = self.__result
         except AttributeError:
-            if not self._errors or self.ignore_errors:
+            result = None
+            if self.is_bound and (not self._errors or self.ignore_errors):
                 try:
                     result = self.execute(**self.context)
                 except forms.ValidationError as ex:
@@ -138,6 +143,7 @@ class GingerFormMixin(object):
                 finally:
                     self.__result = result
 
+    #
     # def is_valid(self):
     #     func = super(GingerFormMixin, self).is_valid
     #     try:

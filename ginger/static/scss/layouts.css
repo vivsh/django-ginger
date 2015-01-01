@@ -1,53 +1,5 @@
-.clearfix:before,
-.clearfix:after {
-  content: "";
-  display: table; }
-
-.clearfix:after {
-  clear: both; }
-
-.clearfix {
-  zoom: 1;
-  /* For IE 6/7 (trigger hasLayout) */ }
-
-.center-block > .cell {
-  display: block;
-  margin-right: auto;
-  margin-left: auto; }
-
-.center-inline {
-  text-align: center; }
-
-.center-inline > .cell {
-  display: inline-block;
-  text-align: center; }
-
-.box-flow, .box-table, .box-inline {
+.layout-base, .layout-base-cell, .box, .box > .cell, .box-flow, .box-flow > .cell, .box-inline, .box-inline > .cell, .box-table > .row > .cell, .box-table > .cell {
   list-style: none !important;
-  padding: 0;
-  width: 100%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-
-.box-flow {
-  overflow: hidden; }
-
-.box-flow > .cell {
-  float: left; }
-
-.box-flow > .cell.left {
-  float: left; }
-
-.box-flow > .cell.right {
-  float: right; }
-
-.text-overflow {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; }
-
-.layout-cell, .box-grid > .layoutcell {
   border: none !important;
   box-shadow: none !important;
   -moz-box-shadow: none !important;
@@ -56,11 +8,54 @@
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+  padding: 0; }
+
+.clearfix, .box {
+  zoom: 1; }
+  .clearfix:before, .box:before, .clearfix.before, .before.box {
+    content: "";
+    display: table; }
+  .clearfix:after, .box:after {
+    clear: both; }
+
+.clamp-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; }
+
+.box > .cell.right {
+  float: right; }
+.box > .cell.left {
+  float: left; }
+.box > .cell.center {
+  float: none;
+  display: block;
+  margin-left: auto !important;
+  margin-right: auto !important; }
+
+.box-flow {
+  overflow: hidden; }
+  .box-flow > .cell {
+    float: left; }
+  .box-flow.right > .cell {
+    float: right; }
+
+.box-inline > .cell {
+  display: inline-block;
+  *display: inline;
+  /* IE < 8: fake inline-block */
+  zoom: 1;
+  vertical-align: top; }
+.box-inline.center {
+  text-align: center; }
+.box-inline.center > .cell {
   text-align: left; }
 
-.box-grid {
+.box-table {
   display: table; }
-  .box-grid > .layoutcell {
+  .box-table > .row > .cell, .box-table > .cell {
     display: table-cell; }
+  .box-table > .row {
+    display: table-row; }
 
 /*# sourceMappingURL=layouts.css.map */

@@ -1,7 +1,5 @@
-from django.utils.functional import cached_property
-import re
-import os
 
+import os
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -21,15 +19,13 @@ P = pattern.Pattern
 
 class ViewMeta(object):
 
-    def __init__(self, view):
+    def __init__(self, view, viewset=None):
         super(ViewMeta, self).__init__()
-        self.view = view
-
-    @cached_property
-    def app(self):
         from django.apps import apps
-        app = apps.get_containing_app_config(utils.qualified_name(self.view))
-        return app
+        app = apps.get_containing_app_config(utils.qualified_name(view))
+        self.app = app
+        self.view = view
+        self.viewset = viewset
 
     @property
     def url_name(self):
@@ -57,16 +53,27 @@ class ViewMeta(object):
         return "".join(p.capitalize() for p in parts)
 
     @property
+    def resource_name(self):
+        return "_".join(self.url_name.split("_")[:-1])
+
+    @property
     def form_path(self):
         return os.path.join(self.app.path, "forms.py")
 
     @property
     def verb(self):
-        return self.name.split("-")[-1]
+        return self.url_name.split("-")[-1]
+
+    @property
+    def url_verb(self):
+        verb = self.verb
+        return verb if verb not in {"home", "index", "list", "detail", "default"} else ""
 
     @property
     def url_regex(self):
         regex = self.view.url_regex
+        if regex is None:
+            regex = self.view.create_url_regex()
         if regex is None:
             raise ImproperlyConfigured("%s cannot have a None url pattern" % self.view.__name__)
         return regex
@@ -85,13 +92,18 @@ class ViewMeta(object):
 
 class ViewMetaDescriptor(object):
 
+    def __init__(self, **kwargs):
+        super(ViewMetaDescriptor, self).__init__()
+        self.kwargs = kwargs
+        self.hash_code = hash(tuple(sorted(kwargs.items(), key=lambda a,b: a)))
+
     def __get__(self, obj, owner=None):
         instance = owner or obj
-        key = "_%s_%s" % (instance.__name__, self.__class__.__name__)
+        key = "_%s_%s_%s" % (instance.__name__, self.__class__.__name__, self.hash_code)
         try:
             result = getattr(instance, key)
         except AttributeError:
-            result = ViewMeta(instance)
+            result = ViewMeta(instance, **self.kwargs)
             setattr(instance, key, result)
         return result
 
@@ -182,6 +194,9 @@ class GingerView(View, GingerSessionDataMixin):
         response = self.process_response(request, response)
         return response
 
+    @classmethod
+    def create_url_regex(cls):
+        return "%s/" % cls.meta.url_verb
 
     def get_context_data(self, **kwargs):
         if 'view' not in kwargs:

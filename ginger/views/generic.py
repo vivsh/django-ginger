@@ -15,11 +15,10 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
-from ginger.exceptions import ValidationFailure
 from ginger.exceptions import Http404
 from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
-
+from ginger.paginator import paginate
 
 from . import storages, steps
 
@@ -57,23 +56,16 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
 
 
 
-class GingerDetailView(GingerTemplateView):
-
-    context_object_name = "object"
-
-    def get_object(self):
-        raise NotImplementedError
-
-    def get(self, request, *args, **kwargs):
-        kwargs[self.context_object_name] = self.object
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-
 class GingerFormView(GingerTemplateView):
 
     success_url = None
     form_class = None
+
+    context_form_key = "form"
+
+    def get_context_form_key(self, form):
+        key = self.context_form_key or "form"
+        return key
 
     def get_success_url(self, form):
         return self.success_url
@@ -108,7 +100,8 @@ class GingerFormView(GingerTemplateView):
             return self.process_submit(form_key=form_key, data=request.GET)
         data, files = self.get_form_data(form_key)
         form = self.get_form(form_key=form_key, data=data, files=files)
-        context = self.get_context_data(form=form, **kwargs)
+        kwargs[self.get_context_form_key(form)] = form
+        context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def form_valid(self, form):
@@ -120,7 +113,11 @@ class GingerFormView(GingerTemplateView):
     def form_invalid(self, form):
         msg = form.get_failure_message()
         self.add_message(level=messages.ERROR, message=msg)
-        return self.render_to_response(self.get_context_data(form=form))
+        return self.render_form(form)
+
+    def render_form(self, form):
+        kwargs = {self.get_context_form_key(form): form}
+        return self.render_to_response(self.get_context_data(**kwargs))
 
     def get_form_initial(self, form_key):
         return None
@@ -152,10 +149,9 @@ class GingerFormView(GingerTemplateView):
 
     def process_submit(self, form_key, data=None, files=None):
         form_obj = self.get_form(form_key, data=data, files=files)
-        try:
-            form_obj.run()
+        if form_obj.is_valid():
             return self.form_valid(form_obj)
-        except ValidationFailure:
+        else:
             return self.form_invalid(form_obj)
 
     def get_form(self, form_key, data=None, files=None):
@@ -173,7 +169,7 @@ class GingerSearchView(GingerFormView):
     page_parameter_name = "page"
     page_limit = 10
     paginate = True
-    context_object_name = "object_list"
+    context_object_key = "object_list"
 
     def get_form_kwargs(self, form_key):
         ctx = super(GingerSearchView, self).get_form_kwargs(form_key)
@@ -187,14 +183,14 @@ class GingerSearchView(GingerFormView):
     def get_context_data(self, **kwargs):
         ctx = super(GingerSearchView, self).get_context_data(**kwargs)
         form = ctx["form"]
-        ctx[self.context_object_name] = form.result
+        ctx[self.context_object_key] = form.result
         return ctx
 
     def can_submit(self):
         return self.request.method == 'GET'
 
     def form_valid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+        return self.render_form(form)
 
     def get(self, request, *args, **kwargs):
         try:
@@ -207,6 +203,7 @@ class GingerStepViewMixin(object):
 
     step_parameter_name = "step"
     done_step = "done"
+    context_done_object_name = "done_object"
 
     def commit(self, form_data):
         raise NotImplementedError
@@ -216,7 +213,6 @@ class GingerStepViewMixin(object):
 
     def get_form_key(self):
         return self.current_step_name()
-
 
     def current_step_name(self):
         return self.kwargs.get(self.step_parameter_name)
@@ -247,8 +243,9 @@ class GingerStepViewMixin(object):
                 return response
             else:
                 data = self.get_session_data()
-        kwargs = self.kwargs
-        context = self.get_context_data(object=data, **kwargs)
+        kwargs = self.kwargs.copy()
+        kwargs[self.context_done_object_name] = data
+        context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def is_done_step(self):
@@ -441,3 +438,103 @@ class GingerWizardView(GingerStepViewMixin, GingerFormView):
             if access_time < expired:
                 file_storage.delete(filename)
 
+
+
+
+class SingleObjectViewMixin(object):
+
+    url_object_key = "object_id"
+    url_object_type = "int"
+    queryset_object_key = "pk"
+    context_object_key = "object"
+
+    def get_context_object_key(self, obj):
+        key = self.context_object_key or obj._meta.model_name
+        return key
+
+    def get_queryset_object_key(self):
+        return self.queryset_object_key
+
+    def get_queryset(self):
+        return self.queryset
+
+    def get_form_instance(self, form_key):
+        return self.object
+
+    def process_request(self, request):
+        result = super(SingleObjectViewMixin, self).process_request(request)
+        self.object = self.get_object()
+        return result
+
+    def get_object(self):
+        key = self.get_queryset_object_key()
+        kwargs = {key: self.kwargs[self.url_object_key]}
+        try:
+            return self.get_queryset().get(**kwargs)
+        except ObjectDoesNotExist:
+            raise Http404
+
+    def get_context_data(self, **kwargs):
+        ctx = super(SingleObjectViewMixin, self).get_context_data(**kwargs)
+        ctx[self.get_context_object_key(self.object)] = self.object
+        return ctx
+
+    @classmethod
+    def create_url_regex(cls):
+        key, kind = cls.url_object_key, cls.url_object_type
+        return "%s:%s/%s/" % (key, kind, cls.meta.url_verb)
+
+
+class MultipleObjectViewMixin(object):
+
+    context_object_key = "object_list"
+
+    def get_queryset(self):
+        return self.queryset
+
+    def get_context_object_key(self, object_list):
+        key = self.context_object_key
+        if not key:
+            key = "%s_list" % object_list._meta.model_name
+        return key
+
+
+class GingerDetailView(SingleObjectViewMixin, GingerTemplateView):
+    pass
+
+
+class GingerEditView(SingleObjectViewMixin, GingerFormView):
+    pass
+
+
+class GingerEditDoneView(SingleObjectViewMixin, GingerFormDoneView):
+    pass
+
+
+class GingerEditWizardView(SingleObjectViewMixin, GingerWizardView):
+    pass
+
+
+class GingerDeleteView(SingleObjectViewMixin, GingerFormView):
+    pass
+
+
+class GingerListView(MultipleObjectViewMixin, GingerTemplateView):
+    per_page = 20
+    page_parameter_name = "page"
+    page_limit = 10
+    paginate = True
+
+    def paginate_queryset(self, queryset):
+        return paginate(queryset, self.request,
+                        parameter_name=self.page_parameter_name,
+                        per_page=self.per_page,
+                        page_limit=self.page_limit)
+
+    def get_context_data(self, **kwargs):
+        ctx = super(GingerListView,self).get_context_data(**kwargs)
+        queryset = self.get_queryset()
+        if self.paginate:
+            queryset = self.paginate_queryset(queryset)
+        ctx[self.get_context_object_key(queryset)] = queryset
+        return ctx

@@ -1,12 +1,13 @@
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS, TEMPLATE_LOADERS
+from .import env
 
 __all__ = ['STATIC_URL',
            'TEMPLATE_CONTEXT_PROCESSORS',
            'TEMPLATE_LOADERS',
            'TEST_RUNNER',
             'CELERY_ALWAYS_EAGER',
-            'CELERY_EAGER_PROPAGATES_EXCEPTIONS']
+            'CELERY_EAGER_PROPAGATES_EXCEPTIONS', 'env']
 
 
 STATIC_URL = '/static/'

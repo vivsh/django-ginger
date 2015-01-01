@@ -1,16 +1,5 @@
 
-
-.clearfix:before,
-.clearfix:after {
-    content: "";
-    display: table;
-}
-.clearfix:after {
-    clear: both;
-}
-.clearfix {
-    zoom: 1; /* For IE 6/7 (trigger hasLayout) */
-}
+$layout-cell: "cell";
 
 @mixin clearfix{
   zoom: 1;
@@ -23,94 +12,124 @@
   }
 }
 
-
-.center-block > .cell{
-    display: block;
-    margin-right: auto;
-    margin-left: auto;
-}
-
-.center-inline{
-    text-align: center;
-}
-
-.center-inline > .cell{
-    display: inline-block;
-    text-align: center;
-}
-
-.box-flow, .box-table, .box-inline{
+@mixin layout-base{
     list-style: none !important;
-    padding: 0;
-    width: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-@mixin layout-cell(){
     border: none !important;
     box-shadow: none !important;
     -moz-box-shadow: none !important;
     -webkit-box-shadow: none !important;
-
     margin: 0 !important;
+
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
-    text-align: left;
+    padding: 0;
 }
 
-
-
-.box-flow{
-    overflow: hidden;
+.layout-base{
+  @include layout-base;
 }
 
-.box-flow > .cell{
+.layout-base-cell{
+  @extend .layout-base;
+}
+
+.clearfix{
+  @include clearfix;
+}
+
+@mixin inline-layout($cell: $layout-cell, $text-align: left){
+  &, & > .#{$cell}{
+    @extend .layout-base;
+  }
+
+  & > .#{$cell}{
+        display: inline-block;
+        *display: inline; /* IE < 8: fake inline-block */
+        zoom: 1;
+        vertical-align: top;
+  }
+
+  &.center{
+    text-align: center;
+  }
+
+  &.center > .#{$cell}{
+    text-align: $text-align;
+  }
+}
+
+@mixin flow-layout($cell: $layout-cell){
+  @extend .layout-base;
+  overflow: hidden;
+
+  & > .#{$cell}{
+    @extend .layout-base;
     float: left;
-}
+  }
 
-.box-flow >.cell.left{
-    float: left;
-}
-
-.box-flow >.cell.right{
+  &.right > .#{$cell}{
     float: right;
+  }
+
 }
 
+@mixin table-layout($cell: $layout-cell, $row: row){
+  display: table;
 
-.text-overflow{
+  & > .#{$row} > .#{$cell}, & > .#{$cell} {
+    @extend .layout-base;
+    display: table-cell;
+  }
+
+  & > .#{row}{
+    display: table-row;
+  }
+
+}
+
+@mixin box-layout($cell: $layout-cell){
+  @extend .layout-base, .clearfix;
+
+  & > .#{$cell}{
+    @extend .layout-base;
+  }
+
+  & > .#{$cell}.right{
+    float: right;
+  }
+
+  & > .#{$cell}.left{
+    float: left;
+  }
+
+  & > .#{$cell}.center{
+    float: none;
+    display: block;
+    margin-left: auto!important;
+    margin-right: auto!important;
+  }
+
+}
+
+.clamp-line{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.layout-cell {
-  @include layout-cell();
-}
-
-@mixin flow-layout($cell){
-
-}
-
-@mixin table-layout($cell){
-  display: table;
-
-  & > .#{$cell} {
-    @extend .layout-cell;
-    display: table-cell;
-  }
-}
-
-@mixin box-layout(){
-
-}
-
 .box{
-  @include box-layout();
+  @include box-layout(cell);
 }
 
-.box-grid{
-  @include table-layout(layout-cell)
+.box-flow{
+  @include flow-layout(cell);
+}
+
+.box-inline{
+  @include inline-layout(cell, left)
+}
+
+.box-table{
+  @include table-layout(cell, row);
 }

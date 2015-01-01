@@ -19,6 +19,9 @@ class Slug:
     def pattern(self, value):
         return r'[a-z0-9A-Z][a-zA-Z0-9\-]*'
 
+    def coerce(self, value):
+        return value
+
 
 class Name:
 
@@ -27,6 +30,15 @@ class Name:
 
     def pattern(self, value):
         return r'[a-zA-Z]\w+'
+
+
+class Any:
+
+    def match(self, value):
+        return value == "*"
+
+    def pattern(self, value):
+        return r'.*'
 
 
 class Choice:
@@ -41,7 +53,7 @@ class Choice:
 
 class Pattern(object):
 
-    pattern_types = [Num, Slug, Name, Choice]
+    pattern_types = [Num, Slug, Name, Choice, Any]
 
     _regex = re.compile("^(\w*)(\?)?:(.+?)(?:\s*\{\s*(\d*)\s*(,\s*\d*)?\s*\})?$")
 

@@ -94,7 +94,7 @@ class TestGingerTemplateView(test.SimpleTestCase):
             template_name = "anything.html"
         request = self.request
         response = AnotherView.as_view()(request)
-        self.assertEqual(response.template_name, ["anything.html"])
+        self.assertEqual(response.template_name, "anything.html")
 
 
 class FakeInfo(GingerForm):
@@ -232,7 +232,7 @@ class TestGingerFormDone(test.SimpleTestCase):
         self.assertEqual(response.status_code, 200)
 
         key = response.context_data["view"].get_session_key()
-
+        print response.context_data
         self.assertEqual(response.context_data["name"], name, response.context_data)
         self.assertEqual(session[key]["name"], name)
 
