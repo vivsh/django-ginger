@@ -1,67 +1,31 @@
 
-import os
-import ast
-import inspect
-# from django.core.management import BaseCommand
+import optparse
+from django.core.management import BaseCommand
+from ginger.generators import views
 
 
-def get_identifiers(filename):
-    source = open(filename).read()
-    tree = ast.parse(source)
-    for child in ast.iter_child_nodes(tree):
-        if isinstance(child, ast.Assign):
-            for n in child.targets:
-                if isinstance(n, ast.Name):
-                    yield n.id, child.lineno, child.col_offset
-                else:
-                    for a in ast.walk(n):
-                        if isinstance(a, ast.Name):
-                            yield a.id, child.lineno, child.col_offset
-        if not isinstance(child, (ast.FunctionDef, ast.ClassDef)):
-            continue
-        name = child.name
-        line = child.lineno
-        col = child.col_offset
-        yield name, line, col
+class Command(BaseCommand):
+
+    option_list = BaseCommand.option_list + (
+        optparse.make_option("-m", "--model",
+                             action="store",
+                             help="Model associated with the view"),
+    )
+
+    @staticmethod
+    def get_model(app, resource, model):
+        if model is None:
+            model = resource
+        try:
+            return app.get_model(model)
+        except LookupError:
+            return None
+
+    def handle(self, view, *kinds, **options):
+        app_name, resource = view.split(".", 1)
+        app = views.Application(app_name, resource, options["model"])
+        model = self.get_model(app.app, resource, options['model'])
+        kinds = tuple(filter(lambda a: bool(a), (k.strip(" ,-:").lower() for k in kinds)))
+        app.generate_view(resource)
 
 
-def check_name(name, filename):
-    if not os.path.exists(filename):
-        return False
-    for identifier, line, offset in get_identifiers(filename):
-        if name == identifier:
-            raise ValueError("%r is already defined in line %s of %s" % (name, line, filename))
-
-
-def list_view(resource):
-    template_folder()
-    include_folder()
-    check_file()
-    check_file()
-    check_base()
-
-def create_detail_view():
-    pass
-
-def create_delete_view():
-    pass
-
-def create_edit_view():
-    pass
-
-def create_form():
-    pass
-
-
-# class Command(BaseCommand):
-#
-#     def handle(self, *args, **options):
-#         pass
-
-class Anything(object):
-    pass
-
-
-if __name__ == '__main__':
-    import __main__ as current_module
-    check_name("copything", inspect.getsourcefile(current_module))

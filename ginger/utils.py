@@ -104,8 +104,10 @@ def qualified_name(cls):
     :param cls:
     :return: str fully qualified name
     """
-    if hasattr(cls, "__qualname__"):
-        return getattr(cls,"__qualname__")
+    # if hasattr(cls, "__qualname__"):
+    #     return getattr(cls,"__qualname__")
+    if inspect.ismodule(cls):
+        return cls.__name__
     parts = [cls.__name__]
     if inspect.ismethod(cls):
         parts.append(cls.im_class.__name__)
@@ -235,4 +237,3 @@ def base64pickle_loads(data):
 def base64pickle_dumps(data):
     serialized = pickle.dumps(data)
     return base64.b64encode(serialized).decode("ascii")
-

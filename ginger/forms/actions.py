@@ -52,6 +52,28 @@ class GingerFormMixin(object):
         self.context = self.process_context(context)
         self.merge_defaults()
 
+    def field_range(self, first, last, step=None):
+        keys = self.fields.keys()
+        if first is not None and isinstance(first, six.string_types):
+            try:
+                first = keys.index(first)
+            except ValueError:
+                raise KeyError("%r is not a field for form %r" % (first, self.__class__.__name__))
+        if last is not None and isinstance(last, six.string_types):
+            try:
+                last = keys.index(last)-1
+            except ValueError:
+                raise KeyError("%r is not a field for form %r" % (last, self.__class__.__name__))
+        return self.iter_fields(keys[first:last:step])
+
+    def iter_fields(self, names):
+        return (self[field] for field in names)
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return self.field_range(item.start, item.stop, item.step)
+        return super(GingerFormMixin, self).__getitem__(item)
+
     def merge_defaults(self):
         if self.use_defaults:
             data = QueryDict('', mutable=True)

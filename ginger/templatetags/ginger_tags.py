@@ -7,7 +7,7 @@ from django.forms.forms import BoundField
 from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 
-from ginger.templates import ginger_tag, filter_tag
+from ginger.templates import ginger_tag, filter_tag, function_tag
 from ginger import utils as gutils
 from ginger import ui, serializer
 
@@ -114,91 +114,6 @@ def format_errors(error_list, **kwargs):
     return Markup(error_list)
 
 
-class RenderField(object):
-
-    def __init__(self, request, field):
-        self.field = field
-        self.request = request
-
-    def widget(self):
-        return self.widget
-
-    def help(self):
-        return self.field.field.help_text
-
-    def error_tag(self):
-        return self.field.errors()
-
-    def label(self):
-        return self.field
-
-    def label_tag(self):
-        return
-
-    def help_tag(self):
-        return
-
-    def value(self):
-        pass
-
-    def data(self):
-        pass
-
-    def choices(self):
-        pass
-
-    def links(self):
-        pass
-
-    def options(self):
-        pass
-
-
-class FormRenderer(object):
-
-    def __init__(self, form):
-        self.form = form
-        self.fields = []
-        self.form.__renderer = self
-        self.reload()
-
-    def reload(self):
-        self.fields = list(self.form.fields.keys())
-
-    @classmethod
-    def get_or_create(self, form):
-        try:
-            self.form.__renderer
-        except AttributeError:
-            return FormRenderer(form)
-
-    def coerce(self, key):
-        if isinstance(key, BoundField):
-            return key.name, key
-        else:
-            return key, self.form[key]
-
-    def field(self, key):
-        name, field = self.coerce(key)
-        self.fields.remove(name)
-        return field
-
-    def get_field_context(self, field):
-        pass
-
-    def render_field(self):
-        pass
-
-    def __iter__(self):
-        for key in self.fields:
-            name, field = self.coerce(key)
-            yield field
-
-    def slice(self, first, last=None, step=None):
-        return
-
-
-
 @filter_tag
 def json(values):
     return ui.as_json(values)
@@ -206,3 +121,18 @@ def json(values):
 @ginger_tag(takes_context=True)
 def ginger_field_options(context, field):
     return ui.choices_to_options(context["request"], field)
+
+@function_tag
+def field_choices(field):
+    return ui.bound_field_choices(field)
+
+def make_class_name(obj):
+    return gutils.camel_to_hyphen(re.sub(r'widget|field|ginger', '',obj.__class__.__name__)).lower()
+
+@function_tag
+def field_class(field):
+    return make_class_name(field.field)
+
+@function_tag
+def widget_class(field):
+    return make_class_name(field.field.widget)

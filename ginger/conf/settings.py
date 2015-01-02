@@ -1,6 +1,6 @@
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS, TEMPLATE_LOADERS
-from .import env
+from . import env
 
 __all__ = ['STATIC_URL',
            'TEMPLATE_CONTEXT_PROCESSORS',

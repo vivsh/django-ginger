@@ -68,6 +68,20 @@ def is_selected_choice(values, choice):
             return True
     return False
 
+class Choice(object):
+    def __init__(self, name, value, content, selected):
+        self.selected = selected
+        self.content = content
+        self.value = value
+        self.name = name
+
+def bound_field_choices(field):
+    form_field = field.field
+    field_value = field.value()
+    name = field.html_name
+    for code, label in form_field.choices:
+        is_active = is_selected_choice(field_value, code)
+        yield Choice(name, code, label, is_active)
 
 def bound_field_link_builder(field, request):
     url = request.get_full_path()

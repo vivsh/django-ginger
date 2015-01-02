@@ -1,0 +1,352 @@
+from django.forms.models import ModelForm
+import os
+import ast
+import re
+import importlib
+from ginger.views import meta
+from ginger import utils, forms, views
+from django.apps import apps
+from django.utils import six
+
+
+def find_empty_line(filename):
+    source = open(filename).read()
+    tree = ast.parse(source)
+    imports = []
+    first = last = 0
+    first_node = None
+
+    for child in ast.iter_child_nodes(tree):
+        if isinstance(child, (ast.Import, ast.ImportFrom)):
+            imports.append(child)
+        elif imports:
+            break
+        elif first_node is None:
+            first_node = child
+
+    if imports:
+        first = imports[0].lineno
+        last = imports[-1].lineno
+
+    return last if imports else (first_node.lineno if first_node else 0)
+
+
+def get_identifiers(filename):
+    source = open(filename).read()
+    tree = ast.parse(source)
+    for child in ast.iter_child_nodes(tree):
+        if isinstance(child, ast.Assign):
+            for n in child.targets:
+                if isinstance(n, ast.Name):
+                    yield n.id, child.lineno, child.col_offset
+                else:
+                    for a in ast.walk(n):
+                        if isinstance(a, ast.Name):
+                            yield a.id, child.lineno, child.col_offset
+        if not isinstance(child, (ast.FunctionDef, ast.ClassDef)):
+            continue
+        name = child.name
+        line = child.lineno
+        col = child.col_offset
+        yield name, line, col
+
+
+def check_name(name, filename):
+    if not os.path.exists(filename):
+        return False
+    for identifier, line, offset in get_identifiers(filename):
+        if name == identifier:
+            raise ValueError("%r is already defined in line %s of %s" % (name, line, filename))
+    return False
+
+
+VIEWS_MODULE = """
+from ginger import views as generics
+"""
+
+MODELS_MODULE = """
+from django.db import models
+"""
+
+FORMS_MODULE = """
+from django import forms
+from ginger.forms import GingerSearchForm, GingerForm, GingerModelForm
+"""
+
+URLS_MODULE = """
+from ginger.conf.urls import scan
+from . import views
+
+urlpatterns = scan(views)
+
+"""
+
+SIGNALS_MODULE = """
+from django.dispatch import Signal
+"""
+
+TASKS_MODULE = """
+from __future__ import absolute_import
+
+from celery import shared_task
+"""
+
+ADMIN_MODULE = """
+from django.contrib import admin
+"""
+
+
+TEMPLATE_VIEW_CLASS = """
+class {name}({base}):
+    pass
+"""
+
+FORM_VIEW_CLASS = """
+class {name}({base}):
+    form_class = {form_class}
+"""
+
+FORM_CLASS = """
+class {name}({base}):
+    pass
+"""
+
+
+MODEL_FORM_CLASS = """
+class {name}({base}):
+    class Meta:
+        model = {model}
+"""
+
+BASE_TEMPLATE = """
+{{% extends "base.html" %}}
+{{% block content %}}
+    {{% block {app_name}_content %}}
+
+    {{% endblock %}}
+{{% endblock %}}
+"""
+
+FORM_TEMPLATE = """
+{{% extends "{app_name}/base.html" %}}
+{{% block {app_name}_content %}}
+    <form form_attrs(form)>
+        {{# {{% csrf_token %}} #}}
+        {{{{form.as_p()}}}}
+        <div>
+            <button type="submit"> Submit </button>
+        </div>
+    </form>
+{{% endblock %}}
+"""
+
+SIMPLE_TEMPLATE = """
+{{% extends "{app_name}/base.html" %}}
+{{% block {app_name}_content %}}
+
+    <h2>Hello World</h2>
+
+{{% endblock %}}
+"""
+
+LIST_TEMPLATE = """
+{{% extends "{app_name}/base.html" %}}
+{{% block {app_name}_content %}}
+
+    <ul>
+    {{% for object in object_list %}}
+        <li>
+            {{%include "{app_name}/include/{resource_name}_item.html"%}}
+        </li>
+    {{%else %}}
+        <li class='empty'>
+            No results found.
+        </li>
+    {{% endfor %}}
+
+{{% endblock %}}
+"""
+
+LIST_ITEM_TEMPLATE = """
+<div>
+{{{{object}}}}
+</div>
+"""
+
+def make_dir(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError:
+        pass
+
+
+class Code(object):
+
+    def __init__(self, module, filename):
+        self.lines = []
+        self.imports = {}
+        self.module = module
+        self.filename = filename
+        self.mark = find_empty_line(filename)
+
+    def symbol_exists(self, name):
+        try:
+            return check_name(name, self.filename)
+        except ValueError:
+            return True
+
+    def add(self, symbol_name, content, **kwargs):
+        if self.symbol_exists(symbol_name):
+            return
+        context = {}
+        for k, v in six.iteritems(kwargs):
+            if not isinstance(v, six.string_types):
+                if isinstance(v, (tuple, list)):
+                    mod, name = v
+                    self.add_import(mod)
+                    v = "%s.%s" % (mod.__name__.rsplit(".")[-1], name)
+                else:
+                    self.add_import(v)
+                    v = v.__name__
+            context[k] = v
+        content = content.format(**context).strip()
+        self.lines.append("\n\n%s" % content)
+
+    def add_import(self, symbol):
+        symbol_name = symbol.__name__.rsplit(".")[-1]
+        if hasattr(self.module, symbol_name) or symbol_name in self.imports:
+            return
+        full_name = utils.qualified_name(symbol)
+        module_name, name = full_name.rsplit(".", 1)
+        if name != symbol_name:
+            raise ValueError("Symbol name %r should always equal %s" % (name, symbol_name))
+        line = "from %s import %s\n" % (module_name, name)
+        self.imports[name] = line
+
+    def save(self):
+        content = open(self.filename, "r").read()
+        lines = content.strip().splitlines(True)
+        for line in self.imports.values():
+            lines.insert(self.mark, line)
+        lines.insert(0, os.linesep)
+        lines.append(os.linesep)
+        lines.extend(self.lines)
+        with open(self.filename, "w") as fh:
+            fh.writelines(lines)
+            fh.write(os.linesep)
+
+
+class Application(object):
+
+    def __init__(self, app_name, resource, model_name):
+        super(Application, self).__init__()
+        self.app = apps.get_app_config(app_name)
+        self.base_dir = self.app.path
+        self.module_name = self.app.module.__name__
+
+        self.template_base_file = self.ensure_file(self.path("templates", app_name, "base.html"),
+                                                   BASE_TEMPLATE, app_name=app_name)
+        self.template_dir = os.path.dirname(self.template_base_file)
+        self.template_include = self.path("templates", app_name, "include")
+
+        self.forms_file = self.ensure_file("forms.py", FORMS_MODULE)
+        self.models_file = self.ensure_file("models.py", MODELS_MODULE)
+        self.urls_file = self.ensure_file("urls.py", URLS_MODULE)
+        self.views_file = self.ensure_file("views.py", VIEWS_MODULE)
+        self.signals_file = self.ensure_file("signals.py", SIGNALS_MODULE)
+        self.tasks_file = self.ensure_file("tasks.py", TASKS_MODULE)
+        self.admin_file = self.ensure_file("admin.py", ADMIN_MODULE)
+
+        make_dir(self.template_include)
+
+        self.view_module = importlib.import_module("%s.views" % self.module_name)
+        self.form_module = importlib.import_module("%s.forms" % self.module_name)
+        self.model_module = importlib.import_module("%s.models" % self.module_name)
+
+        self.resource = re.sub('view$', '', resource, re.I)
+        self.model_name = model_name
+        self.model = self.get_model(self.resource, model_name)
+
+
+    def get_model(self, resource, model_name):
+        try:
+            return self.app.get_model(model_name or resource)
+        except LookupError:
+            if model_name:
+                raise
+            return None
+
+    def path(self, *args):
+        return os.path.join(self.base_dir, *args)
+
+    def ensure_file(self, filename, content, **kwargs):
+        context = kwargs
+        filename = self.path(filename)
+        make_dir(os.path.dirname(filename))
+        kwargs.setdefault("app_name", self.app.label)
+        if not os.path.exists(filename) or not open(filename).read().strip():
+            with open(filename, "w") as fh:
+                fh.write(content.format(**context))
+        return filename
+
+    def create_view(self, info, base_class, content, **kwargs):
+        name = info.view_class_name
+        code = Code(self.view_module, self.views_file)
+        kwargs.setdefault("app_name", self.app.label)
+        code.add(name, content, name=name, base=base_class, **kwargs)
+        code.save()
+
+    def create_form(self, name, base_class, **kwargs):
+        content = MODEL_FORM_CLASS if issubclass(base_class, ModelForm) else FORM_CLASS
+        code = Code(self.form_module, self.forms_file)
+        kwargs.setdefault("app_name", self.app.label)
+        code.add(name, content,
+                 name=name,
+                 base=base_class, **kwargs)
+        code.save()
+
+    def create_template(self, info, content, **kwargs):
+        kwargs["resource_name"] = info.resource_name
+        filename = kwargs.pop("template_path", info.template_path)
+        self.ensure_file(filename, content, **kwargs)
+
+    def template_view(self, info):
+        self.create_view(info, views.GingerTemplateView, TEMPLATE_VIEW_CLASS)
+        self.create_template(info, SIMPLE_TEMPLATE)
+
+    def form_view(self, info):
+        form_name = info.form_name
+        self.create_form(form_name, forms.GingerForm)
+        self.create_view(info, views.GingerFormView, FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name))
+        self.create_template(info, FORM_TEMPLATE)
+
+    def list_view(self, info):
+        form_name = info.form_name
+        self.create_form(form_name, forms.GingerForm)
+        self.create_view(info, views.GingerListView, TEMPLATE_VIEW_CLASS)
+        self.create_template(info, LIST_TEMPLATE)
+        filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
+        self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
+
+    def search_view(self, info):
+        form_name = info.form_name
+        self.create_form(form_name, forms.GingerSearchForm)
+        self.create_view(info, views.GingerSearchView, FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name))
+        self.create_template(info, LIST_TEMPLATE)
+        filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
+        self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
+
+    def generate_views(self, kinds):
+        pass
+
+    def generate_view(self, kind):
+        kind = "search"
+        info = meta.ViewInfo(self.app, self.resource)
+        method_name = "%s_view" % kind
+        try:
+            func = getattr(self, method_name)
+        except AttributeError:
+            raise ValueError("%r is not a valid type of view")
+        func(info)

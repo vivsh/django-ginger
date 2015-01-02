@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.views.generic.base import View
 from django.conf.urls import url
-
+from .meta import ViewInfo
 from ginger import utils, pattern
 
 
@@ -17,57 +17,14 @@ __all__ = ["P", "GingerView"]
 P = pattern.Pattern
 
 
-class ViewMeta(object):
+class ViewMeta(ViewInfo):
 
     def __init__(self, view, viewset=None):
-        super(ViewMeta, self).__init__()
         from django.apps import apps
         app = apps.get_containing_app_config(utils.qualified_name(view))
-        self.app = app
+        super(ViewMeta, self).__init__(app, view.__name__)
         self.view = view
         self.viewset = viewset
-
-    @property
-    def url_name(self):
-        name = utils.camel_to_underscore(self.view.__name__).replace("_view", "").strip("_")
-        return name
-
-    @property
-    def template_dir(self):
-        folder = self.app.path
-        return os.path.join(folder, "templates")
-
-    @property
-    def template_name(self):
-        name = "%s/%s.html" % (self.app.label, self.url_name)
-        return name
-
-    @property
-    def template_path(self):
-        return os.path.join(self.template_dir, self.template_name)
-
-    @property
-    def form_name(self):
-        parts = self.url_name.split("_")
-        parts.append("Form")
-        return "".join(p.capitalize() for p in parts)
-
-    @property
-    def resource_name(self):
-        return "_".join(self.url_name.split("_")[:-1])
-
-    @property
-    def form_path(self):
-        return os.path.join(self.app.path, "forms.py")
-
-    @property
-    def verb(self):
-        return self.url_name.split("_")[-1]
-
-    @property
-    def url_verb(self):
-        verb = self.verb
-        return verb if verb not in {"home", "index", "list", "detail", "default"} else ""
 
     @property
     def url_regex(self):
