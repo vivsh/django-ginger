@@ -23,10 +23,10 @@ class TestRequestMixin(object):
 class TestView(test.SimpleTestCase, TestRequestMixin):
 
     def get_view_class(self):
-        return self.view
+        return self.view_class
 
     def get_view(self):
-        return
+        return self.get_view_class().as_view()
 
     def get_url_name(self):
         pass
