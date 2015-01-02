@@ -55,20 +55,24 @@ class GoogleImage(object):
         while total > 0 and max_pages > start:
             for image_url in self.get_urls(query, start, **kwargs):
                 self.download(image_url)
+                yield image_url
                 total -= 1
                 if total <= 0:
                     break
                 time.sleep(random.randint(1, 4))
             start += 4 # 4 pages per page
 
-    def make_query(self, query, start, **kwargs):
+    def make_query(self, query, start, safe=True, size="large", file_type="jpg"):
         base_url = "https://ajax.googleapis.com/ajax/services/search/images"
-        params = kwargs
+        params = {}
         params["q"] = query
         params["start"] = start
         params["v"] = "1.0"
-        if "filetype" in params:
-            params["as_filetype"] = params.pop("filetype")
+        if file_type:
+            params["as_filetype"] = file_type
+        if size:
+            params["imagesz"] = size
+        params["safe"] = "on" if safe else "off"
         return "%s?%s" % (base_url, urlencode(params))
 
     def get_urls(self, query, start, **kwargs):
@@ -85,4 +89,4 @@ class GoogleImage(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     goog = GoogleImage("student")
-    goog.search("india student|exam", 20, safe="off", imgsz="medium", filetype="jpg", imgtype="face")
+    goog.search("india student|exam", 20, safe="off", size="medium", file_type="jpg")

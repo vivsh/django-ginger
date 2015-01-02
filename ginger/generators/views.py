@@ -1,21 +1,12 @@
+
 from django.forms.models import ModelForm
 import os
 import ast
-import re
 import importlib
 from ginger.views import meta
 from ginger import utils, forms, views
 from django.apps import apps
 from django.utils import six
-
-
-def last_filled(lines, mark, limit):
-    i = mark-1
-    for i in xrange(mark-1, limit, -1):
-        line = lines[i]
-        if line.strip():
-            break
-    return i
 
 
 def find_empty_line(filename):
