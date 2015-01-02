@@ -9,26 +9,24 @@ from django.apps import apps
 from django.utils import six
 
 
+def last_filled(lines, mark, limit):
+    i = mark-1
+    for i in xrange(mark-1, limit, -1):
+        line = lines[i]
+        if line.strip():
+            break
+    return i
+
+
 def find_empty_line(filename):
     source = open(filename).read()
-    tree = ast.parse(source)
-    imports = []
-    first = last = 0
-    first_node = None
-
-    for child in ast.iter_child_nodes(tree):
-        if isinstance(child, (ast.Import, ast.ImportFrom)):
-            imports.append(child)
-        elif imports:
+    lines = source.splitlines()
+    i = 0
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if line and not line.startswith("#"):
             break
-        elif first_node is None:
-            first_node = child
-
-    if imports:
-        first = imports[0].lineno
-        last = imports[-1].lineno
-
-    return last if imports else (first_node.lineno if first_node else 0)
+    return max(i, 0)
 
 
 def get_identifiers(filename):
@@ -106,14 +104,22 @@ class {name}({base}):
     form_class = {form_class}
 """
 
+MODEL_FORM_VIEW_CLASS = """
+class {name}({base}):
+    form_class = {form_class}
+    queryset = {model}.objects.all()
+"""
+
 FORM_CLASS = """
 class {name}({base}):
+    {queryset}
     pass
 """
 
 
 MODEL_FORM_CLASS = """
 class {name}({base}):
+    {queryset}
     class Meta:
         model = {model}
         exclude = ()
@@ -225,16 +231,15 @@ class Code(object):
         self.imports[name] = line
 
     def save(self):
-        content = open(self.filename, "r").read()
-        lines = content.strip().splitlines(True)
+        content = open(self.filename, "r").read().rstrip()
+        lines = content.splitlines(True)
         for line in self.imports.values():
             lines.insert(self.mark, line)
-        lines.insert(0, os.linesep)
         lines.append(os.linesep)
         lines.extend(self.lines)
+        lines.append(os.linesep*2)
         with open(self.filename, "w") as fh:
             fh.writelines(lines)
-            fh.write(os.linesep)
 
 
 class Application(object):
@@ -302,6 +307,7 @@ class Application(object):
         content = MODEL_FORM_CLASS if issubclass(base_class, ModelForm) else FORM_CLASS
         code = Code(self.form_module, self.forms_file)
         kwargs.setdefault("app_name", self.app.label)
+        kwargs.setdefault("queryset", "")
         if self.model:
             kwargs.setdefault("model", (self.model_module, self.model.__name__))
         code.add(name, content,
@@ -320,10 +326,11 @@ class Application(object):
 
     def delete_view(self, info):
         form_name = info.form_name
-        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        base = forms.GingerModelForm
         self.create_form(form_name, base)
-        self.create_view(info, views.GingerDeleteView, FORM_VIEW_CLASS,
-                         form_class=(self.form_module, form_name))
+        self.create_view(info, views.GingerDeleteView, MODEL_FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name),
+                         model=(self.model_module, self.model.__name__))
         self.create_template(info, FORM_TEMPLATE)
 
     def new_view(self, info):
@@ -336,10 +343,11 @@ class Application(object):
 
     def edit_view(self, info):
         form_name = info.form_name
-        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        base = forms.GingerModelForm
         self.create_form(form_name, base)
-        self.create_view(info, views.GingerEditView, FORM_VIEW_CLASS,
-                         form_class=(self.form_module, form_name))
+        self.create_view(info, views.GingerEditView, MODEL_FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name),
+                         model=(self.model_module, self.model.__name__))
         self.create_template(info, FORM_TEMPLATE)
 
     def form_view(self, info):
@@ -366,14 +374,18 @@ class Application(object):
     def search_view(self, info):
         form_name = info.form_name
         base = forms.GingerSearchForm if not self.model else forms.GingerSearchModelForm
-        self.create_form(form_name, base)
+        form_ctx = {}
+        if self.model:
+            form_ctx["model"] = (self.model_module, self.model.__name__)
+            form_ctx["queryset"] = "queryset = models.%s.objects.all()\n" % self.model.__name__
+        self.create_form(form_name, base, **form_ctx)
         self.create_view(info, views.GingerSearchView, FORM_VIEW_CLASS,
                          form_class=(self.form_module, form_name))
         self.create_template(info, LIST_TEMPLATE)
         filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
         self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
 
-    def generate_view(self, view_name, kind):
+    def generate_view(self, view_name, kind=None):
         info = meta.ViewInfo(self.app, view_name)
         if kind is None:
             kind = info.verb
@@ -383,3 +395,8 @@ class Application(object):
         except AttributeError:
             raise ValueError("%r is not a valid type of view" % kind)
         func(info)
+
+    def generate_model_views(self, kinds):
+        for kind in kinds:
+            view_name = "%s%s" % (self.resource_name.capitalize(), kind.capitalize())
+            self.generate_view(view_name, kind)
