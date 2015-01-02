@@ -6,26 +6,20 @@ from ginger.generators import views
 
 class Command(BaseCommand):
 
+    help = "Creates a view and its associated forms/templates"
+
     option_list = BaseCommand.option_list + (
         optparse.make_option("-m", "--model",
                              action="store",
                              help="Model associated with the view"),
+        optparse.make_option("-t", "--type",
+                             action="store",
+                             help="type of view: new detail, edit, delete, search, list, form"),
     )
 
-    @staticmethod
-    def get_model(app, resource, model):
-        if model is None:
-            model = resource
-        try:
-            return app.get_model(model)
-        except LookupError:
-            return None
-
-    def handle(self, view, *kinds, **options):
+    def handle(self, view, **options):
         app_name, resource = view.split(".", 1)
         app = views.Application(app_name, resource, options["model"])
-        model = self.get_model(app.app, resource, options['model'])
-        kinds = tuple(filter(lambda a: bool(a), (k.strip(" ,-:").lower() for k in kinds)))
-        app.generate_view(resource)
+        app.generate_view(resource, options["type"])
 
 

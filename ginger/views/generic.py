@@ -26,7 +26,8 @@ from . import storages, steps
 __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerDetailView', 'GingerFormView', 'GingerWizardView',
            'GingerFormDoneView', 'GingerListView', 'GingerDeleteView',
-           'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView']
+           'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView',
+           "GingerNewDoneView", "GingerNewView", "GingerNewWizardView"]
 
 
 from .base import GingerView, P
@@ -518,6 +519,18 @@ class GingerEditWizardView(SingleObjectViewMixin, GingerWizardView):
 
 
 class GingerDeleteView(SingleObjectViewMixin, GingerFormView):
+    pass
+
+
+class GingerNewView(GingerFormView):
+    pass
+
+
+class GingerNewDoneView(GingerFormDoneView):
+    pass
+
+
+class GingerNewWizardView(GingerWizardView):
     pass
 
 

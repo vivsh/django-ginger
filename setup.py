@@ -38,10 +38,10 @@ setup(
     install_requires=[
         "django-jsonfield",
         "django-pods>=1.1",
-        "django>=1.7.1",
-        "jinja2",
         "django_jinja>=1",
-        "django_nose",
+        "django_nose>=1.3",
+        "django>=1.7.1",
+        "jinja2>=2.7.3",
         "mock",
     ],
     include_package_data=True,

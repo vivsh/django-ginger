@@ -1,5 +1,6 @@
 
 from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
 import re
 from jinja2 import Markup, escape
 
@@ -136,3 +137,19 @@ def field_class(field):
 @function_tag
 def widget_class(field):
     return make_class_name(field.field.widget)
+
+@function_tag
+def form_class(form):
+    return make_class_name(form)
+
+@function_tag
+def form_attrs(form):
+    return mark_safe(get_form_attrs(form))
+
+@function_tag
+def data_attr(name, value):
+    return " %s='%s' " % (name, ui.as_json(value))
+
+@function_tag
+def js_value(name, value):
+    return mark_safe("<script type='text/javascript'> var %s = %s </script>" % (name, ui.as_json(value)))

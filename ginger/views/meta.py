@@ -8,7 +8,9 @@ class ViewInfo(object):
         super(ViewInfo, self).__init__()
         self.app = app
         self.view_name = view_name
-        self.url_name = utils.camel_to_underscore(self.view_name).replace("_view", "").strip("_")
+        name = utils.camel_to_underscore(self.view_name)
+        banned = {"view", "wizard"}
+        self.url_name = "_".join(w for w in name.split("_") if w and w not in banned)
 
     @property
     def template_dir(self):

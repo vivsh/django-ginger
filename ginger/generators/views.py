@@ -116,6 +116,7 @@ MODEL_FORM_CLASS = """
 class {name}({base}):
     class Meta:
         model = {model}
+        exclude = ()
 """
 
 BASE_TEMPLATE = """
@@ -262,17 +263,18 @@ class Application(object):
         self.view_module = importlib.import_module("%s.views" % self.module_name)
         self.form_module = importlib.import_module("%s.forms" % self.module_name)
         self.model_module = importlib.import_module("%s.models" % self.module_name)
-
-        self.resource = re.sub('view$', '', resource, re.I)
+        self.resource_name = self.clean_resource(resource)
         self.model_name = model_name
-        self.model = self.get_model(self.resource, model_name)
+        self.model = self.get_model()
 
+    def clean_resource(self, name):
+        return meta.ViewInfo(self.app, name).resource_name
 
-    def get_model(self, resource, model_name):
+    def get_model(self):
         try:
-            return self.app.get_model(model_name or resource)
+            return self.app.get_model(self.model_name or self.resource_name)
         except LookupError:
-            if model_name:
+            if self.model_name:
                 raise
             return None
 
@@ -300,6 +302,8 @@ class Application(object):
         content = MODEL_FORM_CLASS if issubclass(base_class, ModelForm) else FORM_CLASS
         code = Code(self.form_module, self.forms_file)
         kwargs.setdefault("app_name", self.app.label)
+        if self.model:
+            kwargs.setdefault("model", (self.model_module, self.model.__name__))
         code.add(name, content,
                  name=name,
                  base=base_class, **kwargs)
@@ -314,39 +318,68 @@ class Application(object):
         self.create_view(info, views.GingerTemplateView, TEMPLATE_VIEW_CLASS)
         self.create_template(info, SIMPLE_TEMPLATE)
 
+    def delete_view(self, info):
+        form_name = info.form_name
+        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        self.create_form(form_name, base)
+        self.create_view(info, views.GingerDeleteView, FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name))
+        self.create_template(info, FORM_TEMPLATE)
+
+    def new_view(self, info):
+        form_name = info.form_name
+        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        self.create_form(form_name, base)
+        self.create_view(info, views.GingerNewView, FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name))
+        self.create_template(info, FORM_TEMPLATE)
+
+    def edit_view(self, info):
+        form_name = info.form_name
+        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        self.create_form(form_name, base)
+        self.create_view(info, views.GingerEditView, FORM_VIEW_CLASS,
+                         form_class=(self.form_module, form_name))
+        self.create_template(info, FORM_TEMPLATE)
+
     def form_view(self, info):
         form_name = info.form_name
-        self.create_form(form_name, forms.GingerForm)
+        base = forms.GingerForm if not self.model else forms.GingerModelForm
+        self.create_form(form_name, base)
         self.create_view(info, views.GingerFormView, FORM_VIEW_CLASS,
                          form_class=(self.form_module, form_name))
         self.create_template(info, FORM_TEMPLATE)
 
     def list_view(self, info):
+        base = forms.GingerForm if not self.model else forms.GingerModelForm
         form_name = info.form_name
-        self.create_form(form_name, forms.GingerForm)
+        self.create_form(form_name, base)
         self.create_view(info, views.GingerListView, TEMPLATE_VIEW_CLASS)
         self.create_template(info, LIST_TEMPLATE)
         filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
         self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
 
+    def detail_view(self, info):
+        self.create_view(info, views.GingerDetailView, TEMPLATE_VIEW_CLASS)
+        self.create_template(info, SIMPLE_TEMPLATE)
+
     def search_view(self, info):
         form_name = info.form_name
-        self.create_form(form_name, forms.GingerSearchForm)
+        base = forms.GingerSearchForm if not self.model else forms.GingerSearchModelForm
+        self.create_form(form_name, base)
         self.create_view(info, views.GingerSearchView, FORM_VIEW_CLASS,
                          form_class=(self.form_module, form_name))
         self.create_template(info, LIST_TEMPLATE)
         filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
         self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
 
-    def generate_views(self, kinds):
-        pass
-
-    def generate_view(self, kind):
-        kind = "search"
-        info = meta.ViewInfo(self.app, self.resource)
+    def generate_view(self, view_name, kind):
+        info = meta.ViewInfo(self.app, view_name)
+        if kind is None:
+            kind = info.verb
         method_name = "%s_view" % kind
         try:
             func = getattr(self, method_name)
         except AttributeError:
-            raise ValueError("%r is not a valid type of view")
+            raise ValueError("%r is not a valid type of view" % kind)
         func(info)
