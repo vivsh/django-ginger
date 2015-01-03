@@ -1,4 +1,4 @@
-
+from django.conf import settings
 import os
 import optparse
 from ginger.extras.google_images import GoogleImage
@@ -27,17 +27,23 @@ class Command(BaseCommand):
             action="store_true"
         ),
         optparse.make_option(
+            "-p",
+            "--prefix",
+            default="image"
+        ),
+        optparse.make_option(
             "-c",
             "--count",
-            type="int",
-            default=10
+            default=10,
+            type="int"
         ),
     )
 
     def handle(self, query, dest=None, *args, **options):
         if dest is None:
-            dest = os.getcwd()
-        gi = GoogleImage(dest)
+            dest = ""
+        dest = os.path.join(settings.MEDIA_ROOT, dest)
+        gi = GoogleImage(dest, options["prefix"])
         results = gi.search(query, options["count"],
                   safe= not options["unsafe"],
                   file_type=options["file_type"])

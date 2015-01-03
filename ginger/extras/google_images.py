@@ -20,8 +20,9 @@ class GoogleImage(object):
     Documentation: "https://developers.google.com/image-search/v1/jsondevguide"
     """
 
-    def __init__(self, target):
+    def __init__(self, target, prefix):
         self.target = target
+        self.prefix = prefix
         try:
             os.makedirs(self.target)
         except OSError:
@@ -39,8 +40,7 @@ class GoogleImage(object):
             img.save(filename)
 
     def filename(self, url):
-        path = urlsplit(url).path.strip("/")
-        head = os.path.basename(path).split(".", 1)[0]
+        head = self.prefix
         i = 0
         filename = joinpath(self.target, "%s.jpg" % head)
         while os.path.exists(filename):
