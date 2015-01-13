@@ -3,7 +3,7 @@ Fabric==1.10.0
 Jinja2==2.7.3
 MarkupSafe==0.23
 Pillow==2.6.0
--e git+https://vivsh@github.com/vivsh/django-ginger.git@78285af7fa9bbf5be2fcdd3a1a9d91ad9839943f#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@2068dde9e09625c00830fb8b104988b15ceecf82#egg=django_ginger-master
 django-jinja==1.0.4
 django-nose==1.2
 django-pods==1.1
