@@ -1,7 +1,6 @@
 
 import random
 from django.db import models
-
 from ginger.forms import HeightField as HeightFormField
 
 

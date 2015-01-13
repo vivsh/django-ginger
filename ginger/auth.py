@@ -9,8 +9,8 @@ __all__ = ["GingerUser", "CaseInsensitiveBackend"]
 
 class MetaUser(type):
     def __new__(self, name, bases, attrs):
-        if not bases or bases[0] == object:
-            return type.__new__(self, name, bases, attrs)
+        if bases == (AbstractUser,) and name == 'GingerUser':
+            return type.__new__(self, name, (), {})
         cls = User
         meta = cls._meta
         field_dict = {f.name: f for f in meta.fields}
