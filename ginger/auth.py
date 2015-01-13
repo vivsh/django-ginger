@@ -1,16 +1,19 @@
 from django.contrib.auth.backends import ModelBackend
 from django.db.models.query_utils import Q
 from django.utils import six
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractUser
+
+
+__all__ = ["GingerUser", "CaseInsensitiveBackend"]
 
 
 class MetaUser(type):
-    def __new__(self,name,bases,attrs):
+    def __new__(self, name, bases, attrs):
         if not bases or bases[0] == object:
-            return type.__new__(self,name,bases,attrs)
+            return type.__new__(self, name, bases, attrs)
         cls = User
         meta = cls._meta
-        field_dict = {f.name: f for f in meta.fields }
+        field_dict = {f.name: f for f in meta.fields}
         for k, v in attrs.items():
             if k in field_dict:
                 field = field_dict[k]
@@ -20,14 +23,15 @@ class MetaUser(type):
                     value = getattr(v, a, None)
                     if value is not None:
                         setattr(field, a, value)
-            else:
+            elif k not in cls.__dict__ and not hasattr(cls, k):
                 cls.add_to_class(k,v)
         return cls
 
 
 @six.add_metaclass(MetaUser)
-class UserBase(User):
-    pass
+class GingerUser(AbstractUser):
+    class Meta(AbstractUser.Meta):
+        abstract = True
 
 
 class CaseInsensitiveBackend(ModelBackend):

@@ -30,3 +30,8 @@ CELERY_ALWAYS_EAGER = True
 CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 
 STAGING_SECRET = "curry-rice"
+
+from django.contrib.messages import constants
+MESSAGE_TAGS = {
+    constants.ERROR: "danger"
+}

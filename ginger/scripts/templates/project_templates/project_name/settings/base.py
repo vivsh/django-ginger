@@ -110,3 +110,9 @@ TEMPLATE_DIRS = (
 STATICFILE_DIRS = (
     make_path("assets"),
 )
+
+
+
+MIGRATION_MODULES = {
+    'auth': '{{project_name}}.migrations.auth',
+}
