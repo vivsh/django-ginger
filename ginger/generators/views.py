@@ -234,10 +234,9 @@ class Code(object):
             fh.writelines(lines)
 
 
-class Application(object):
-
-    def __init__(self, app_name, resource, model_name):
-        super(Application, self).__init__()
+class GingerApp(object):
+    def __init__(self, app_name):
+        super(GingerApp, self).__init__()
         self.app = apps.get_app_config(app_name)
         self.base_dir = self.app.path
         self.module_name = self.app.module.__name__
@@ -260,6 +259,26 @@ class Application(object):
         self.view_module = importlib.import_module("%s.views" % self.module_name)
         self.form_module = importlib.import_module("%s.forms" % self.module_name)
         self.model_module = importlib.import_module("%s.models" % self.module_name)
+
+
+    def ensure_file(self, filename, content, **kwargs):
+        context = kwargs
+        filename = self.path(filename)
+        make_dir(os.path.dirname(filename))
+        kwargs.setdefault("app_name", self.app.label)
+        if not os.path.exists(filename) or not open(filename).read().strip():
+            with open(filename, "w") as fh:
+                fh.write(content.format(**context))
+        return filename
+
+    def path(self, *args):
+        return os.path.join(self.base_dir, *args)
+
+
+class Application(GingerApp):
+
+    def __init__(self, app_name, resource, model_name):
+        super(Application, self).__init__(app_name)
         self.resource_name = self.clean_resource(resource)
         self.model_name = model_name
         self.model = self.get_model()
@@ -274,19 +293,6 @@ class Application(object):
             if self.model_name:
                 raise
             return None
-
-    def path(self, *args):
-        return os.path.join(self.base_dir, *args)
-
-    def ensure_file(self, filename, content, **kwargs):
-        context = kwargs
-        filename = self.path(filename)
-        make_dir(os.path.dirname(filename))
-        kwargs.setdefault("app_name", self.app.label)
-        if not os.path.exists(filename) or not open(filename).read().strip():
-            with open(filename, "w") as fh:
-                fh.write(content.format(**context))
-        return filename
 
     def create_view(self, info, base_class, content, **kwargs):
         name = info.view_class_name

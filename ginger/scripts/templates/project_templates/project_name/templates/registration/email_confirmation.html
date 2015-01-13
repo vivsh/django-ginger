@@ -1,0 +1,11 @@
+{% extends "registration/base.html" %}
+{% block title %}Email Change {% endblock %}
+{%block content%}
+    {%if account%}
+        Email successfully changed
+    {%else %}
+        Failed to changed email. Did the link expire or was the link incorrect ?    
+    {%endif%}
+{% endblock %}
+
+

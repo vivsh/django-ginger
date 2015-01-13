@@ -91,11 +91,12 @@ class HeightField(forms.MultiValueField):
 
 class SortField(forms.ChoiceField):
 
-    def __init__(self, choices=(), toggle=True, **kwargs):
+    def __init__(self, choices=(), field_map=None,toggle=True, **kwargs):
         kwargs.setdefault("required", False)
         kwargs.setdefault("widget", forms.HiddenInput)
         super(SortField, self).__init__(choices=choices, **kwargs)
         self.toggle = toggle
+        self.field_map = field_map
 
     def valid_value(self, value):
         "Check to see if the provided value is a valid choice"
@@ -105,7 +106,7 @@ class SortField(forms.ChoiceField):
         return super(SortField, self).valid_value(text_value)
 
     def build_links(self, request, bound_field):
-        value = bound_field.value
+        value = bound_field.value()
         field_name = bound_field.name
         text_value = force_text(value) if value is not None else None
         for k, v in self.choices:
@@ -120,6 +121,13 @@ class SortField(forms.ChoiceField):
             yield ui.Link(url, content, is_active=is_active)
 
     def handle_queryset(self, queryset, value, bound_field):
+        sign = ""
+        if value.startswith("-"):
+            sign = "-"
+            value = value[1:]
+        if self.field_map and value in self.field_map:
+            value = self.field_map[value]
+        value = "%s%s" % (sign, value)
         return queryset.order_by(value)
 
 
