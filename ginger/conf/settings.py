@@ -17,6 +17,8 @@ TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.request',
 )
 
+JINJA2_EXCLUDE_FOLDERS = ["admin", "debugtoolbar"]
+
 TEMPLATE_LOADERS = (
     'ginger.templates.FileSystemLoader',
     'ginger.templates.AppLoader',

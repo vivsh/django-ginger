@@ -134,10 +134,10 @@ class Project(object):
         self.check_installed("npm")
         self.prepare_npm()
         self.check_installed("bower", action=lambda: self.npm_install("bower", "--save"))
-        self.check_installed("gulp", action=lambda: self.npm_install("gulp"))
-        packages = "gulp-ruby-sass,gulp-autoprefixer,gulp-minify-css,gulp-rename".split(",")
-        for pkg in packages:
-            self.npm_install(pkg)
+        # self.check_installed("gulp", action=lambda: self.npm_install("gulp"))
+        # packages = "gulp-ruby-sass,gulp-autoprefixer,gulp-minify-css,gulp-rename".split(",")
+        # for pkg in packages:
+        #     self.npm_install(pkg)
 
     def run(self, cmd):
         run(cmd, cwd=self.path(), env=self.env)
@@ -191,6 +191,12 @@ class Project(object):
                   '*': {
                     'underscore': 'lodash'
                   }
+                },
+                path:{
+                    "jquery": "../bower_components/jquery/dist/jquery",
+                    "backbone": "../bower_components/backbone/backbone",
+                    "lodash": "../bower_components/lodash/lodash",
+                    "requireLib": "../bower_components/requirejs/require",
                 }
             })
         """)
@@ -238,5 +244,5 @@ def main():
     prj.prepare()
 
     prj.create()
-    prj.manage("migrate")
     prj.prepare_bower()
+    prj.manage("migrate")

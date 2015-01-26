@@ -1,6 +1,6 @@
 
 from .base import *
 
-STATICFILE_DIRS += (
+STATICFILES_DIRS += (
     make_path("assets-dev"),
 )

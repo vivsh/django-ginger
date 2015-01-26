@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-from ginger.settings import *
+from ginger.conf.settings import *
 import os
 
 PROJECT_NAME = "{{project_name}}"
@@ -107,11 +107,9 @@ TEMPLATE_DIRS = (
     make_path("assets", "templates")
 )
 
-STATICFILE_DIRS = (
+STATICFILES_DIRS = (
     make_path("assets"),
 )
-
-
 
 MIGRATION_MODULES = {
     'auth': '{{project_name}}.migrations.auth',

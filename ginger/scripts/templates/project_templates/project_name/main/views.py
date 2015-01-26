@@ -1,20 +1,27 @@
 
+import ginger.views as generic
 from django.views.generic import TemplateView
 
-class AboutUsView(TemplateView):
-    template_name = "main/aboutus.html"
 
-class HelpView(TemplateView):
-    template_name = "main/help.html"
+class AboutUsView(generic.GingerTemplateView):
+    url_regex = "about_us/"
 
-class FaqView(TemplateView):
-    template_name = "main/faq.html"
 
-class PrivacyView(TemplateView):
-    template_name = "main/privacy.html"
+class HelpView(generic.GingerTemplateView):
+    url_regex = "main/"
 
-class TosView(TemplateView):
-    template_name = "main/tos.html"
 
-class HomeView(TemplateView):
-    template_name = "main/home.html"
+class FaqView(generic.GingerTemplateView):
+    url_regex = "faq/"
+
+
+class PrivacyView(generic.GingerTemplateView):
+    url_regex = "privacy/"
+
+
+class TosView(generic.GingerTemplateView):
+    url_regex = "tos/"
+
+
+class HomeView(generic.GingerTemplateView):
+    url_regex = ""
