@@ -227,7 +227,7 @@ class Project(object):
 
 
 def main():
-    delete_files("src", "static", "media", "var", "log", ".env")
+    # delete_files("src", "static", "media", "var", "log", ".env")
     make_dirs("src", "static", "media", "var", "log")
     make_file(".env")
 

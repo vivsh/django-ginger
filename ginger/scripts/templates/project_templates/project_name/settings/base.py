@@ -47,7 +47,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'ginger',
     '{{project_name}}.main',
-    '{{project_name}}.accounts',
+    '{{project_name}}.registration',
     'django.contrib.admin',
 )
 
