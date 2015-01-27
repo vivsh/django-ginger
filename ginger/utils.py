@@ -8,7 +8,7 @@ from datetime import date
 import base64
 import pickle
 from django.utils.encoding import force_bytes
-from django.utils import six
+from django.utils import six,timezone
 from django.contrib.auth import login
 from django.db import models
 
@@ -160,7 +160,7 @@ def auth_login(request,user):
     return user
 
 def calculate_age(born):
-    today = date.today()
+    today = timezone.now().date()
     if not born: return 0
     try: # raised when birth date is February 29 and the current year is not a leap year
         birthday = born.replace(year=today.year)
