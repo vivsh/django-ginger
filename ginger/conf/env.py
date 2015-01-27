@@ -15,7 +15,7 @@ def get_cache():
         _cache = {}
         _update(os.environ)
         try:
-            env_file = os.path.join(os.environ['VIRTUAL_ENV'], ".env")
+            env_file = os.path.join(os.environ['VIRTUAL_ENV'], "../.env")
         except KeyError:
             pass
         else:

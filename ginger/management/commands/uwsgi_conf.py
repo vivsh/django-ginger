@@ -1,29 +1,60 @@
 
 import os
-import importlib
-import inspect
-
 from django.core.management import BaseCommand
 from django.conf import settings
 
-def project_path():
-    attrs = ["PROJECT_PATH_", "BASE_DIR", "PROJECT_DIR", "PROJECT_ROOT"]
-    try:
-        return next(getattr(settings,attr) for attr in attrs if hasattr(settings, attr))
-    except StopIteration:
-        pass
-    try:
-        module = importlib.import_module(project_name())
-        result = os.path.realpath(os.path.dirname(inspect.getsourcefile(module)))
-        return result
-    except ImportError:
-        pass
-    raise ValueError("Failed to find the base dir for this project")
-
-def project_name():
-    return settings.ROOT_URLCONF.split(".", 1)[0]    
 
 class Command(BaseCommand):
-    
-    def handle(self, mode, target="all", **options):
-        pass
+
+    def handle(self, *args, **options):
+        base_dir = os.path.join(os.environ['VIRTUAL_ENV'], "../")
+        content = template.format(project_dir=base_dir.rstrip("/") + "/",
+                                  project_name=settings.PROJECT_NAME,
+                                  project_port=settings.PROJECT_PORT)
+        self.stdout.write(content)
+
+
+
+template = """
+[uwsgi]
+
+chdir           = {project_dir}src/
+
+module          = {project_name}.wsgi
+
+home            = {project_dir}venv/
+
+http-socket     = 0.0.0.0:{project_port}
+
+master          = true
+
+pidfile         = {project_dir}run/uwsgi.pid
+
+logto           = {project_dir}log/uwsgi.log
+
+processes       = 2
+
+threads         = 10
+
+vacuum          = true
+
+harakiri-verbose= 1
+
+auto-procname   = 1
+
+no-orphans      = 1
+
+master          = 1
+
+disable-logging = false
+
+limit-post      = 153600000
+
+http-timeout    = 10
+
+threads         = 10
+
+enable-threads  = 1
+
+touch-reload    = {project_dir}src/etc/uwsgi.ini
+"""
