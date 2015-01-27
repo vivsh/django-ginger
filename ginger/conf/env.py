@@ -38,10 +38,10 @@ def load_file(path):
     with open(path) as fh:
         content = fh.read()
         for line in content.splitlines():
-            values = re.findall(r'\s*(\w+)\s*=\s*(.+?)\s*', line)
+            values = re.findall(r'\s*(\w+)\s*=\s*(.+)\s*', line)
             if values:
                 key, value = values[0]
-                result[key]= value
+                result[key]= value.strip()
     _update(result)
 
 
