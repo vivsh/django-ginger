@@ -7,7 +7,7 @@ from django.conf import settings
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        base_dir = os.path.join(os.environ['VIRTUAL_ENV'], "../")
+        base_dir = os.path.abspath(os.path.join(os.environ['VIRTUAL_ENV'], "../"))
         content = template.format(project_dir=base_dir.rstrip("/") + "/",
                                   project_name=settings.PROJECT_NAME,
                                   project_port=settings.PROJECT_PORT)
