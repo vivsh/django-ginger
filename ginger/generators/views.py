@@ -287,7 +287,7 @@ class Application(GingerApp):
 
     def get_model(self):
         try:
-            return self.app.get_model(self.model_name or self.resource_name)
+            return apps.get_model(self.model_name or self.resource_name)
         except LookupError:
             if self.model_name:
                 raise

@@ -7,7 +7,12 @@ __all__ = ['STATIC_URL',
            'TEMPLATE_LOADERS',
            'TEST_RUNNER',
             'CELERY_ALWAYS_EAGER',
-            'CELERY_EAGER_PROPAGATES_EXCEPTIONS', 'env']
+            'CELERY_EAGER_PROPAGATES_EXCEPTIONS',
+            'env',
+            'MESSAGE_TAGS', 'JINJA2_EXCLUDE_FOLDERS',
+            'JINJA2_AUTOESCAPE',
+            'STAGING_SECRET'
+]
 
 
 STATIC_URL = '/static/'
