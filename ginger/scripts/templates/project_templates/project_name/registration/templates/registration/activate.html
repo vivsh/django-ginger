@@ -1,6 +1,6 @@
 {% extends "registration/base.html" %}
 {% block title %}{% if account %}Activation complete{% else %}Activation problem{% endif %}{% endblock %}
-{%block content%}
+{%block registration_content%}
 {% if account %}
 Thanks {{ account }}, activation complete!  You may now <a href='{% url login %}'>login</a> using the username and password you set at registration.
 {% else %}

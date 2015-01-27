@@ -1,47 +1,14 @@
-{%if not request.is_ajax() %} {%extends 'base.html'%} {%endif %}
-{%block content%}
+{%extends 'registration/base.html'%}
+{%block registration_content%}
 <br/>
 <div class="accounts formset">
 
 	<div class="formset-inner">
-		<h3 class='center heading pink-only noborder'> Join the Erotq.com Community - Its Free</h3>
-
-		<h4 class='center noborder' style='font-size:16px'> Already a member ?<a href='{%url login%}'> Click here to login </a></h4>
-
-		<h4 class="center noborder" style='margin-top:0.5em;font-size:16px'> Looking to advertise instead ? <a href="/advertise/"> Click here </a></h4>
-		
 		<br />
-		<p class="center">
-			To access enhanced features you must first become a Erotq.com member:
-		</p>
 		<br/>
-		<ul class='salients center60' >
-			<li>
-				private messaging to members and service providers
-			</li>
-			<li>
-				view additional nude photos !
-			</li>
-			<li>
-				access to advertisers "backstage pass"
-			</li>
-			<li>
-				post comments, like/favorite service providers
-			</li>
-			<li>
-				engage with other hobbyists members !
-			</li>
-			<li>
-				and more... !
-			</li>
-		</ul>
-		<br/>
-		<form {{erotq_form_attrs(form,class='eq-form', id="accounts-join", name='accounts-join')}} style="margin-left:15%">
+		<form >
 			{%csrf_token%}
-			{{ erotq_form_slice(form.username,) }}
-			{# {erotq_field(form.heard_source)} #}
 			<div class="form-actions">
-				{{erotq_form_submit(form, class='btn btn-primary', value="Register")}}
 			</div>
 		</form>
 

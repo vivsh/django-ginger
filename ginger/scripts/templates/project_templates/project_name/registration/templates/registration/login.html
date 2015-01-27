@@ -1,19 +1,14 @@
-{%if not request.is_ajax() %} {% extends "base.html" %} {%endif %}
-{%block content%}
-	<div class="formset loginform section-login">
-		<div class="formset-inner">
-			<form class="eq-form" method="post" action="{%url login%}">
+{% extends "registration/base.html" %}
+{%block registration_content%}
+			<form method="post" action="{%url login%}">
 				{{form.non_field_errors()}}
 				{%csrf_token%}
-				{{ erotq_form_slice(form=form) }}
+				{{ form }}
 				<div class="form-actions">
 					<input type="hidden" name="next" value="{{ next }}" />
-					<input type="submit" id="submit-id-submit" class="btn btn-primary" value="Submit" name="submit" />				
+					<input type="submit" id="submit-id-submit" value="Submit" name="submit" />
 				</div>			
 			</form>		
-			<h5><a class='noxhr' href='{%url password_reset%}'> Lost your password ?</a></h4>
-			<br/>
-			<h5>Not yet a member ? <a href='{%url "advertiser_new" %}'> Click here to join </a></h4>
-		</div>
-	</div>
+			<h5><a class='noxhr' href='{%url password_reset%}'> Lost your password ?</a></h5>
+
 {% endblock %}
