@@ -19,7 +19,6 @@ def get_cache():
         except KeyError:
             pass
         else:
-            print(env_file, os.path.exists(env_file))
             if os.path.exists(env_file):
                 load_file(env_file)
     return _cache
@@ -38,12 +37,10 @@ def load_file(path):
     result = {}
     with open(path) as fh:
         content = fh.read()
-        print "&&&&&&&", content, "<<<<<<"
         for line in content.splitlines():
-            print line, "&&&&&"
             values = re.findall(r'\s*(\w+)\s*=\s*(.+?)\s*', line)
             if values:
-                key, value = values
+                key, value = values[0]
                 result[key]= value
     _update(result)
 
