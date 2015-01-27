@@ -6,7 +6,7 @@ from ginger.generators import views
 
 
 class Command(BaseCommand):
-    view_types = ['new','detail', 'edit', 'search', 'list', 'form', 'form-done', 'wizard']
+    view_types = ['new','detail', 'edit', 'search', 'list', 'form', 'form-done', 'wizard', 'template']
 
     help = "Creates a view and its associated forms/templates. " \
            "If any class already exists then it will never be over-written."
