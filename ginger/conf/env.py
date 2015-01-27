@@ -15,10 +15,11 @@ def get_cache():
         _cache = {}
         _update(os.environ)
         try:
-            env_file = os.path.join(os.environ['VIRTUAL_ENV'], "../.env")
+            env_file = os.path.abspath(os.path.join(os.environ['VIRTUAL_ENV'], "../.env"))
         except KeyError:
             pass
         else:
+            print(env_file, os.path.exists(env_file))
             if os.path.exists(env_file):
                 load_file(env_file)
     return _cache
@@ -36,7 +37,10 @@ def _update(values):
 def load_file(path):
     result = {}
     with open(path) as fh:
-        for line in fh.readline():
+        content = fh.read()
+        print "&&&&&&&", content, "<<<<<<"
+        for line in content.splitlines():
+            print line, "&&&&&"
             values = re.findall(r'\s*(\w+)\s*=\s*(.+?)\s*', line)
             if values:
                 key, value = values
@@ -47,3 +51,8 @@ def load_file(path):
 def get(key, default=None):
     cache = get_cache()
     return cache.get(key, default)
+
+
+def all():
+    cache = get_cache()
+    return cache.copy()

@@ -19,6 +19,8 @@ TEMPLATE_CONTEXT_PROCESSORS += (
 
 JINJA2_EXCLUDE_FOLDERS = ["admin", "debug_toolbar", "suit"]
 
+JINJA2_AUTOESCAPE = False
+
 TEMPLATE_LOADERS = (
     'ginger.templates.FileSystemLoader',
     'ginger.templates.AppLoader',
