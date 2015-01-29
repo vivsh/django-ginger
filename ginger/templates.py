@@ -132,6 +132,13 @@ filter_tag = library.filter
 test_tag = library.test
 
 
+def field_layout(func):
+    from ginger.html import forms
+    name = func.__name__
+    forms.register_layout(name, func)
+    return func
+
+
 class GingerResponse(TemplateResponse):
 
     def is_json(self):

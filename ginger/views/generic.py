@@ -507,11 +507,15 @@ class GingerDetailView(SingleObjectViewMixin, GingerTemplateView):
 
 
 class GingerEditView(SingleObjectViewMixin, GingerFormView):
-    pass
+
+    def get_success_url(self, form):
+        return form.instance.get_absolute_url()
 
 
 class GingerEditDoneView(SingleObjectViewMixin, GingerFormDoneView):
-    pass
+
+    def get_success_url(self, form):
+        return form.instance.get_absolute_url()
 
 
 class GingerEditWizardView(SingleObjectViewMixin, GingerWizardView):
@@ -523,11 +527,15 @@ class GingerDeleteView(SingleObjectViewMixin, GingerFormView):
 
 
 class GingerNewView(GingerFormView):
-    pass
+
+    def get_success_url(self, form):
+        return form.instance.get_absolute_url()
 
 
 class GingerNewDoneView(GingerFormDoneView):
-    pass
+
+    def get_success_url(self, form):
+        return form.instance.get_absolute_url()
 
 
 class GingerNewWizardView(GingerWizardView):

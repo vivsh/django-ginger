@@ -1,6 +1,6 @@
+from collections import namedtuple
 import inspect
 import operator
-from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 from jinja2 import Markup
 import re
@@ -68,12 +68,8 @@ def is_selected_choice(values, choice):
             return True
     return False
 
-class Choice(object):
-    def __init__(self, name, value, content, selected):
-        self.selected = selected
-        self.content = content
-        self.value = value
-        self.name = name
+
+Choice = namedtuple("Choice", ["name", "value", "content", "selected"])
 
 def bound_field_choices(field):
     form_field = field.field

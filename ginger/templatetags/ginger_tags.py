@@ -2,15 +2,13 @@
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 import re
-from jinja2 import Markup, escape
-
-from django.forms.forms import BoundField
+from jinja2 import Markup
 from django.template.loader import render_to_string
 from django.middleware.csrf import get_token
 
 from ginger.templates import ginger_tag, filter_tag, function_tag
 from ginger import utils as gutils
-from ginger import ui, serializer
+from ginger import ui
 
 
 @ginger_tag(mark_safe=True)

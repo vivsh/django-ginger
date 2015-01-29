@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+ 
+{% block title %}{{ title }} | {% trans 'Control Panel' %}{% endblock %}
+
+{%block extrastyle%}
+{{block.super}}
+
+{%endblock%}
+
+{%block extrahead%}
+{{block.super}}
+	<script>
+		window.STATIC_URL = "{{STATIC_URL}}";
+		window.MEDIA_URL = "{{MEDIA_URL}}";
+	</script>
+{%endblock %}
+
+ 
+{% block branding %}
+	<h1 id="site-name"><a href='/'>{% trans 'Control Panel' %}</a></h1>
+{% endblock %}
+ 
+{% block nav-global %}{% endblock %}

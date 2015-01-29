@@ -128,13 +128,12 @@ BASE_TEMPLATE = """
 FORM_TEMPLATE = """
 {{% extends "{app_name}/base.html" %}}
 {{% block {app_name}_content %}}
-    <form form_attrs(form)>
-        {{# {{% csrf_token %}} #}}
+    {{{{ form_start(form) }}}}
         {{{{form.as_p()}}}}
         <div>
             <button type="submit"> Submit </button>
         </div>
-    </form>
+    {{{{form_end()}}}}
 {{% endblock %}}
 """
 
@@ -286,6 +285,8 @@ class Application(GingerApp):
         return meta.ViewInfo(self.app, name).resource_name
 
     def get_model(self):
+        if not self.model_name:
+            return None
         try:
             return apps.get_model(self.model_name or self.resource_name)
         except LookupError:
@@ -322,6 +323,8 @@ class Application(GingerApp):
         self.create_template(info, SIMPLE_TEMPLATE)
 
     def delete_view(self, info):
+        if not self.model:
+            return self.form_view(info)
         form_name = info.form_name
         base = forms.GingerModelForm
         self.create_form(form_name, base)
@@ -331,6 +334,8 @@ class Application(GingerApp):
         self.create_template(info, FORM_TEMPLATE)
 
     def new_view(self, info):
+        if not self.model:
+            return self.form_view(info)
         form_name = info.form_name
         base = forms.GingerForm if not self.model else forms.GingerModelForm
         self.create_form(form_name, base)
@@ -339,6 +344,8 @@ class Application(GingerApp):
         self.create_template(info, FORM_TEMPLATE)
 
     def edit_view(self, info):
+        if not self.model:
+            return self.form_view(info)
         form_name = info.form_name
         base = forms.GingerModelForm
         self.create_form(form_name, base)
@@ -381,6 +388,40 @@ class Application(GingerApp):
         self.create_template(info, LIST_TEMPLATE)
         filename = self.path(self.template_include, "%s_item.html" % info.resource_name)
         self.create_template(info, LIST_ITEM_TEMPLATE, template_path=filename)
+
+    def find_view(self, view_class, default=None):
+        if issubclass(view_class, views.GingerSearchView):
+            return "search"
+        if issubclass(view_class, views.GingerEditView) and self.model:
+            return "edit"
+        if issubclass(view_class, views.GingerDetailView) and self.model:
+            return "detail"
+        if issubclass(view_class, views.GingerListView):
+            return "list"
+        if issubclass(view_class, views.GingerCreateView) and self.model:
+            return "new"
+        if issubclass(view_class, views.GingerDeleteView) and self.model:
+            return "delete"
+        if issubclass(view_class, views.GingerFormView):
+            return "form"
+        if issubclass(view_class, views.GingerTemplateView):
+            return "template"
+        return default
+
+    def bless_view(self, view_class):
+        info = view_class.meta
+        kind = info.verb
+        method_name = "%s_view" % kind
+        if not hasattr(self, method_name):
+            kind = self.find_view(view_class)
+            if kind is None:
+                raise ValueError("Cannot find a valid type for %r" % view_class)
+        method_name = "%s_view" % kind
+        try:
+            func = getattr(self, method_name)
+        except AttributeError:
+            raise ValueError("%r is not a valid type of view" % kind)
+        func(info)
 
     def generate_view(self, view_name, kind=None):
         info = meta.ViewInfo(self.app, view_name)
