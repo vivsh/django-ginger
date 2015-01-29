@@ -464,11 +464,6 @@ class SingleObjectViewMixin(object):
     def get_form_instance(self, form_key):
         return self.object
 
-    def process_request(self, request):
-        result = super(SingleObjectViewMixin, self).process_request(request)
-        self.object = self.get_object()
-        return result
-
     def get_object(self):
         key = self.get_queryset_object_key()
         kwargs = {key: self.kwargs[self.url_object_key]}

@@ -90,18 +90,29 @@ class Symbol(object):
     def find(self, class_):
         return next(self.find_all(class_), None)
 
-    def revise_end(self, lineno):
-        last = lineno - 1
-        lines = self.source
-        limit = len(self.source)
+    def __contains__(self, item):
+        return any(item == sym.name for sym in self.symbols)
 
-        while limit > last-1 and not lines[last-1].strip():
-            last -= 1
-        self.span = self.span[0], last
-        print "Span for %r is (%d, %d)" % (self.__class__, self.span[0], self.span[1])
+    def revise_end(self, lineno):
+        """
+
+        :param lineno: line number of the line above the next sibling node
+        :return:
+        """
+        span = self.span
+        if lineno > span[-1]:
+            last = lineno
+            lines = self.source
+            limit = len(self.source)
+            while limit > last-1 and not lines[last-1].strip():
+                last -= 1
+            self.span = self.span[0], last
+        else:
+            last = self.span[-1]
         for sym in reversed(self.symbols):
             sym.revise_end(last)
-            last = sym.span[0]
+            last = sym.span[0]-1
+        print("Span for %s is %r"%(self, self.span))
 
 
     def set_position(self, node):
@@ -126,8 +137,8 @@ class Symbol(object):
             if func:
                 result = func(child)
             if not result:
-                if isinstance(child, ast.Assign):
-                    print(child)
+                # if isinstance(child, ast.Assign):
+                print(child)
                 result = Symbol(child, self.source)
             self.symbols.append(result)
 
@@ -146,11 +157,7 @@ class Symbol(object):
 
 
 class ImportFrom(Symbol):
-
-    def get_position(self, node):
-        super(ImportFrom, self).get_position(node)
-        first, last = self.span
-        print self.source[last-1], "<<<<<<<"
+    pass
 
 
 class Import(Symbol):
@@ -162,7 +169,9 @@ class Assign(object):
 
 
 class Function(Symbol):
-    pass
+
+    def parse(self):
+        self.set_position(self.node)
 
 
 class Class(Symbol):
@@ -180,11 +189,10 @@ class Module(Symbol):
 
     def set_position(self, node):
         self.span = (1, len(self.source))
-        return
 
     def parse(self):
         super(Module, self).parse()
-        self.revise_end(len(self.source)-1)
+        self.revise_end(len(self.source))
 
 
 if __name__ == '__main__':
