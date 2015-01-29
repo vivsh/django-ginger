@@ -178,6 +178,6 @@ class Element(object):
 
 
 for name in "html body link meta div span form section article aside main ul li ol dl dd dt p a strong "\
-            "i fieldset legend b em input select button".split(" "):
+            "i fieldset legend b em input select button label".split(" "):
     __all__.append(name)
     globals()[name] = Element(name)

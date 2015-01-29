@@ -29,7 +29,7 @@ _layouts = {}
 
 
 def make_css_class(obj, suffix=""):
-    name = utils.camel_to_hyphen(re.sub(r'widget|field|ginger|form', '', obj.__class__.__name__.lower()))
+    name = utils.camel_to_hyphen(re.sub(r'(?i)widget|field|ginger|form', '', obj.__class__.__name__, 1))
     if suffix:
         name = "%s%s" % (name, suffix)
     return name
@@ -121,7 +121,7 @@ def render_field(field, layout=None, **kwargs):
     ctx = {
         "field": field,
         "label": field.label,
-        "label_tag": field.label_tag(),
+        "label_tag": common.label(class_="form-label", for_=field.id_for_label)[field.label],
         "widget": render_widget(field),
         "help": field.help_text,
         "help_tag": common.div(class_="form-help")[field.help_text],
