@@ -67,7 +67,7 @@ def field_links(request, field):
 
 @function_tag
 def field_help(field):
-    return field.help
+    return field.help_text
 
 
 @function_tag
