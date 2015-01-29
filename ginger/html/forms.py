@@ -128,7 +128,10 @@ def render_field(field, layout=None, **kwargs):
         "errors": field.errors
     }
     content = template.format(**ctx)
-    return common.div(class_=["form-field", field_css_class(field)],
+    classes = ["form-field", field_css_class(field)]
+    if field.errors:
+        classes.append("has-errors")
+    return common.div(class_=classes,
                       data_field=field.name, **kwargs)[content]
 
 
