@@ -4,7 +4,7 @@ Jinja2==2.7.3
 MarkupSafe==0.23
 Pillow==2.6.0
 astunparse==1.2.2
--e git+https://vivsh@github.com/vivsh/django-ginger.git@da82b803fc1ecff3b1fa5b504c0fe91a5be94c8e#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@778aa83c6f6eb88c91369164becae7618ff1d493#egg=django_ginger-master
 django-jinja==1.0.4
 django-nose==1.2
 django-pods==1.1
