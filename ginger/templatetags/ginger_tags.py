@@ -151,3 +151,4 @@ def data_attr(name, value):
 @function_tag
 def js_value(name, value):
     return mark_safe("<script type='text/javascript'> var %s = %s </script>" % (name, ui.as_json(value)))
+

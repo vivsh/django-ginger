@@ -160,9 +160,13 @@ class Element(object):
         return el
 
     def append(self, child):
+        if child is None:
+            return
         if isinstance(child, (list, tuple)):
-            self.children.extend(child)
-        self.children.append(child)
+            for c in child:
+                self.append(c)
+        else:
+            self.children.append(child)
 
     def render(self):
         attrs = self.attrib
@@ -178,6 +182,6 @@ class Element(object):
 
 
 for name in "html body link meta div span form section article aside main ul li ol dl dd dt p a strong "\
-            "i fieldset legend b em input select button label".split(" "):
+            "i fieldset legend b em input select button label nav".split(" "):
     __all__.append(name)
     globals()[name] = Element(name)

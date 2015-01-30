@@ -10,7 +10,7 @@ from . import common
 
 __all__ = ["Choice", "Link", "form_csrf_tag", "form_attrs", "form_css_class",
            "field_choices", "field_name_range", "field_links", "iter_fields", "widget_css_class",
-           "render_widget", "register_layout", "render_field", "field_css_class", "field_range"]
+           "render_widget", "register_layout", "render_field", "field_css_class", "field_range", "render_page"]
 
 Choice = namedtuple("Choice", ["name", "value", "content", "selected"])
 
@@ -130,7 +130,7 @@ def render_field(field, layout=None, **kwargs):
     content = template.format(**ctx)
     classes = ["form-field", field_css_class(field)]
     if field.errors:
-        classes.append("has-errors")
+        classes.append("has-error")
     return common.div(class_=classes,
                       data_field=field.name, **kwargs)[content]
 
@@ -159,3 +159,23 @@ def widget_css_class(field):
 
 def form_css_class(form):
     return make_css_class(form, "-form")
+
+
+def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
+    H = common
+    nav = H.ul(class_="pagination", **kwargs)
+    if page.has_previous():
+        url = page.previous_link(request).url
+        previous_tag = H.li(href=url, aria_label="Previous")[H.span(aria_hidden="true")[previous]]
+        nav.append(previous_tag)
+    for link in page.build_links(request):
+        if link.is_active:
+            el = H.li(class_="active")[H.span[link.content, H.span(class_="sr-only")["(current)"]]]
+        else:
+            el = H.li[H.a(href=link.url)[link.content]]
+        nav.append(el)
+    if page.has_next():
+        url = page.next_link(request).url
+        next_tag = H.li(href=url, aria_label="Previous")[H.span(aria_hidden="true")[next]]
+        nav.append(next_tag)
+    return nav.render()

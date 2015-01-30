@@ -69,7 +69,6 @@ def field_links(request, field):
 def field_help(field):
     return field.help_text
 
-
 @function_tag
 def field_errors(field):
     return field.errors
@@ -127,3 +126,8 @@ def widget_is(field, class_name):
 def class_is(obj, class_name):
     class_ = obj.__class__
     return class_.__name__ == class_name or any(class_name == b.__name__ for b in inspect.getmro(class_))
+
+
+@ginger_tag(takes_context=True, mark_safe=True)
+def page_tag(context, page, **kwargs):
+    return html.render_page(context["request"], page, **kwargs)

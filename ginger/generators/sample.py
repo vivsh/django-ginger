@@ -1,8 +1,4 @@
 
-import something.anything
-from some import (
-    any, tomorrow
-)
 
 class TestModel(object):
 
@@ -13,7 +9,16 @@ class TestModel(object):
 
         """
 
-any.something()
+    class TestMe(object):
+        name = "asdsa"
+
+        def happy(self):
+            return
+
+
+def function(a, b, c):
+    pass
+
 
 if __name__ == '__main__':
     pass
