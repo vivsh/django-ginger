@@ -15,7 +15,7 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
-from ginger.exceptions import Http404
+from ginger.exceptions import Http404, Redirect
 from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
 from ginger.paginator import paginate
@@ -40,6 +40,12 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
+
+    def process_exception(self, request, ex):
+        result = super(GingerTemplateView, self).process_exception(request, ex)
+        if result is None and isinstance(ex, Redirect):
+            result = self.redirect(ex.url)
+        return result
 
     def redirect(self, to, **kwargs):
         response = redirect(to, **kwargs)

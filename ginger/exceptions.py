@@ -1,4 +1,4 @@
-from django.utils.html import escape
+from django.core.urlresolvers import reverse
 
 try:
     from django.utils import six
@@ -8,6 +8,9 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import (InvalidPage, PageNotAnInteger, EmptyPage)
 from django.http import Http404
 from django.db import IntegrityError
+from django.shortcuts import resolve_url
+from ginger import utils
+
 
 __all__ = [
     "GingerHttpError",
@@ -45,13 +48,33 @@ class MethodNotFound(GingerHttpError):
     description = "Method not allowed"
 
 
-class PermissionRequired(GingerHttpError):
+class Redirect(GingerHttpError):
+    permanent = False
+
+    description = "Content has moved"
+
+    def __init__(self, to, message=None, **kwargs):
+        url = resolve_url(to, **kwargs)
+        super(Redirect, self).__init__(message)
+        self.url = url
+
+
+class PermissionRequired(Redirect):
     status_code = 401
     description = "Permission Required"
 
+    def __init__(self, request, url, message=None):
+        current_url = request.get_full_path()
+        url = utils.get_url_with_modified_params(url, {"next": current_url})
+        super(PermissionDenied, self).__init__(url, message=message)
+
 
 class LoginRequired(PermissionRequired):
-    pass
+
+    def __init__(self, request, message=None):
+        current_url = request.get_full_path()
+        url = utils.get_url_with_modified_params(reverse("login"), {"next": current_url})
+        super(LoginRequired, self).__init__(url, message=message)
 
 
 class ValidationFailure(GingerHttpError):

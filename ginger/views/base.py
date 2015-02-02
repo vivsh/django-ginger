@@ -137,7 +137,7 @@ class GingerView(View, GingerSessionDataMixin):
         return response
 
     def process_exception(self, request, ex):
-        return
+        pass
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -146,7 +146,7 @@ class GingerView(View, GingerSessionDataMixin):
                 response = super(GingerView, self).dispatch(request, *args, **kwargs)
         except Exception as ex:
             response = self.process_exception(request, ex)
-            if not response:
+            if response is None:
                 raise
         response = self.process_response(request, response)
         return response

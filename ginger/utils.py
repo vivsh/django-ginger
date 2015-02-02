@@ -1,15 +1,13 @@
 
 import threading
-from django.http.request import HttpRequest
 import re
 import hashlib
 import inspect
-from datetime import date
 import base64
 import pickle
+from django.http.request import HttpRequest
 from django.utils.encoding import force_bytes
 from django.utils import six,timezone
-from django.contrib.auth import login
 from django.db import models
 
 
@@ -155,6 +153,7 @@ def get_local(key, default=None):
     return getattr(ctx, key, default)
 
 def auth_login(request,user):
+    from django.contrib.auth import login
     user.backend = 'django.contrib.auth.backends.ModelBackend'
     login(request,user)
     return user

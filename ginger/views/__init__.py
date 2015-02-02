@@ -4,3 +4,4 @@ from .generic import *
 from .base import P, GingerView
 from .steps import StepList, Step
 from .storages import SessionFormStorage
+from .mixins import *
