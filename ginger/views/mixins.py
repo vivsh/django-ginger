@@ -32,7 +32,7 @@ class LoginRequiredMixin(object):
 class PrivilegeRequiredMixin(object):
     
     def get_user(self):
-        user = super(LoginRequiredMixin, self).get_user()
+        user = super(PrivilegeRequiredMixin, self).get_user()
         if not user.is_authenticated():
             return reverse("login")
         if not self.has_privileges(user):
