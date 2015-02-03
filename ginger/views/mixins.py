@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 __all__ = ['PermissionRequiredMixin', 'PrivilegeRequiredMixin', 'LoginRequiredMixin',
            'StaffRequiredMixin', 'SuperUserRequiredMixin']
 
+
 class PermissionRequiredMixin(object):
 
     def get_permission_url(cls, user):
@@ -34,7 +35,7 @@ class PrivilegeRequiredMixin(object):
     def get_user(self):
         user = super(PrivilegeRequiredMixin, self).get_user()
         if not user.is_authenticated():
-            return reverse("login")
+            raise LoginRequired(self.request)
         if not self.has_privileges(user):
             raise PermissionDenied
         return user

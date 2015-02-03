@@ -37,8 +37,7 @@ setup(
     keywords="django utilities",
     install_requires=[
         "django-jsonfield",
-        "django-pods>=1.1",
-        "django_jinja>=1.1",
+        "django_jinja==1.1",
         "django_nose>=1.3",
         "django>=1.7.4",
         "jinja2>=2.7.3",

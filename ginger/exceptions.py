@@ -66,7 +66,7 @@ class PermissionRequired(Redirect):
     def __init__(self, request, url, message=None):
         current_url = request.get_full_path()
         url = utils.get_url_with_modified_params(url, {"next": current_url})
-        super(PermissionDenied, self).__init__(url, message=message)
+        super(PermissionRequired, self).__init__(url, message=message)
 
 
 class LoginRequired(PermissionRequired):
@@ -74,7 +74,7 @@ class LoginRequired(PermissionRequired):
     def __init__(self, request, message=None):
         current_url = request.get_full_path()
         url = utils.get_url_with_modified_params(reverse("login"), {"next": current_url})
-        super(LoginRequired, self).__init__(url, message=message)
+        super(LoginRequired, self).__init__(request, url, message=message)
 
 
 class ValidationFailure(GingerHttpError):
