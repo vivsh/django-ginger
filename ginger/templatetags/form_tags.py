@@ -1,5 +1,7 @@
 
 import inspect
+from django.forms.formsets import BaseFormSet
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from ginger import html
 from ginger.templates import function_tag, ginger_tag
@@ -17,6 +19,8 @@ def field_option_tags(field):
 
 @ginger_tag(takes_context=True, mark_safe=True)
 def form_hidden_field_tags(context, form, csrf=True):
+    if isinstance(form, BaseFormSet):
+        return "".join(form_hidden_field_tags(context, f, csrf=csrf) for f in form.forms)
     request = context["request"]
     fields = []
     if csrf:
@@ -47,7 +51,8 @@ def form_start(context, form, **attrs):
     attrs = html.form_attrs(form, **attrs)
     form_tag = "<form {}>".format(attrs)
     hidden = form_hidden_field_tags(context, form, csrf=csrf)
-    return "%s%s" % (form_tag, hidden)
+    mgmt = force_text(getattr(form, "management_form", ""))
+    return "%s%s%s" % (form_tag, hidden, mgmt)
 
 
 @ginger_tag(mark_safe=True)

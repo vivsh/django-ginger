@@ -1,7 +1,6 @@
 
 from ginger.exceptions import LoginRequired, PermissionRequired
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
 
 
 __all__ = ['PermissionRequiredMixin', 'PrivilegeRequiredMixin', 'LoginRequiredMixin',
