@@ -19,14 +19,13 @@ def field_option_tags(field):
 
 @ginger_tag(takes_context=True, mark_safe=True)
 def form_hidden_field_tags(context, form, csrf=True):
-    if isinstance(form, BaseFormSet):
-        return ""
     request = context["request"]
     fields = []
     if csrf:
         fields.append(html.form_csrf_tag(request))
-    for f in form.hidden_fields():
-        fields.append(str(f))
+    if not isinstance(form, BaseFormSet):
+        for f in form.hidden_fields():
+            fields.append(str(f))
     return "".join(fields)
 
 
