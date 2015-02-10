@@ -15,6 +15,9 @@ from ginger import ui
 def ginger_form_attributes(form, **kwargs):
     return get_form_attrs(form, **kwargs)
 
+@ginger_tag(mark_safe=True)
+def ginger_form_attrs(form, **kwargs):
+    return get_form_attrs(form, **kwargs)
 
 @ginger_tag(mark_safe=True)
 def ginger_form_slice(first=None,last=None,form=None,**kwargs):
@@ -22,20 +25,20 @@ def ginger_form_slice(first=None,last=None,form=None,**kwargs):
         form = first
         first = None
     else:
-        form = getattr(first,'form', getattr(last,'form',form)) 
+        form = getattr(first,'form', getattr(last,'form',form))
     keys = form.fields.keys()
     first = keys.index(first.name) if first else None
     last = keys.index(last.name) + 1 if last else None
     return ginger_fields(*list(form[field] for field in keys[first:last]), **kwargs)
 
-        
-@ginger_tag(mark_safe=True)        
+
+@ginger_tag(mark_safe=True)
 def ginger_fields(*fields,**kwargs):
     content = map(lambda f : ginger_field(f, **kwargs), fields)
     return "".join(content)
 
-            
-@ginger_tag(mark_safe=True)            
+
+@ginger_tag(mark_safe=True)
 def ginger_field(field, **kwargs):
     return field_to_html(field, kwargs)
 
@@ -152,3 +155,18 @@ def data_attr(name, value):
 def js_value(name, value):
     return mark_safe("<script type='text/javascript'> var %s = %s </script>" % (name, ui.as_json(value)))
 
+
+
+@filter_tag
+def local_datetime(stamp, large=True):
+    #April 3rd 2013, 10:50am
+    suffix = {
+      '1': 'st',
+      '3': 'rd'
+    }
+    month = str(stamp.month)[-1]
+    suffix = suffix.get(month, 'th')
+    fmt = "%B %d{suffix} %Y, %I:%M %p".format(suffix=suffix)
+    if not large:
+        fmt = "%B %d{suffix} %I:%M %p".format(suffix=suffix)
+    return stamp.strftime(fmt)

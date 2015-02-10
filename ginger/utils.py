@@ -29,6 +29,7 @@ __all__ = [
     'get_form_name',
     'get_form_submit_name',
     'get_url_with_modified_params',
+    'modify_url_query',
     'generate_pages',
     'calculate_age',
     'auth_login',
@@ -91,8 +92,8 @@ def get_url_with_modified_params(request, values, append=False):
     return parts._replace(query=parse.urlencode(params, True)).geturl()
 
 
-def update_url_query(url, data, append=False):
-    return
+def modify_url_query(url, **kwargs):
+    return get_url_with_modified_params(url, kwargs)
 
 
 def qualified_name(cls):

@@ -120,7 +120,7 @@ def hashdir(dirname, ext="js"):
 def get_requirejs_path():
     default_path = "bower_components/requirejs/require.js"
     requirejs_path = getattr(settings, "REQUIREJS_PATH", default_path)
-    if not asset(requirejs_path):
+    if not find_asset(requirejs_path):
         raise AttributeError("No REQUIREJS_PATH has been specified in settings")
     return requirejs_path
 
