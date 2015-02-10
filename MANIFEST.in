@@ -1,1 +1,2 @@
+include MANIFEST.in README.md DESCRIPTION.md CHANGES
 recursive-include ginger *
