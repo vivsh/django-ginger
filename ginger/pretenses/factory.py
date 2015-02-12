@@ -8,6 +8,7 @@ from django.utils import six
 from django.contrib.webdesign import lorem_ipsum as lipsum
 from django.utils.functional import cached_property
 from django.utils.text import camel_case_to_spaces
+import datetime
 
 
 __all__ = ['register']
@@ -210,10 +211,15 @@ class Factory(object):
         return value
 
     def process_date_time_field(self, field):
-        return
+        return datetime.datetime.combine(self.process_date_field(field), self.process_time_field(field))
 
-    def process_date_field(self):
-        return
+    def process_date_field(self, field):
+        return datetime.date(year=random.randint(1970, 2015),
+                             month=random.randint(1, 12),
+                             day=random.randint(1,28))
 
-    def process_point_field(self):
+    def process_time_field(self, field):
+        return datetime.time(hour=random.randint(0, 23), minute=random.randint(0,59), second=random.randint(0,59))
+
+    def process_point_field(self, field):
         return
