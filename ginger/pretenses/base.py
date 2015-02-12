@@ -8,8 +8,5 @@ variable specificity
     3.) Search by field type
 """
 
-class Tube(object):
-    pass
-
 
 

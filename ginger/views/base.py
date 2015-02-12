@@ -94,6 +94,8 @@ class GingerView(View, GingerSessionDataMixin):
 
     url_regex = None
 
+    url_prefix = None
+
     meta = ViewMetaDescriptor()
 
 

@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.template.loaders import app_directories
 from django.template.loaders import filesystem
-from django_jinja.base import env, Template
+from django_jinja.base import Template
 from django_jinja import library
 
 
@@ -39,6 +39,11 @@ JINJA2_TEMPLATE_EXTENSION = getattr(settings, 'JINJA2_TEMPLATE_EXTENSION', '.jin
 JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 
 
+def get_env():
+    from django_jinja.base import env
+    return env
+
+
 class LoaderMixin(object):
     is_usable = True
 
@@ -55,7 +60,7 @@ class LoaderMixin(object):
         if root not in JINJA2_EXCLUDE_FOLDERS or ext == JINJA2_TEMPLATE_EXTENSION:
             try:
                 template_name = self.process_template_name(template_name)
-                template = env.get_or_select_template(template_name)
+                template = get_env().get_or_select_template(template_name)
                 return template, template.filename
             except jinja2.TemplateNotFound:            
                 raise TemplateDoesNotExist(template_name)                    
@@ -71,22 +76,22 @@ class AppLoader(LoaderMixin, app_directories.Loader):
     pass
 
 def from_string(value):
-    return env.from_string(value)
+    return get_env().from_string(value)
 
 def get_template(template_name):
-    return env.get_template(template_name)
+    return get_env().get_template(template_name)
 
 
 def select_template(template_names):
-    return env.select_template(template_names)
+    return get_env().select_template(template_names)
 
 
 def get_or_select_template(templates):
-    return env.get_or_select_template(templates)
+    return get_env().get_or_select_template(templates)
 
 
 def render_to_string(template_names, context):
-    return env.get_or_select_template(template_names).render(context)
+    return get_env().get_or_select_template(template_names).render(context)
 
 
 def render_to_response(template_names, context, response_class=HttpResponse, response_kwargs=None):
@@ -105,9 +110,8 @@ def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
         func = orig_func
         name_ = name or getattr(func,'_decorated_function',func).__name__
         if template:
-            def wrapper(*args,**kwargs):
-                from django_jinja.base import env
-                t = env.get_template(template)
+            def wrapper(*args, **kwargs):
+                t = get_env().get_template(template)
                 values = orig_func(*args,**kwargs)
                 result = t.render( values )
                 result = jinja2.Markup(result)
