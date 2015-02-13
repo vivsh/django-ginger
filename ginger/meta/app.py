@@ -33,7 +33,7 @@ class Application(object):
         self.form_module = importlib.import_module("%s.forms" % self.module_name)
         self.model_module = importlib.import_module("%s.models" % self.module_name)
 
-    def make_dir(dir_name):
+    def make_dir(self, dir_name):
         try:
             os.makedirs(dir_name)
         except OSError:

@@ -2,7 +2,7 @@
 import optparse
 from django.core.management import BaseCommand
 from django.core.management.base import CommandError
-from ginger.generators import views
+from ginger.meta import app
 
 
 class Command(BaseCommand):
@@ -16,6 +16,7 @@ class Command(BaseCommand):
         if len(args) > 1:
             raise CommandError("Too many arguments. Check python manage.py help bless_app")
         app_name = args[0]
-        views.GingerApp(app_name)
+        app.Application(app_name)
+
 
 

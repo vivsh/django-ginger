@@ -42,7 +42,6 @@ class Command(BaseCommand):
     def handle(self, query, dest=None, *args, **options):
         if dest is None:
             dest = ""
-        dest = os.path.join(settings.MEDIA_ROOT, dest)
         gi = GoogleImage(dest, options["prefix"])
         results = gi.search(query, options["count"],
                   safe= not options["unsafe"],

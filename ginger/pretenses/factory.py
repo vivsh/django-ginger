@@ -1,13 +1,21 @@
 
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from django.core.files import File
 import contextlib
 import random
 import importlib
+from django.conf import settings
+from django.contrib.gis.geos.point import Point
 from django.db import models
 from django.apps import apps
-from django.utils import six
+from django.db.utils import IntegrityError
+from django.utils import timezone
+from django.utils.lru_cache import lru_cache
 from django.contrib.webdesign import lorem_ipsum as lipsum
 from django.utils.functional import cached_property
 from django.utils.text import camel_case_to_spaces
+from .utils import collect_files
 import datetime
 
 
@@ -15,14 +23,17 @@ __all__ = ['register']
 
 
 _processors = {}
+_images = None
 
 
 def register(pretense, *models):
     for m in models:
         _processors[m] = pretense
 
+
 def boolean():
     return random.choice([True, False])
+
 
 class IncompleteFactoryError(TypeError):
     pass
@@ -35,6 +46,21 @@ def impartial(obj):
     obj.partial = True
     yield
     obj.partial = False
+
+
+@lru_cache(maxsize=16)
+def get_files(conf_name, formats=None):
+    global _images
+    if _images is not None:
+        return _images
+    folder = getattr(settings, conf_name)
+    _images = []
+    return collect_files(folder, formats)
+
+
+def get_image_files():
+    return get_files("GINGER_PRETENSE_IMAGE_DIRS", ("jpg", "png", "gif", "jpeg", "bmp", "tiff", "pnga"))
+
 
 
 class Field(object):
@@ -103,7 +129,7 @@ class Factory(object):
             obj.meta = model._meta
             obj.fields = obj.meta.fields
             obj.total = obj.model.objects.count()
-            obj.highest_id = obj.model.objects.order_by("id").last().id if obj.total else 0
+            obj.highest_id = obj.model.objects.order_by("id").last().id + 1 if obj.total else 0
             obj.partial = False
             app = apps.get_app_config(obj.meta.app_label)
             name = app.module.__name__
@@ -148,7 +174,7 @@ class Factory(object):
         template = "process_%s"
         yield template % field.name
         yield template % self.snake_case(field.__class__)
-        for cls in field.__class__.mro():
+        for cls in field.__class__.__mro__:
             if issubclass(cls, models.Field):
                 yield template % self.snake_case(cls)
 
@@ -181,17 +207,50 @@ class Factory(object):
         return self.all[i]
 
     def create_all(self, limit=20):
-        for i in six.moves.range(limit):
-            self.create(self.highest_id+i)
+        i = 0
+        errors = 0
+        while i < limit:
+            try:
+                self.create(self.highest_id+i)
+                i += 1
+            except (IntegrityError, ValidationError) as ex:
+                errors += 1
+                if errors > limit * 5:
+                    raise
+            else:
+                errors = 0
 
     def get_field_value(self, field):
         return None
+
+    def process_float_field(self, field):
+        return random.uniform(0.1, 9999999999.28989)
+
+    def process_decimal_field(self, field):
+        limit = float("9"*field.max_digits)/10**field.decimal_places
+        value = random.uniform(0.1, limit)
+        return Decimal(value)
+
+    def process_null_boolean_field(self, field):
+        return boolean()
 
     def process_boolean_field(self, field):
         return boolean()
 
     def process_positive_small_integer_field(self, field):
-        return random.randint(1, 127)
+        return random.randint(1, 32767)
+
+    def process_positive_integer_field(self, field):
+        return random.randint(1, 2147483647)
+
+    def process_small_integer_field(self, field):
+        return random.randint(-32767, 32767)
+
+    def process_big_integer_field(self, field):
+        return random.randint(0, 2147483647)
+
+    def process_integer_field(self, field):
+        return random.randint(-2147483647, 2147483647)
 
     def process_char_field(self, field):
         return lipsum.sentence()[: field.max_length]
@@ -211,15 +270,44 @@ class Factory(object):
         return value
 
     def process_date_time_field(self, field):
-        return datetime.datetime.combine(self.process_date_field(field), self.process_time_field(field))
+        value = datetime.datetime.combine(self.process_date_field(field), self.process_time_field(field))
+        return timezone.make_aware(value, timezone.get_default_timezone())
 
     def process_date_field(self, field):
         return datetime.date(year=random.randint(1970, 2015),
                              month=random.randint(1, 12),
-                             day=random.randint(1,28))
+                             day=random.randint(1, 28))
 
     def process_time_field(self, field):
         return datetime.time(hour=random.randint(0, 23), minute=random.randint(0,59), second=random.randint(0,59))
 
+    def process_username(self, field):
+        word = lipsum.words(1, False)
+        return "%s%s" % (word, field.index)
+
+    def process_ip_address_field(self, field):
+        return ".".join(str(random.randint(1, 254)) for _ in range(4))
+
+    def process_generic_ip_address_field(self, field):
+        return self.process_ip_address_field(field)
+
+    def process_json_field(self, field):
+        return {}
+
+    def process_password(self, field):
+        word = lipsum.words(1, False)
+        field.instance.set_password(word)
+
     def process_point_field(self, field):
-        return
+        from geopy.distance import VincentyDistance
+        km = random.randint(100, 1000)
+        d = VincentyDistance(kilometers=km)
+        latitude = random.randint(-179, 179)
+        longitude = random.randint(-179, 179)
+        bearing = random.randint(0, 359)
+        p = d.destination((latitude, longitude),bearing)
+        return Point(x=p.longitude, y=p.latitude)
+
+    def process_image_field(self, field):
+        filename = random.choice(get_image_files())
+        return File(open(filename))
