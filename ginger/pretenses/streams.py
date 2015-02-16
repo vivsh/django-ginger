@@ -1,6 +1,6 @@
 from decimal import Decimal
 from datetime import datetime, timedelta, date, time
-from IPython.external.path._path import path
+from os import path
 from django.contrib.webdesign import lorem_ipsum as lorem
 from django.utils.lru_cache import lru_cache
 from django.core.files import File
@@ -249,4 +249,5 @@ def test_decimalfield():
 
 
 if __name__=="__main__":
-    test_float()
+    test_date()
+    test_ipaddress()
