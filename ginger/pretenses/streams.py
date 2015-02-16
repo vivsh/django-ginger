@@ -5,7 +5,31 @@ from django.contrib.webdesign import lorem_ipsum as lorem
 from django.utils.lru_cache import lru_cache
 from django.core.files import File
 from django.conf import settings
+from django.contrib.gis.geos.point import Point
 import random
+
+
+__all__= [
+    "IntegerStream",
+    "FloatStream",
+    "DateTimeStream",
+    "DateStream",
+    "TimeStream",
+    "DecimalStream",
+    "WordStream",
+    "FirstNameStream",
+    "LastNameStream",
+    "FullNameStream",
+    "PasswordRandomStream",
+    "PasswordStream",
+    "ParagraphStream",
+    "SentenceStream",
+    "IPAddressStream",
+    "ImageStream",
+    "PointStream",
+    "ChoiceStream"
+          ]
+
 
 _images = None
 
@@ -42,7 +66,7 @@ def collect_files(folders, extensions=None):
 
 
 
-class Paragraph(object):
+class ParagraphStream(object):
 
     def __init__(self, minimum=1, maximum=10, html=False):
         self.minimum = minimum
@@ -62,7 +86,7 @@ class Paragraph(object):
         return result
 
 
-class Integer(object):
+class IntegerStream(object):
 
     def __init__(self, start, end):
         self.start = start
@@ -72,13 +96,13 @@ class Integer(object):
         return random.randint(self.start,self.end)
 
 
-class Sentence(object):
+class SentenceStream(object):
 
     def next(self, field):
         return lorem.sentence()
 
 
-class FullName(object):
+class FullNameStream(object):
 
     def next(self, field):
         first_name = lorem.words(1, False)
@@ -86,17 +110,17 @@ class FullName(object):
         return "%s %s"%(first_name,last_name)
 
 
-class FirstName(object):
+class FirstNameStream(object):
     def next(self, field):
         return lorem.words(1,False)
 
 
-class LastName(FirstName):
+class LastNameStream(FirstNameStream):
     def next(self, field):
         return lorem.words(1,False)
 
 
-class DateTime(object):
+class DateTimeStream(object):
     def __init__(self, start=None, end=None, aware=True):
         if start is None:
             start = datetime(1900, 1, 1)
@@ -118,20 +142,20 @@ class DateTime(object):
         return result
 
 
-class Date(DateTime):
+class DateStream(DateTimeStream):
     def __init__(self, start=None, end=None):
         if start is None:
             start = date(1900,1,1)
         if end is None:
             end = date.now()
-        super(Date, self).__init__(datetime.combine(start, time()), datetime.combine(end, time()), False)
+        super(DateStream, self).__init__(datetime.combine(start, time()), datetime.combine(end, time()), False)
 
     def next(self, field):
-        result = super(Date, self).next(field)
+        result = super(DateStream, self).next(field)
         return result.date()
 
 
-class Time(DateTime):
+class TimeStream(DateTimeStream):
     def __init__(self, start=None, end=None):
         if start is None:
             start = time(0, 0, 0)
@@ -141,27 +165,27 @@ class Time(DateTime):
             raise ValueError
         start = self.to_datetime(start)
         end = self.to_datetime(end)
-        super(Time, self).__init__(start, end, False)
+        super(TimeStream, self).__init__(start, end, False)
 
     @staticmethod
     def to_datetime(stamp):
         return datetime.combine(date.today(), stamp)
 
     def next(self, field):
-        result = super(Time, self).next(field)
+        result = super(TimeStream, self).next(field)
         return result.time()
 
 
-class Float(Integer):
+class FloatStream(IntegerStream):
     def __init__(self, start, end):
-        super(Float, self).__init__(start, end)
+        super(FloatStream, self).__init__(start, end)
 
     def next(self, field):
         return random.uniform(0.1, 9999999999.28989)
 
 
-class Words(object):
-    def __init__(self, n=40):
+class WordStream(object):
+    def __init__(self, n=4):
         self.n = n
 
     def next(self, field):
@@ -169,85 +193,175 @@ class Words(object):
         return result
 
 #
-class IPAddress(object):
+class IPAddressStream(object):
     def next(self, field):
         return ".".join(str(random.randint(1, 254)) for _ in range(4))
 
-class ImageField(object):
+class ImageStream(object):
+    def __init__(self, path):
+        self.path = path
+
     def next(self, field):
-        filename = random.choice(get_image_files())
+        filename = random.choice(collect_files(self.path, ("jpg", "png", "gif", "jpeg", "bmp", "tiff", "pnga")))
         return File(open(filename))
 
 
-class DecimalField(object):
+class DecimalStream(object):
     def next(self, field):
         limit = float("9"*field.max_digits)/10**field.decimal_places
         value = random.uniform(0.1, limit)
         return Decimal(value)
+
+
+class PasswordStream(object):
+    def __init__(self, word):
+        self.word = word
+
+    def next(self, field):
+        from django.contrib.auth.hashers import make_password
+        return make_password(self.word)
+
+
+class PasswordRandomStream(object):
+    def __init__(self, max_length=32, min_length=1, specials=1, capitals = 1):
+        self.max_length = max_length
+        self.min_length = min_length
+        self.specials = specials
+        self.capitals = capitals
+        if max_length < min_length:
+            raise ValueError("max length should be greater than min length")
+
+    def next(self, field):
+        list_special_char = ['!','@','#','$','%','^','&','*','(',')','+','_','~','<','>','|','{','}','[',']','`']
+        password = ""
+        size = random.randint(self.min_length, self.max_length)
+        while len(password) <  size:
+            password += lorem.words(1, common=False)
+        password = password[:size]
+        result = list(password)
+        positions = set(range(len(password)))
+
+        specials = self.specials % size
+        special_positions = random.sample(range(len(password)), specials)
+        positions.difference_update(special_positions)
+
+        for i in special_positions:
+            result[i] = random.choice(list_special_char)
+
+        capitals = self.capitals % len(positions)
+        for i in random.sample(positions, capitals):
+            result[i] = result[i].upper()
+
+        return "".join(result)
+
+class ChoiceStream(object):
+    def __init__(self, choices):
+        self.choices = choices
+
+    def next(self, field):
+        return random.choice(self.choices)
+
+
+class PointStream(object):
+    def __init__(self, longitude=None, latitude=None, radius=None):
+        self.longitude = longitude
+        self.latitude = latitude
+        self.radius = radius
+
+    def next(self, field):
+        if self.longitude is None:
+            self.longitude = random.randint(-179, 179)
+        if self.latitude is None:
+            self.latitude = random.randint(-179, 179)
+        if self.radius is None:
+            self.radius = random.randint(100, 1000)
+        from geopy.distance import VincentyDistance
+        m = random.randint(100, 1000)
+        d = VincentyDistance(meters=m)
+        bearing = random.randint(0, 359)
+        p = d.destination((self.latitude, self.longitude),bearing)
+        return Point(x=p.longitude, y=p.latitude)
 
 class Dummy:
     max_length = 10000
     max_digits = 10
     decimal_places=2
 
+
 def test_name():
-    n = FullName()
+    n = FullNameStream()
     print n.next(None)
 
 def test_paragraph():
-    p = Paragraph(1,5, html=True)
+    p = ParagraphStream(1,5, html=True)
     for i in range(5):
         assert len(p.next(Dummy())) < 100, "Length is invalid"
 
 def test_integer():
-    i = Integer(3,500)
+    i = IntegerStream(3,500)
     print i.next(None)
 
 def test_sentence():
-    s = Sentence()
+    s = SentenceStream()
     print s.next(None)
 
 def test_firstname():
-    f = FirstName()
+    f = FirstNameStream()
     print f.next(None)
 
 def test_lastname():
-    f = LastName()
+    f = LastNameStream()
     print f.next(None)
 
 def test_datetime():
-    d = DateTime(aware=False, start=datetime(2014, 5, 2), end=datetime(2015, 4, 2))
+    d = DateTimeStream(aware=False, start=datetime(2014, 5, 2), end=datetime(2015, 4, 2))
     print d.next(None)
 
 def test_date():
-    d = Date(start=date(2011, 5, 3), end=date(2015, 1, 1))
+    d = DateStream(start=date(2011, 5, 3), end=date(2015, 1, 1))
     print d.next(None)
 
 def test_time():
-    d = Time(start=time(1, 35, 0), end=time(23, 59, 59))
+    d = TimeStream(start=time(1, 35, 0), end=time(23, 59, 59))
     print d.next(None)
 
 def test_float():
-    f = Float(start=1, end=99)
+    f = FloatStream(start=1, end=99)
     print f.next(None)
 
 def test_words():
-    w = Words()
+    w = WordStream()
     print w.next(None)
 
 def test_ipaddress():
-    ip = IPAddress()
+    ip = IPAddressStream()
     print ip.next(None)
 
-def test_imagefield():
-    img = ImageField()
+def test_imagestream():
+    img = ImageStream()
     print img.next(None)
 
-def test_decimalfield():
-    dec = DecimalField()
+def test_decimalstream():
+    dec = DecimalStream()
     print dec.next(Dummy)
+
+def test_passwordrandomstream():
+    pwd = PasswordRandomStream(20, 5,100,100)
+    print pwd.next(None)
+
+def test_passwordstream():
+    pwd = PasswordStream()
+    print pwd.next(None)
+
+def test_pointstream():
+    p = PointStream(latitude=41.11, longitude=71.89)
+    print p.next(None)
+
+
+
+
+
 
 
 if __name__=="__main__":
-    test_date()
-    test_ipaddress()
+    test_pointstream()

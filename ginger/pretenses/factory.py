@@ -131,16 +131,21 @@ class Factory(object):
             obj.total = obj.model.objects.count()
             obj.highest_id = obj.model.objects.order_by("id").last().id + 1 if obj.total else 0
             obj.partial = False
-            app = apps.get_app_config(obj.meta.app_label)
-            name = app.module.__name__
-            try:
-                importlib.import_module("%s.pretenses" % name)
-            except ImportError:
-                pass
+            Factory.load_pretenses()
         else:
             obj = cls.__cache[model]
         obj.limit = limit
         return obj
+
+    @staticmethod
+    def load_pretenses():
+        for app in apps.get_app_configs():
+            name = app.module.__name__
+            module_name = "%s.pretenses" % name
+            try:
+                importlib.import_module(module_name)
+            except ImportError as ex:
+                pass
 
     @cached_property
     def processors(self):
@@ -151,7 +156,7 @@ class Factory(object):
                 result.append(k)
         result.sort(key=lambda a: classes.index(a), reverse=True)
         result.append(self)
-        return result
+        return [_processors[k] for k in result if k in _processors]
 
     def find_method(self, field, default):
         for handler in self.processors:
