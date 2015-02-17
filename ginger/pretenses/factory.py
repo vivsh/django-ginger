@@ -231,7 +231,7 @@ class Factory(object):
 
     @cached_property
     def all(self):
-        if self.limit < self.total:
+        if self.limit >= self.total:
             self.create_all(self.limit-self.total)
         return list(self.model.objects.all())
 
