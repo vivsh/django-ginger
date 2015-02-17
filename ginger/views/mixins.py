@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 
 
 __all__ = ['PermissionRequiredMixin', 'PrivilegeRequiredMixin', 'LoginRequiredMixin',
-           'StaffRequiredMixin', 'SuperUserRequiredMixin']
+           'StaffRequiredMixin', 'SuperUserRequiredMixin', 'OwnerRequiredMixin']
 
 
 class PermissionRequiredMixin(object):
