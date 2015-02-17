@@ -178,7 +178,7 @@ class GingerSearchView(GingerFormView):
     page_parameter_name = "page"
     page_limit = 10
     paginate = True
-    context_object_key = "object_list"
+    context_object_list_key = "object_list"
 
     def get_form_kwargs(self, form_key):
         ctx = super(GingerSearchView, self).get_form_kwargs(form_key)
@@ -192,7 +192,7 @@ class GingerSearchView(GingerFormView):
     def get_context_data(self, **kwargs):
         ctx = super(GingerSearchView, self).get_context_data(**kwargs)
         form = ctx["form"]
-        ctx[self.context_object_key] = form.result
+        ctx[self.context_object_list_key] = form.result
         return ctx
 
     def can_submit(self):
