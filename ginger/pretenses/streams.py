@@ -234,7 +234,7 @@ class RandomPasswordStream(object):
         list_special_char = ['!','@','#','$','%','^','&','*','(',')','+','_','~','<','>','|','{','}','[',']','`']
         password = ""
         size = random.randint(self.min_length, self.max_length)
-        while len(password) <  size:
+        while len(password) < size:
             password += lorem.words(1, common=False)
         password = password[:size]
         result = list(password)

@@ -98,11 +98,13 @@ FORM_TEMPLATE = """
 {% extends "${app_name}/base.html" %}
 {% block ${app_name}_content %}
     {{ form_start(form) }}
-        {{form.as_p()}}
+        {%for field in form %}
+            {{ field_tag(field) }}
+        {%endfor %}
         <div>
             <button type="submit"> Submit </button>
         </div>
-    {{form_end()}}
+    {{form_end(form)}}
 {% endblock %}
 """
 
@@ -122,20 +124,22 @@ LIST_TEMPLATE = """
     <ul>
     {% for object in object_list %}
         <li>
-            {%include "$app_name/include/$resource_name_item.html"%}
+            {%include "$app_name/include/${resource_name}_item.html"%}
         </li>
     {%else %}
         <li class='empty'>
             No results found.
         </li>
     {% endfor %}
-
+    <nav>
+        {{ page_tag(object_list) }}
+    </nav>
 {% endblock %}
 """
 
 LIST_ITEM_TEMPLATE = """
 <div>
-${object}
+ {{object}}
 </div>
 """
 
@@ -144,7 +148,7 @@ ${object}
 class Template(object):
 
     def __init__(self, filename, content):
-        self.content = content.strip()
+        self.content = content
         self.template = string.Template(content)
         self.filename = filename
 
@@ -162,4 +166,4 @@ class Template(object):
 
     def render(self, context):
         content = self.template.safe_substitute(context)
-        return utils.create_file(self.filename, content)
+        return utils.create_file(self.filename, content.strip())

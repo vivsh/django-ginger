@@ -1,4 +1,5 @@
 
+
 import itertools
 
 
@@ -12,11 +13,16 @@ def set_indentation(line, width):
 
 def builtins():
     try:
-        import __builtins__
-        return __builtins__
-    except ImportError:
-        import builtins
-        return builtins
+        from django.utils import six
+    except ImportError as ex:
+        import six
+    return six.moves.builtins
+    # try:
+    #     import __builtin__
+    #     return __builtin__
+    # except ImportError:
+    #     import builtins
+    #     return builtins
 
 
 def clean_lines(content):

@@ -43,6 +43,10 @@ class Code(object):
         return ".".join(parts)
 
     @property
+    def root(self):
+        return self.parent.root
+
+    @property
     def full_name(self):
         names = []
         if self.parent:
@@ -63,11 +67,10 @@ class Code(object):
     def save(self):
         obj = self.code
         self.export(self)
-        if not obj:
+        if obj is None and self.source is None:
             source = self.parent.source
             source.add_child(self, gap=self.vertical_gap)
             source.save()
-            self.reload()
         else:
             self.patch()
             warnings.warn("%s already exists" % self.full_name)
@@ -116,7 +119,8 @@ class Value(object):
             return repr(self.value)
         if isinstance(self.value, (float, int)):
             return str(self.value)
-        return self.export(self.value)
+        result = self.export(self.value)
+        return result if not isinstance(result, (list, tuple)) else repr(result)
 
     def __str__(self):
         return self.render()
@@ -252,6 +256,11 @@ class Function(Block):
 class Class(Block):
 
     def __init__(self, name, bases=None, decorators=None):
+        if inspect.isclass(name):
+            cls = name
+            name = cls.__name__
+            if bases is None:
+                bases = cls.__bases__
         super(Class, self).__init__(name)
         self.bases = bases or [object]
         self.decorators = decorators or []
@@ -325,8 +334,11 @@ class Exporter(object):
         if obj in exports:
             return exports[obj]
         if isinstance(obj, Block):
-            exports[obj] = obj.local_name
-            return obj.local_name
+            if obj.root is self.module:
+                exports[obj] = obj.local_name
+                return obj.local_name
+            else:
+                return self.add(obj.code)
         name = obj.__name__.split(".")[-1]
         if getattr(builtins, name, None) is obj:
             return name
@@ -407,6 +419,10 @@ class Module(Block):
         super(Module, self).__init__(name)
         self.exporter = Exporter(module)
 
+    @property
+    def root(self):
+        return self.code
+
     def export(self, obj):
         if isinstance(obj, dict):
             return {k: self.export(v) for (k, v) in obj.items()}
@@ -422,10 +438,10 @@ class Module(Block):
             stmt.parent = self
             self.source.prepend(stmt)
         self.source.save()
+        self.reload()
 
     def reload(self):
-        return
-        # self.code_obj = reload(self.code_obj)
+        self.code_obj = reload(self.code_obj)
 
     @property
     def imports(self):

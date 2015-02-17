@@ -33,6 +33,9 @@ class ViewMeta(ViewInfo):
             regex = self.view.create_url_regex()
         if regex is None:
             raise ImproperlyConfigured("%s cannot have a None url pattern" % self.view.__name__)
+        prefix = self.view.url_prefix
+        if prefix:
+            regex = "%s%s" % (prefix, regex)
         return regex
 
     def as_url(self, **kwargs):

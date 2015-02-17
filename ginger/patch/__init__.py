@@ -1,6 +1,7 @@
 
 import itertools
 from . import codes
+import time
 
 __all__ = ['Module']
 
@@ -42,11 +43,22 @@ class _Class(_Base):
     def __init__(self, obj):
         self._obj = obj
 
+    def Class(self, *args, **kwargs):
+        args, kwargs = self._convert((args, kwargs))
+        obj = codes.Class(*args, **kwargs)
+        self._obj.add(obj)
+        return _Class(obj)
+
     def Def(self, *args, **kwargs):
         args, kwargs = self._convert((args, kwargs))
         obj = codes.Function(*args, **kwargs)
         self._obj.add(obj)
         return _Def(obj)
+
+    def Attr(self, name, value):
+        name, value = self._convert((name, value))
+        obj = codes.Assign(name, value)
+        self._obj.add(obj)
 
 
 class Module(_Class):
@@ -54,12 +66,6 @@ class Module(_Class):
     def __init__(self, module):
         self._obj = codes.Module(module)
 
-    def Class(self, *args, **kwargs):
-        args, kwargs = self._convert((args, kwargs))
-        obj = codes.Class(*args, **kwargs)
-        self._obj.add(obj)
-        return _Class(obj)
-
     def save(self):
-        return self._obj.save()
+        self._obj.save()
 

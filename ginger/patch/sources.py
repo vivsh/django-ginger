@@ -190,9 +190,12 @@ class SymbolSource(object):
     def parse(self, node, source):
         self.source = source
         self.node = node
-        self.name = getattr(node, 'name', None)
+        self.parse_name()
         self.parse_position()
         self.parse_children()
+
+    def parse_name(self):
+        self.name = getattr(self.node, 'name', None)
 
     def parse_position(self):
         node = self.node
@@ -224,16 +227,26 @@ class SymbolSource(object):
     def make_symbol(self, class_, child):
         name = getattr(child, "name", None)
         for sym in self.symbols[:]:
-            if class_ in (ClassSource, FunctionSource) and isinstance(sym, class_) and sym.name == name:
+            if class_ in (ClassSource, FunctionSource, AssignSource) and isinstance(sym, class_) and sym.name == name:
                 sym.parse(child, self.source)
                 return sym
         return class_(child, self.source)
+
+    def handle_assign(self, child):
+        if len(child.targets):
+            return self.make_symbol(AssignSource, child)
 
     def handle_classdef(self, child):
         return self.make_symbol(ClassSource, child)
 
     def handle_functiondef(self, node):
         return self.make_symbol(FunctionSource, node)
+
+
+class AssignSource(SymbolSource):
+
+     def parse_name(self):
+         self.name = self.node.targets[0].id
 
 
 class BlockSourceMixin(object):
