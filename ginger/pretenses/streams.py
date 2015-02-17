@@ -31,7 +31,9 @@ __all__ = [
     "FileStream",
     "ForeignKeyStream",
     "OneToOneStream",
-    "ManyToManyStream"
+    "ManyToManyStream",
+    "DefaultValueStream",
+    "ValueStream",
 ]
 
 
@@ -260,6 +262,19 @@ class ChoiceStream(object):
 
     def next(self, field):
         return random.choice(self.choices)
+
+
+class ValueStream(object):
+    def __init__(self, value):
+        self.value = value
+
+    def next(self, field):
+        return self.value
+
+
+class DefaultValueStream(object):
+    def next(self, field):
+        return field.default
 
 
 class PointStream(object):
