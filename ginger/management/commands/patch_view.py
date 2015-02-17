@@ -5,7 +5,9 @@ import importlib
 
 from django.core.management import BaseCommand
 from django.core.management.base import CommandError
-from views.base import GingerView
+from django.utils.module_loading import import_string
+from ginger.views import GingerView, utils
+from ginger.meta import views
 
 
 class Command(BaseCommand):
@@ -31,15 +33,18 @@ class Command(BaseCommand):
         if len(args) > 1:
             raise CommandError("Too many arguments. Check python manage.py help create_view")
         view = args[0]
-        head, tail = view.rsplit(".", 1)
-        module = importlib.import_module(head)
+
         try:
-            views = [getattr(module, tail)]
-        except AttributeError:
-            module = importlib.import_module(view)
-            views = inspect.getmembers(module, predicate=lambda a: isinstance(a, GingerView))
-            views = [pair[1] for pair in views]
-        for view in views:
+            view_class = importlib.import_module(view)
+        except ImportError:
+            view_class = import_string(view)
+
+        if inspect.ismodule(view_class):
+            view_classes = utils.find_views(view_class)
+        else:
+            view_classes = [view_class]
+
+        for view in view_classes:
             app = views.ViewPatch(view)
             app.patch()
 

@@ -54,9 +54,13 @@ class ViewPatch(object):
         if model:
             return model
         parts = self.meta.resource_name.split("_")
+        app_label = self.app.label
         while parts:
             class_name = "".join(p.capitalize() for p in parts)
-            model = next((m for m in apps.get_models() if m.__name__ == class_name), None)
+            try:
+                model = apps.get_model(app_label, class_name)
+            except LookupError:
+                model = next((m for m in apps.get_models() if m.__name__ == class_name), None)
             if model:
                 return model
             parts.pop(0)
@@ -131,9 +135,6 @@ class ViewPatch(object):
                                                                          self.meta.resource_name)))
 
     def patch_template_view(self):
-        with self.class_patch() as cls:
-            cls.Def("get_thing")
-            cls.Attr("name", "hello")
         self.create_template(templates.SIMPLE_TEMPLATE)
 
     def __str__(self):

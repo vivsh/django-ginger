@@ -168,7 +168,7 @@ class Assign(Code):
 
     def render(self, indentation=0):
         value = str(self.value)
-        line = "%s = %s" % (self.name, value)
+        line = "%s = %s\n" % (self.name, value)
         return indent(line, indentation)
 
 
