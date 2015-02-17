@@ -1,69 +1,61 @@
 
-import os
-from ginger import utils
+from django.utils.module_loading import import_string
+from ginger import views as generics
+from django.utils import six
+from . import templates
+from .app import Application
 
 
-class ViewInfo(object):
+class ViewPatch(object):
 
-    def __init__(self, app_name, view_name):
-        self.app_name = app_name
-        self.view_name = view_name
+    def __init__(self, view_class):
+        if isinstance(view_class, six.string_types):
+            view_class = import_string(view_class)
+        self.view_class = view_class
+        self.meta = view_class.meta
+        self.app = Application(self.meta.app.app_label)
+
+    def kind(self):
+        return "template"
+        kinds = {
+            generics.GingerTemplateView: "template",
+            generics.GingerFormView: "form",
+            generics.GingerNewView: "new",
+            generics.GingerDetailView: "detail",
+            generics.GingerEditView: "edit",
+            generics.GingerDeleteView: "edit",
+            generics.GingerSearchView: "search"
+        }
+
+    def get_model(self):
+        view = self.get_view_class()
+        return view.model
+
+    def patch(self):
+        kind = self.kind()
+        if kind == "template":
+            self.patch_template_view()
+        if kind == "form":
+            pass
+
+    def patch_form_view(self):
+        pass
+
+    def patch_template_view(self):
+        context = {
+            "app_name": self.app.label
+        }
+        templates.Template(self.meta.template_path, templates.SIMPLE_TEMPLATE).render(context)
 
 
-    def __init__(self, app, view_name):
-        super(ViewInfo, self).__init__()
-        self.app = app
-        self.view_name = view_name
-        name = utils.camel_to_underscore(self.view_name)
-        banned = {"view", "wizard"}
-        self.url_name = "_".join(w for w in name.split("_") if w and w not in banned)
-
-    @property
-    def template_dir(self):
-        folder = self.app.path
-        return os.path.join(folder, "templates")
-
-    @property
-    def template_name(self):
-        name = "%s/%s.html" % (self.app.label, self.url_name)
-        return name
-
-    @property
-    def template_path(self):
-        return os.path.join(self.template_dir, self.template_name)
-
-    @property
-    def form_name(self):
-        parts = self.url_name.split("_")
-        parts.append("Form")
-        return "".join(p.capitalize() for p in parts)
-
-    @property
-    def view_module_name(self):
-        return "%s.views" % (self.app.module.__name__, )
-
-    @property
-    def form_module_name(self):
-        return "%s.forms" % (self.app.module.__name__, )
-
-    @property
-    def view_class_name(self):
-        return "%sView" % "".join(p.capitalize() for p in self.url_name.split("_"))
-
-    @property
-    def resource_name(self):
-        return "_".join(self.url_name.split("_")[:-1])
-
-    @property
-    def form_path(self):
-        return os.path.join(self.app.path, "forms.py")
-
-    @property
-    def verb(self):
-        return self.url_name.split("_")[-1]
-
-    @property
-    def url_verb(self):
-        verb = self.verb
-        return verb if verb not in {"home", "index", "list", "detail", "default"} else ""
-
+    def __str__(self):
+        return str(dict(
+            app_label=self.app.label,
+            template_dir=self.template_dir,
+            template_name=self.template_name,
+            template_path=self.template_path,
+            resource_name=self.resource_name,
+            form_name=self.form_name,
+            form_path=self.form_path,
+            verb=self.verb
+        ))

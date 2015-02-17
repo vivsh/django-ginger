@@ -1,3 +1,3 @@
 
-from .factory import register, Factory
+from .factory import register, generate
 from .streams import *

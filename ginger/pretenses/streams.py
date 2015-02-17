@@ -1,15 +1,15 @@
+
 from decimal import Decimal
 from datetime import datetime, timedelta, date, time
-from os import path
 from django.contrib.webdesign import lorem_ipsum as lorem
-from django.utils.lru_cache import lru_cache
 from django.core.files import File
-from django.conf import settings
 from django.contrib.gis.geos.point import Point
 import random
 
+from . import utils
 
-__all__= [
+
+__all__ = [
     "IntegerStream",
     "FloatStream",
     "DateTimeStream",
@@ -20,50 +20,54 @@ __all__= [
     "FirstNameStream",
     "LastNameStream",
     "FullNameStream",
-    "PasswordRandomStream",
+    "RandomPasswordStream",
     "PasswordStream",
     "ParagraphStream",
     "SentenceStream",
     "IPAddressStream",
-    "ImageStream",
     "PointStream",
-    "ChoiceStream"
-          ]
+    "ChoiceStream",
+    "ImageStream",
+    "FileStream",
+    "ForeignKeyStream",
+    "OneToOneStream",
+    "ManyToManyStream"
+]
 
 
-_images = None
+class IntegerStream(object):
+
+    def __init__(self, start=0, end=255):
+        self.start = start
+        self.end = end
+
+    def next(self, field):
+        return random.randint(self.start, self.end)
 
 
-def get_image_files():
-    return get_files("GINGER_PRETENSE_IMAGE_DIRS", ("jpg", "png", "gif", "jpeg", "bmp", "tiff", "pnga"))
+class FloatStream(IntegerStream):
 
-@lru_cache(maxsize=16)
-def get_files(conf_name, formats=None):
-    global _images
-    if _images is not None:
-        return _images
-    folder = getattr(settings, conf_name)
-    _images = []
-    return collect_files(folder, formats)
+    def __init__(self, start, end):
+        super(FloatStream, self).__init__(start, end)
 
-def process_image_field(self, field):
-        filename = random.choice(get_image_files())
-        return File(open(filename))
+    def next(self, field):
+        return random.uniform(0.000001, 9999999999.99999999)
 
-def collect_files(folders, extensions=None):
-    _images = []
-    if not isinstance(folders, (tuple, list)):
-        folders = (folders, )
-    for folder in folders:
-        for root, dirs, files in os.walk(folder):
-            for f in files:
-                _, ext = path.splitext(f)
-                ext = ext.strip(".").lower()
-                if extensions is None or ext in extensions:
-                    filename = path.join(root, f)
-                    _images.append(filename)
-    return _images
 
+class WordStream(object):
+
+    def __init__(self, n=4):
+        self.n = n
+
+    def next(self, field):
+        result = lorem.words(self.n, common=False)
+        return result
+
+
+class SentenceStream(object):
+
+    def next(self, field):
+        return lorem.sentence()
 
 
 class ParagraphStream(object):
@@ -86,41 +90,26 @@ class ParagraphStream(object):
         return result
 
 
-class IntegerStream(object):
-
-    def __init__(self, start, end):
-        self.start = start
-        self.end = end
-
-    def next(self, field):
-        return random.randint(self.start,self.end)
-
-
-class SentenceStream(object):
-
-    def next(self, field):
-        return lorem.sentence()
-
-
 class FullNameStream(object):
 
     def next(self, field):
         first_name = lorem.words(1, False)
         last_name = lorem.words(1, False)
-        return "%s %s"%(first_name,last_name)
+        return "%s %s" % (first_name,last_name)
 
 
 class FirstNameStream(object):
+
     def next(self, field):
         return lorem.words(1,False)
 
 
 class LastNameStream(FirstNameStream):
-    def next(self, field):
-        return lorem.words(1,False)
+    pass
 
 
 class DateTimeStream(object):
+
     def __init__(self, start=None, end=None, aware=True):
         if start is None:
             start = datetime(1900, 1, 1)
@@ -143,12 +132,14 @@ class DateTimeStream(object):
 
 
 class DateStream(DateTimeStream):
+
     def __init__(self, start=None, end=None):
         if start is None:
-            start = date(1900,1,1)
+            start = date(1900, 1, 1)
         if end is None:
             end = date.now()
-        super(DateStream, self).__init__(datetime.combine(start, time()), datetime.combine(end, time()), False)
+        super(DateStream, self).__init__(datetime.combine(start, time()),
+                                            datetime.combine(end, time()), False)
 
     def next(self, field):
         result = super(DateStream, self).next(field)
@@ -156,6 +147,7 @@ class DateStream(DateTimeStream):
 
 
 class TimeStream(DateTimeStream):
+
     def __init__(self, start=None, end=None):
         if start is None:
             start = time(0, 0, 0)
@@ -163,8 +155,7 @@ class TimeStream(DateTimeStream):
             end = time(23, 59, 59)
         if start > end:
             raise ValueError
-        start = self.to_datetime(start)
-        end = self.to_datetime(end)
+        start, end = map(self.to_datetime, (start, end))
         super(TimeStream, self).__init__(start, end, False)
 
     @staticmethod
@@ -176,54 +167,62 @@ class TimeStream(DateTimeStream):
         return result.time()
 
 
-class FloatStream(IntegerStream):
-    def __init__(self, start, end):
-        super(FloatStream, self).__init__(start, end)
-
-    def next(self, field):
-        return random.uniform(0.1, 9999999999.28989)
-
-
-class WordStream(object):
-    def __init__(self, n=4):
-        self.n = n
-
-    def next(self, field):
-        result = lorem.words(self.n, common=False)
-        return result
-
-#
 class IPAddressStream(object):
+
     def next(self, field):
         return ".".join(str(random.randint(1, 254)) for _ in range(4))
 
+
 class ImageStream(object):
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, paths):
+        self.folder = paths
 
     def next(self, field):
-        filename = random.choice(collect_files(self.path, ("jpg", "png", "gif", "jpeg", "bmp", "tiff", "pnga")))
+        filename = utils.get_random_image(self.folder)
+        return File(open(filename))
+
+
+class FileStream(object):
+    
+    def __init__(self, paths, extensions=None):
+        self.folders = paths
+        self.extensions = extensions
+
+    def next(self, field):
+        filename = utils.get_random_file(self.folders, self.extensions)
         return File(open(filename))
 
 
 class DecimalStream(object):
+
+    def __init__(self, start=None, end=None):
+        if start is None:
+            start = 0.0
+        if end is None:
+            end = 9999999999.999999
+        self.start = int(start)
+        self.end = int(end)
+
     def next(self, field):
-        limit = float("9"*field.max_digits)/10**field.decimal_places
-        value = random.uniform(0.1, limit)
-        return Decimal(value)
+        value = random.randint(self.start, self.end)
+        value = str(value)[:field.max_digits]
+        return Decimal(value)/10**field.decimal_places
 
 
 class PasswordStream(object):
+
     def __init__(self, word):
+        from django.contrib.auth.hashers import make_password
         self.word = word
+        self.hash_code = make_password(self.word)
 
     def next(self, field):
-        from django.contrib.auth.hashers import make_password
-        return make_password(self.word)
+        return self.hash_code
 
 
-class PasswordRandomStream(object):
-    def __init__(self, max_length=32, min_length=1, specials=1, capitals = 1):
+class RandomPasswordStream(object):
+
+    def __init__(self, max_length=32, min_length=1, specials=1, capitals=1):
         self.max_length = max_length
         self.min_length = min_length
         self.specials = specials
@@ -254,6 +253,7 @@ class PasswordRandomStream(object):
 
         return "".join(result)
 
+
 class ChoiceStream(object):
     def __init__(self, choices):
         self.choices = choices
@@ -269,99 +269,38 @@ class PointStream(object):
         self.radius = radius
 
     def next(self, field):
-        if self.longitude is None:
-            self.longitude = random.randint(-179, 179)
-        if self.latitude is None:
-            self.latitude = random.randint(-179, 179)
-        if self.radius is None:
-            self.radius = random.randint(100, 1000)
         from geopy.distance import VincentyDistance
-        m = random.randint(100, 1000)
-        d = VincentyDistance(meters=m)
+        longitude = random.randint(-179, 179) if self.longitude is None else self.longitude
+        latitude = random.randint(-179, 179) if self.latitude is None else self.latitude
+        radius = random.randint(100, 6000) if self.radius is None else self.radius
+        d = VincentyDistance(kilometers=radius)
         bearing = random.randint(0, 359)
-        p = d.destination((self.latitude, self.longitude),bearing)
+        p = d.destination((latitude, longitude), bearing)
         return Point(x=p.longitude, y=p.latitude)
 
-class Dummy:
-    max_length = 10000
-    max_digits = 10
-    decimal_places=2
+
+class ForeignKeyStream(object):
+    def __init__(self, queryset):
+        self.queryset = queryset
+        self.total = len(self.queryset)
+
+    def next(self, field):
+        i = random.randint(0, self.total-1)
+        return self.queryset[i]
 
 
-def test_name():
-    n = FullNameStream()
-    print n.next(None)
-
-def test_paragraph():
-    p = ParagraphStream(1,5, html=True)
-    for i in range(5):
-        assert len(p.next(Dummy())) < 100, "Length is invalid"
-
-def test_integer():
-    i = IntegerStream(3,500)
-    print i.next(None)
-
-def test_sentence():
-    s = SentenceStream()
-    print s.next(None)
-
-def test_firstname():
-    f = FirstNameStream()
-    print f.next(None)
-
-def test_lastname():
-    f = LastNameStream()
-    print f.next(None)
-
-def test_datetime():
-    d = DateTimeStream(aware=False, start=datetime(2014, 5, 2), end=datetime(2015, 4, 2))
-    print d.next(None)
-
-def test_date():
-    d = DateStream(start=date(2011, 5, 3), end=date(2015, 1, 1))
-    print d.next(None)
-
-def test_time():
-    d = TimeStream(start=time(1, 35, 0), end=time(23, 59, 59))
-    print d.next(None)
-
-def test_float():
-    f = FloatStream(start=1, end=99)
-    print f.next(None)
-
-def test_words():
-    w = WordStream()
-    print w.next(None)
-
-def test_ipaddress():
-    ip = IPAddressStream()
-    print ip.next(None)
-
-def test_imagestream():
-    img = ImageStream()
-    print img.next(None)
-
-def test_decimalstream():
-    dec = DecimalStream()
-    print dec.next(Dummy)
-
-def test_passwordrandomstream():
-    pwd = PasswordRandomStream(20, 5,100,100)
-    print pwd.next(None)
-
-def test_passwordstream():
-    pwd = PasswordStream()
-    print pwd.next(None)
-
-def test_pointstream():
-    p = PointStream(latitude=41.11, longitude=71.89)
-    print p.next(None)
+class OneToOneStream(ForeignKeyStream):
+    pass
 
 
+class ManyToManyStream(object):
+    def __init__(self, queryset, limit=None):
+        self.queryset = queryset
+        self.total = len(self.queryset)
+        self.limit = limit
 
-
-
-
-
-if __name__=="__main__":
-    test_pointstream()
+    def next(self, field):
+        size = self.limit if self.limit is not None else random.randint(0, self.total-1)
+        i = random.randint(0, self.total-1)
+        items = self.queryset[i: i+size]
+        return items

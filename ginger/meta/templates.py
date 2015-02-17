@@ -1,4 +1,8 @@
 
+from os import path
+from . import utils
+import string
+
 
 VIEWS_MODULE = """
 from ginger import views as generics
@@ -41,96 +45,121 @@ from django.contrib import admin
 
 
 BASE_TEMPLATE = """
-{{% extends "base.html" %}}
-{{% block content %}}
-    {{% block {app_name}_content %}}
+{% extends "base.html" %}
+{% block content %}
+    {% block ${app_name}_content %}
 
-    {{% endblock %}}
-{{% endblock %}}
+    {% endblock %}
+{% endblock %}
 
 """
 
 TEMPLATE_VIEW_CLASS = """
-class {name}({base}):
+class ${name}(${base}):
     pass
 """
 
 FORM_VIEW_CLASS = """
-class {name}({base}):
-    form_class = {form_class}
+class ${name}(${base}):
+    form_class = ${form_class}
 """
 
 MODEL_FORM_VIEW_CLASS = """
-class {name}({base}):
-    form_class = {form_class}
-    queryset = {model}.objects.all()
+class ${name}(${base}):
+    form_class = ${form_class}
+    queryset = ${model}.objects.all()
 """
 
 FORM_CLASS = """
-class {name}({base}):
-    {queryset}
+class ${name}(${base}):
+    ${queryset}
     pass
 """
 
 
 MODEL_FORM_CLASS = """
-class {name}({base}):
-    {queryset}
+class ${name}(${base}):
+    ${queryset}
     class Meta:
-        model = {model}
+        model = ${model}
         exclude = ()
 """
 
 BASE_TEMPLATE = """
-{{% extends "base.html" %}}
-{{% block content %}}
-    {{% block {app_name}_content %}}
+{% extends "base.html" %}
+{% block content %}
+    {% block ${app_name}_content %}
 
-    {{% endblock %}}
-{{% endblock %}}
+    {% endblock %}
+{% endblock %}
 """
 
 FORM_TEMPLATE = """
-{{% extends "{app_name}/base.html" %}}
-{{% block {app_name}_content %}}
-    {{{{ form_start(form) }}}}
-        {{{{form.as_p()}}}}
+{% extends "${app_name}/base.html" %}
+{% block ${app_name}_content %}
+    {{ form_start(form) }}
+        {{form.as_p()}}
         <div>
             <button type="submit"> Submit </button>
         </div>
-    {{{{form_end()}}}}
-{{% endblock %}}
+    {{form_end()}}
+{% endblock %}
 """
 
 SIMPLE_TEMPLATE = """
-{{% extends "{app_name}/base.html" %}}
-{{% block {app_name}_content %}}
+{% extends "${app_name}/base.html" %}
+{% block ${app_name}_content %}
 
     <h2>Hello World</h2>
 
-{{% endblock %}}
+{% endblock %}
 """
 
 LIST_TEMPLATE = """
-{{% extends "{app_name}/base.html" %}}
-{{% block {app_name}_content %}}
+{% extends "${app_name}/base.html" %}
+{% block ${app_name}_content %}
 
     <ul>
-    {{% for object in object_list %}}
+    {% for object in object_list %}
         <li>
-            {{%include "{app_name}/include/{resource_name}_item.html"%}}
+            {%include "$app_name/include/$resource_name_item.html"%}
         </li>
-    {{%else %}}
+    {%else %}
         <li class='empty'>
             No results found.
         </li>
-    {{% endfor %}}
+    {% endfor %}
 
-{{% endblock %}}
+{% endblock %}
 """
 
 LIST_ITEM_TEMPLATE = """
 <div>
-{{{{object}}}}
+${object}
 </div>
 """
+
+
+
+class Template(object):
+
+    def __init__(self, filename, content):
+        self.content = content.strip()
+        self.template = string.Template(content)
+        self.filename = filename
+
+    def clean_content(self):
+        indentation = None
+        result = []
+        for line in self.content.splitlines():
+            if indentation is None:
+                if not line.strip():
+                    continue
+                indentation = len(line) - len(line.lstrip())
+            result.append(line)
+        return "".join(line).strip()
+
+
+    def render(self, context):
+        content = self.template.safe_substitute(context)
+        return utils.create_file(self.filename, content)

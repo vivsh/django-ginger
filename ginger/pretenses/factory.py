@@ -10,25 +10,38 @@ from django.contrib.gis.geos.point import Point
 from django.db import models
 from django.apps import apps
 from django.db.utils import IntegrityError
+from django.forms.models import model_to_dict
 from django.utils import timezone
-from django.utils.lru_cache import lru_cache
 from django.contrib.webdesign import lorem_ipsum as lipsum
 from django.utils.functional import cached_property
 from django.utils.text import camel_case_to_spaces
-from .utils import collect_files
+from . import utils
 import datetime
 
 
-__all__ = ['register']
+__all__ = ['register', 'generate']
 
 
 _processors = {}
-_images = None
-
+_callback = None
 
 def register(pretense, *models):
+    if isinstance(pretense, type):
+        pretense = pretense()
     for m in models:
         _processors[m] = pretense
+
+
+def generate(model, n=20, name=None, callback=None):
+    global _callback
+    _callback = callback
+    fac = Factory(model, limit=n, name=name)
+    fac.create_all(n)
+
+
+def on_create(ins):
+    if _callback:
+        _callback(model_to_dict(ins))
 
 
 def boolean():
@@ -48,18 +61,14 @@ def impartial(obj):
     obj.partial = False
 
 
-@lru_cache(maxsize=16)
-def get_files(conf_name, formats=None):
-    global _images
-    if _images is not None:
-        return _images
+def get_file(conf_name, formats=None):
     folder = getattr(settings, conf_name)
-    _images = []
-    return collect_files(folder, formats)
+    return utils.collect_files(folder, formats)
 
 
-def get_image_files():
-    return get_files("GINGER_PRETENSE_IMAGE_DIRS", ("jpg", "png", "gif", "jpeg", "bmp", "tiff", "pnga"))
+def get_image_file():
+    conf_key = "GINGER_PRETENSE_IMAGE_DIRS"
+    return utils.get_random_image(getattr(settings, conf_key))
 
 
 
@@ -117,11 +126,12 @@ class Field(object):
 class Factory(object):
 
     __cache = {}
+    __loaded = False
 
     highest_id = 0
     total = 0
 
-    def __new__(cls, model, limit=20, *args, **kwargs):
+    def __new__(cls, model, limit=20, name=None):
         if model not in cls.__cache:
             obj = super(Factory, cls).__new__(cls)
             cls.__cache[model] = obj
@@ -131,32 +141,38 @@ class Factory(object):
             obj.total = obj.model.objects.count()
             obj.highest_id = obj.model.objects.order_by("id").last().id + 1 if obj.total else 0
             obj.partial = False
+            obj.name = name
             Factory.load_pretenses()
         else:
             obj = cls.__cache[model]
         obj.limit = limit
         return obj
 
-    @staticmethod
-    def load_pretenses():
-        for app in apps.get_app_configs():
-            name = app.module.__name__
-            module_name = "%s.pretenses" % name
-            try:
-                importlib.import_module(module_name)
-            except ImportError as ex:
-                pass
+    @classmethod
+    def load_pretenses(cls):
+        if not cls.__loaded:
+            cls.__loaded = True
+            for app in apps.get_app_configs():
+                name = app.module.__name__
+                module_name = "%s.pretenses" % name
+                try:
+                    importlib.import_module(module_name)
+                except ImportError as ex:
+                    pass
 
     @cached_property
     def processors(self):
         classes = [self.model] + list(self.model.__mro__)
         result = []
-        for k in _processors:
-            if k in classes:
-                result.append(k)
-        result.sort(key=lambda a: classes.index(a), reverse=True)
+        for k in classes:
+            if k not in _processors:
+                continue
+            proc = _processors[k]
+            if self.name and proc.__class__.__name__ != self.name:
+                continue
+            result.append(proc)
         result.append(self)
-        return [_processors[k] for k in result if k in _processors]
+        return result
 
     def find_method(self, field, default):
         for handler in self.processors:
@@ -199,6 +215,7 @@ class Factory(object):
         ins.save()
         self.total += 1
         self.highest_id = ins.id
+        on_create(ins)
         return ins
 
     @cached_property
@@ -211,7 +228,9 @@ class Factory(object):
         i = index % len(self.all)
         return self.all[i]
 
-    def create_all(self, limit=20):
+    def create_all(self, limit=None):
+        if limit is None:
+            limit = self.limit
         i = 0
         errors = 0
         while i < limit:
@@ -314,5 +333,5 @@ class Factory(object):
         return Point(x=p.longitude, y=p.latitude)
 
     def process_image_field(self, field):
-        filename = random.choice(get_image_files())
+        filename = get_image_file()
         return File(open(filename))
