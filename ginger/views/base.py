@@ -99,6 +99,8 @@ class GingerView(View, GingerSessionDataMixin):
 
     url_prefix = None
 
+    context_object_key = "object"
+
     meta = ViewMetaDescriptor()
 
 
@@ -164,7 +166,7 @@ class GingerView(View, GingerSessionDataMixin):
         if 'view' not in kwargs:
             kwargs['view'] = self
         if hasattr(self, "object") and "object" not in kwargs:
-            kwargs["object"] = self.object
+            kwargs[self.context_object_key] = self.object
         return kwargs
 
     def add_message(self,  message, level=messages.INFO, **kwargs):
