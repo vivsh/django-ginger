@@ -200,12 +200,12 @@ class DecimalStream(object):
             start = 0.0
         if end is None:
             end = 9999999999.999999
-        self.start = int(start)
-        self.end = int(end)
+        self.start = float(start)
+        self.end = float(end)
 
     def next(self, field):
-        value = random.randint(self.start, self.end)
-        value = str(value)[:field.max_digits]
+        value = random.uniform(self.start, self.end)
+        value = str(value*10**field.decimal_places)[:field.max_digits]
         return Decimal(value)/10**field.decimal_places
 
 
@@ -300,7 +300,7 @@ class ManyToManyStream(object):
         self.limit = limit
 
     def next(self, field):
-        size = self.limit if self.limit is not None else random.randint(0, self.total-1)
+        size = self.limit if self.limit is not None else random.randint(0, self.total/2-1)
         i = random.randint(0, self.total-1)
         items = self.queryset[i: i+size]
         return items
