@@ -126,7 +126,7 @@ class Field(object):
 class Factory(object):
 
     __cache = {}
-    __loaded = False
+    __modules = None
 
     highest_id = 0
     total = 0
@@ -150,13 +150,14 @@ class Factory(object):
 
     @classmethod
     def load_pretenses(cls):
-        if not cls.__loaded:
-            cls.__loaded = True
+        if cls.__modules is None:
+            cls.__modules = []
             for app in apps.get_app_configs():
                 name = app.module.__name__
                 module_name = "%s.pretenses" % name
                 try:
-                    importlib.import_module(module_name)
+                    mod = importlib.import_module(module_name)
+                    cls.__modules.append(mod)
                 except ImportError as ex:
                     pass
 
@@ -164,13 +165,17 @@ class Factory(object):
     def processors(self):
         classes = [self.model] + list(self.model.__mro__)
         result = []
-        for k in classes:
-            if k not in _processors:
-                continue
-            proc = _processors[k]
-            if self.name and proc.__class__.__name__ != self.name:
-                continue
-            result.append(proc)
+        if not self.name:
+            for k in classes:
+                if k not in _processors:
+                    continue
+                proc = _processors[k]
+                result.append(proc)
+        else:
+            for mod in self.__modules:
+                cls = getattr(mod, self.name, None)
+                if cls is not None:
+                    result.append(cls())
         result.append(self)
         return result
 
@@ -213,6 +218,12 @@ class Factory(object):
             if value is not None:
                 field.set(value)
         ins.save()
+        for f in self.meta.many_to_many:
+            field = Field(f, ins, index)
+            func = self.find_method(f, self.get_field_value)
+            value = func(field)
+            if value is not None:
+                field.set(value)
         self.total += 1
         self.highest_id = ins.id
         on_create(ins)
