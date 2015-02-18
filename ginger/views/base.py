@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.views.generic.base import View
 from django.conf.urls import url
+from django.utils import six
 from .meta import ViewInfo
 from ginger import utils, pattern
 
@@ -91,6 +92,17 @@ class GingerSessionDataMixin(object):
         return utils.create_hash(utils.qualified_name(cls))
 
 
+class GingerMetaView(type):
+
+    __position = 0
+
+    def __init__(cls, name, bases, attrs):
+        super(GingerMetaView, cls).__init__(name, bases, attrs)
+        GingerMetaView.__position += 1
+        cls.position = GingerMetaView.__position
+
+
+@six.add_metaclass(GingerMetaView)
 class GingerView(View, GingerSessionDataMixin):
 
     user = None
