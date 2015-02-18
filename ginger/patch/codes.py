@@ -207,7 +207,8 @@ class Function(Block):
 
     def patch(self):
         source = self.source
-        source.set_decorators(self.get_decorators())
+        if source:
+            source.set_decorators(self.get_decorators())
 
     def get_decorators(self):
         decorators = map(self.export, self.decorators)

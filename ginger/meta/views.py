@@ -24,15 +24,12 @@ class ViewPatch(object):
         self.model = self.get_model()
 
     def get_kind(self):
-        kinds = (
-            (generics.GingerTemplateView, "template"),
-            (generics.GingerFormView, "form"),
-            (generics.GingerNewView, "new"),
-            (generics.GingerDetailView, "detail"),
-            (generics.GingerEditView, "edit"),
-            (generics.GingerDeleteView, "delete"),
-            (generics.GingerSearchView, "search")
-        )
+        if issubclass(self.view_class, generics.GingerNewView):
+            return "new"
+        if issubclass(self.view_class, generics.GingerEditView):
+            return "edit"
+        if issubclass(self.view_class, generics.GingerDeleteView):
+            return "delete"
         if issubclass(self.view_class, generics.GingerSearchView):
             return "search"
         if issubclass(self.view_class, generics.GingerFormView):
@@ -95,10 +92,77 @@ class ViewPatch(object):
             meta_cls.Attr("model", model)
             meta_cls.Attr("exclude", ())
 
-            func = form_class.Def("get_queryset", [])
+            func = form_class.Def("execute", ["user"])
+        module.save()
+
+        with self.class_patch() as cls:
+            cls.Attr("form_class", form_class)
+            if model:
+                cls.Attr("model", model)
+        self.create_template(templates.FORM_TEMPLATE)
+
+    def patch_delete_view(self):
+        model = self.model
+        base = forms.GingerForm if not model else forms.GingerModelForm
+        module = patch.Module(self.app.form_module)
+        cls = module.Class(self.meta.form_name, [base])
+        form_class = cls
+        if model:
+            meta_cls = form_class.Class("Meta")
+            meta_cls.Attr("model", model)
+            meta_cls.Attr("fields", ())
+
+            func = form_class.Def("execute", ["user", "instance"])
             func("""
-            return {model}.objects.all()
-            """, model=model)
+            instance.delete()
+            """)
+        module.save()
+
+        with self.class_patch() as cls:
+            cls.Attr("form_class", form_class)
+            if model:
+                cls.Attr("model", model)
+        self.create_template(templates.FORM_TEMPLATE)
+
+    def patch_new_view(self):
+        model = self.model
+        base = forms.GingerForm if not model else forms.GingerModelForm
+        module = patch.Module(self.app.form_module)
+        cls = module.Class(self.meta.form_name, [base])
+        form_class = cls
+        if model:
+            meta_cls = form_class.Class("Meta")
+            meta_cls.Attr("model", model)
+            meta_cls.Attr("exclude", ())
+
+            func = form_class.Def("execute", ["user", "instance"])
+            func("""
+            instance.save()
+            """)
+        module.save()
+
+        with self.class_patch() as cls:
+            cls.Attr("form_class", form_class)
+            if model:
+                cls.Attr("model", model)
+        self.create_template(templates.FORM_TEMPLATE)
+
+    def patch_edit_view(self):
+        model = self.model
+        base = forms.GingerForm if not model else forms.GingerModelForm
+        module = patch.Module(self.app.form_module)
+        cls = module.Class(self.meta.form_name, [base])
+        form_class = cls
+        if model:
+            meta_cls = form_class.Class("Meta")
+            meta_cls.Attr("model", model)
+            meta_cls.Attr("exclude", ())
+
+            func = form_class.Def("execute", ["user", "instance"])
+            func("""
+            instance.save()
+            return instance
+            """)
         module.save()
 
         with self.class_patch() as cls:

@@ -49,7 +49,7 @@ class GingerFormMixin(object):
             value = kwargs.pop(key)
             context[key] = value
         super(GingerFormMixin, self).__init__(**kwargs)
-        self.context = self.process_context(context)
+        self.context = context
         self.merge_defaults()
 
     def field_range(self, first, last, step=None):
@@ -90,7 +90,13 @@ class GingerFormMixin(object):
                         data.setdefault(name, value)
             self.data = data
 
-    def process_context(self, context):
+    def process_context(self):
+        context = self.context
+        if not isinstance(self, GingerSearchFormMixin) and hasattr(self, "cleaned_data"):
+            if hasattr(self, "save"):
+                instance = self.save(commit=False)
+                context["instance"] = instance
+            context["data"] = self.cleaned_data
         spec = inspect.getargspec(self.execute)
         if spec.varargs:
             raise ImproperlyConfigured("Form.execute cannot have variable arguments")
@@ -158,8 +164,9 @@ class GingerFormMixin(object):
         except AttributeError:
             result = None
             if self.is_bound and (not self._errors or self.ignore_errors):
+                context = self.process_context()
                 try:
-                    result = self.execute(**self.context)
+                    result = self.execute(**context)
                 except forms.ValidationError as ex:
                     self.add_error(None, ex)
                 finally:

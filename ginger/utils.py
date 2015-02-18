@@ -199,9 +199,9 @@ def get_client_latlng(request):
     return g.lat_lon(ip)
 
 
-def model_from_dict(model, **kwargs):
+def model_from_dict(model, kwargs):
     meta = model._meta
-    names = set( meta.get_all_field_names() )
+    names = set(meta.get_all_field_names())
     names.difference_update({a.name for a in meta.many_to_many})
     return model(**dict((k, v) for k, v in six.iteritems(kwargs) if k in names))
 
