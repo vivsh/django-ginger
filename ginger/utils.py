@@ -36,6 +36,7 @@ __all__ = [
     'get_client_ip',
     'get_client_latlng',
     'model_from_dict',
+    "model_update_from_dict",
     'base64pickle_dumps',
     'base64pickle_loads',
 ]
@@ -199,12 +200,19 @@ def get_client_latlng(request):
     return g.lat_lon(ip)
 
 
-def model_from_dict(model, kwargs):
-    meta = model._meta
-    names = set(meta.get_all_field_names())
-    names.difference_update({a.name for a in meta.many_to_many})
-    return model(**dict((k, v) for k, v in six.iteritems(kwargs) if k in names))
+def model_from_dict(model, kwargs, many_to_many=False):
+    instance = model()
+    model_update_from_dict(instance, kwargs, many_to_many=many_to_many)
+    return instance
 
+def model_update_from_dict(instance, kwargs, many_to_many=False):
+    meta = instance.__class__._meta
+    names = set(meta.get_all_field_names())
+    if not many_to_many:
+        names.difference_update({a.name for a in meta.many_to_many})
+    for k in names:
+        if k in kwargs:
+            setattr(instance, k, kwargs[k])
 
 def update_object(instance, data):
     opts = instance._meta
