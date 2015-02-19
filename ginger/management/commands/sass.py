@@ -30,7 +30,7 @@ class Command(BaseCommand):
         sass_dir = path.dirname(source)
         static_dir = path.dirname(sass_dir)
         filename, _ = path.splitext(path.basename(source))
-        output = path.join(static_dir, "css", "%s_.css" % filename)
+        output = path.join(static_dir, "css", "%s.css" % filename)
         includes = [
             path.join(path.dirname(assets.__file__), "sass"),
             sass_dir
