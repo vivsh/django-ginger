@@ -12,7 +12,7 @@ from django.template import loader
 from django.template.base import TemplateDoesNotExist
 
 def project_path():
-    attrs = ["PROJECT_PATH_", "BASE_DIR", "PROJECT_DIR", "PROJECT_ROOT"]
+    attrs = ["BASE_DIR", "PROJECT_DIR", "PROJECT_ROOT"]
     try:
         return next(getattr(settings,attr) for attr in attrs if hasattr(settings, attr))
     except StopIteration:

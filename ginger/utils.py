@@ -1,4 +1,5 @@
 
+import os
 import threading
 import re
 import hashlib
@@ -39,6 +40,7 @@ __all__ = [
     "model_update_from_dict",
     'base64pickle_dumps',
     'base64pickle_loads',
+    'which',
 ]
 
 
@@ -245,3 +247,8 @@ def base64pickle_loads(data):
 def base64pickle_dumps(data):
     serialized = pickle.dumps(data)
     return base64.b64encode(serialized).decode("ascii")
+
+
+def which(name):
+    from distutils import spawn
+    return spawn.find_executable(name)
