@@ -41,6 +41,7 @@ setup(
         "django_nose==1.3",
         "django-imagekit==3.2.5",
         "django==1.7.4",
+        "webtest",
         "django-webtest",
         "jinja2==2.7.3",
         "mock==1.0.1",
