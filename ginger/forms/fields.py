@@ -12,7 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from ginger import ui, utils
 
 
-__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField"]
+__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField", "GingerSortField"]
 
 
 class FileOrUrlInput(forms.ClearableFileInput):
@@ -162,3 +162,6 @@ class GingerDataSetField(SortField):
         column = dataset.columns[name]
         column.sort(reverse=reverse)
 
+
+class GingerSortField(SortField):
+    pass
