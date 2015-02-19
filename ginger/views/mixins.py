@@ -31,11 +31,11 @@ class LoginRequiredMixin(object):
 
 class OwnerRequiredMixin(LoginRequiredMixin):
 
-    def get_user(self):
-        user = super(OwnerRequiredMixin, self).get_user()
-        if not user.is_superuser and self.object.owner != user:
+    def get_object(self):
+        obj = super(OwnerRequiredMixin, self).get_object()
+        if not self.user.is_superuser and obj.owner != self.user:
             raise PermissionDenied
-        return user
+        return obj
 
 
 class PrivilegeRequiredMixin(LoginRequiredMixin):
