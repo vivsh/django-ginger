@@ -122,7 +122,6 @@ class Field(object):
         return "Field(%r)" % self.field
 
 
-
 class Factory(object):
 
     __cache = {}
@@ -176,8 +175,15 @@ class Factory(object):
                 cls = getattr(mod, self.name, None)
                 if cls is not None:
                     result.append(cls())
-        result.append(self)
+        result.append(DefaultProcessor(self))
         return result
+
+    def post_save(self, ins):
+        method_name = "after_%s_%s" % (self.meta.app_label, self.snake_case(self.model))
+        for handler in self.processors:
+            func = getattr(handler, method_name, None)
+            if callable(func):
+                func(ins, FactoryProxy)
 
     def find_method(self, field, default):
         for handler in self.processors:
@@ -204,17 +210,21 @@ class Factory(object):
             if issubclass(cls, models.Field):
                 yield template % self.snake_case(cls)
 
-    def create(self, index):
+    def create(self, index, **kwargs):
         ins = self.model()
         for f in self.fields:
             field = Field(f, ins, index)
-            if field.primary_key:
-                continue
-            if field.has_choices():
-                value = f.choice
+            name = field.name
+            if name in kwargs:
+                value = kwargs[name]
             else:
-                func = self.find_method(f, self.get_field_value)
-                value = func(field)
+                if field.primary_key:
+                    continue
+                if field.has_choices():
+                    value = f.choice
+                else:
+                    func = self.find_method(f, self.get_field_value)
+                    value = func(field)
             if value is not None:
                 field.set(value)
         ins.save()
@@ -226,6 +236,7 @@ class Factory(object):
                 field.set(value)
         self.total += 1
         self.highest_id = ins.id
+        self.post_save(ins)
         on_create(ins)
         return ins
 
@@ -239,14 +250,14 @@ class Factory(object):
         i = index % len(self.all)
         return self.all[i]
 
-    def create_all(self, limit=None):
+    def create_all(self, limit=None, **kwargs):
         if limit is None:
             limit = self.limit
         i = 0
         errors = 0
         while i < limit:
             try:
-                self.create(self.highest_id+i)
+                self.create(self.highest_id+i, **kwargs)
                 i += 1
             except (IntegrityError, ValidationError) as ex:
                 errors += 1
@@ -256,7 +267,23 @@ class Factory(object):
                 errors = 0
 
     def get_field_value(self, field):
-        return None
+        return field.default
+
+
+
+class FactoryProxy(object):
+
+    def __init__(self, model, limit=20):
+        self.factory = Factory(model, limit)
+
+    def create(self, limit=None, **kwargs):
+        return self.factory.create_all(limit, **kwargs)
+
+
+class DefaultProcessor(object):
+
+    def __init__(self, factory):
+        self.factory = factory
 
     def process_float_field(self, field):
         return random.uniform(0.1, 9999999999.28989)
@@ -300,7 +327,7 @@ class Factory(object):
 
     def process_foreign_key(self, field):
         index = field.index
-        factory = Factory(field.model, self.limit)
+        factory = Factory(field.model, self.factory.limit)
         value = factory.get(index)
         return value
 
