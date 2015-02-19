@@ -170,7 +170,7 @@ def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
         nav.append(previous_tag)
     for link in page.build_links(request):
         if link.is_active:
-            el = H.li(class_="active")[H.span[link.content, H.span(class_="sr-only")["(current)"]]]
+            el = H.li(class_="active")[H.span[link.content, H.span(class_="sr-only")[link.content]]]
         else:
             el = H.li[H.a(href=link.url)[link.content]]
         nav.append(el)
