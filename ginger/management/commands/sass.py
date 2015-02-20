@@ -35,7 +35,7 @@ class Command(BaseCommand):
             path.join(path.dirname(assets.__file__), "sass"),
             sass_dir
         ]
-        binaries = (utils.which("sassc"), utils.which("scss"))
+        binaries = (utils.which("scss"), utils.which("sassc"))
         exe = filter(None, binaries)[0]
         sassc = binaries[0] == exe
 
