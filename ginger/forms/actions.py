@@ -81,6 +81,8 @@ class GingerFormMixin(object):
                 data.update(self.data)
             initial = self.initial_data
             for key in initial:
+                if key in data:
+                    continue
                 value = initial[key]
                 name = self.add_prefix(key)
                 if value is not None:
@@ -146,8 +148,9 @@ class GingerFormMixin(object):
         """
         return utils.create_hash(utils.qualified_name(cls))
 
-    def is_submitted(self, data):
-        return self.submit_name() in data
+    @classmethod
+    def is_submitted(cls, data):
+        return data and (any(k in data for k in self.base_fields) or self.submit_name() in data)
 
     @classmethod
     def submit_name(cls):
@@ -256,6 +259,7 @@ class GingerSearchFormMixin(GingerFormMixin):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data if self.is_bound else self.initial_data
         allowed = set(self.get_queryset_filter_names())
+        print data, "<<<<<<", len(queryset)
         for name, value in six.iteritems(data):
             if name not in allowed or not value:
                 continue
