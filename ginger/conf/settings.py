@@ -18,6 +18,7 @@ __all__ = ['STATIC_URL',
 STATIC_URL = '/static/'
 
 
+
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.request',
 )
