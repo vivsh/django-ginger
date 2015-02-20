@@ -478,6 +478,9 @@ class SingleObjectViewMixin(object):
         except ObjectDoesNotExist:
             raise Http404
 
+    def get_target(self):
+        return self.object
+
     def get_context_data(self, **kwargs):
         ctx = super(SingleObjectViewMixin, self).get_context_data(**kwargs)
         ctx[self.get_context_object_key(self.object)] = self.object
@@ -492,6 +495,9 @@ class SingleObjectViewMixin(object):
 class MultipleObjectViewMixin(object):
 
     context_object_key = "object_list"
+
+    def get_target(self):
+        return self.queryset
 
     def get_queryset(self):
         return self.queryset

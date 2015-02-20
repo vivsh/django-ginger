@@ -31,8 +31,8 @@ class LoginRequiredMixin(object):
 
 class OwnerRequiredMixin(LoginRequiredMixin):
 
-    def get_object(self):
-        obj = super(OwnerRequiredMixin, self).get_object()
+    def get_target(self):
+        obj = super(OwnerRequiredMixin, self).get_target()
         if not self.user.is_superuser and obj.owner != self.user:
             raise PermissionDenied
         return obj

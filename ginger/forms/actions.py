@@ -259,7 +259,6 @@ class GingerSearchFormMixin(GingerFormMixin):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data if self.is_bound else self.initial_data
         allowed = set(self.get_queryset_filter_names())
-        print data, "<<<<<<", len(queryset)
         for name, value in six.iteritems(data):
             if name not in allowed or not value:
                 continue

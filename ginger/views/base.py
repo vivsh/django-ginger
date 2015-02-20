@@ -129,12 +129,15 @@ class GingerView(View, GingerSessionDataMixin):
     def as_view(cls, **initkwargs):
         func = super(GingerView, cls).as_view(**initkwargs)
         func.view_class = cls
-        cls.setup_resource()
+        cls.setup_view()
         return func
 
     @classmethod
-    def setup_resource(cls):
+    def setup_view(cls):
         return
+
+    def get_target(self):
+        return None
 
     def get_user(self):
         return self.request.user
@@ -151,6 +154,7 @@ class GingerView(View, GingerSessionDataMixin):
                 raise Http404
         elif hasattr(self, 'get_queryset'):
             self.queryset = self.get_queryset()
+        self.target = self.get_target()
 
     def process_response(self, request, response):
         return response
