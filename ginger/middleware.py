@@ -65,14 +65,9 @@ class ActiveUserMiddleware:
 
     def process_request(self, request):
         user = request.user
-        if user.is_authenticated():
-            now = timezone.now()
-            cutoff = now - timedelta(seconds=user.ONLINE_TIMEOUT)
-            accessed = user.accessed
-            user.accessed = now
-            if accessed < cutoff:
-                user.save(update_fields=['accessed'])
-#            cache.set('seen_%s' % (current_user.username), now, settings.USER_ONLINE_TIMEOUT)
+        if not request.is_ajax() and request.method == 'GET':
+            if user.is_authenticated() and not user.is_online():
+                user.make_online(commit=True)
 
 
 class UsersOnlineMiddleware(object):

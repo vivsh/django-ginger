@@ -1,5 +1,6 @@
 from django.contrib.auth.backends import ModelBackend
 from django.db.models.query_utils import Q
+from django.db import models
 from django.utils import six
 from django.contrib.auth.models import User, AbstractUser
 
