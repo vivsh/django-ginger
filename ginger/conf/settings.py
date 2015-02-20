@@ -3,20 +3,22 @@ from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS, TEMPLATE_LO
 from . import env
 
 __all__ = ['STATIC_URL',
+           'MEDIA_URL',
            'TEMPLATE_CONTEXT_PROCESSORS',
            'TEMPLATE_LOADERS',
            'TEST_RUNNER',
             'CELERY_ALWAYS_EAGER',
             'CELERY_EAGER_PROPAGATES_EXCEPTIONS',
             'env',
-            'MESSAGE_TAGS', 'JINJA2_EXCLUDE_FOLDERS',
+            'MESSAGE_TAGS',
+            'JINJA2_EXCLUDE_FOLDERS',
             'JINJA2_AUTOESCAPE',
             'STAGING_SECRET'
 ]
 
 
 STATIC_URL = '/static/'
-
+MEDIA_URL = '/media/'
 
 
 TEMPLATE_CONTEXT_PROCESSORS += (

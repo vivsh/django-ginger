@@ -36,6 +36,7 @@ __all__ = [
     'auth_login',
     'get_client_ip',
     'get_client_latlng',
+    'model_to_dict',
     'model_from_dict',
     "model_update_from_dict",
     'base64pickle_dumps',
@@ -206,6 +207,34 @@ def model_from_dict(model, kwargs, many_to_many=False):
     instance = model()
     model_update_from_dict(instance, kwargs, many_to_many=many_to_many)
     return instance
+
+
+def model_to_dict(instance, fields=None, exclude=None):
+    from django.db.models.fields.related import ManyToManyField
+    opts = instance._meta
+    data = {}
+    for f in opts.concrete_fields + opts.virtual_fields + opts.many_to_many:
+        if fields and f.name not in fields:
+            continue
+        if exclude and f.name in exclude:
+            continue
+        if isinstance(f, ManyToManyField):
+            # If the object doesn't have a primary key yet, just use an empty
+            # list for its m2m fields. Calling f.value_from_object will raise
+            # an exception.
+            if instance.pk is None:
+                data[f.name] = []
+            else:
+                # MultipleChoiceWidget needs a list of pks, not object instances.
+                qs = f.value_from_object(instance)
+                if qs._result_cache is not None:
+                    data[f.name] = [item.pk for item in qs]
+                else:
+                    data[f.name] = list(qs.values_list('pk', flat=True))
+        else:
+            data[f.name] = f.value_from_object(instance)
+    return data
+
 
 def model_update_from_dict(instance, kwargs, many_to_many=False):
     meta = instance.__class__._meta
