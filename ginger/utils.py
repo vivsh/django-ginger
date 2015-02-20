@@ -210,7 +210,7 @@ def model_from_dict(model, kwargs, many_to_many=False):
 
 
 def model_to_dict(instance, fields=None, exclude=None):
-    from django.db.models.fields.related import ManyToManyField
+    from django.db.models.fields.related import ManyToManyField, ForeignKey
     opts = instance._meta
     data = {}
     for f in opts.concrete_fields + opts.virtual_fields + opts.many_to_many:
@@ -218,7 +218,9 @@ def model_to_dict(instance, fields=None, exclude=None):
             continue
         if exclude and f.name in exclude:
             continue
-        if isinstance(f, ManyToManyField):
+        if isinstance(f, ForeignKey):
+            data[f.get_attname()] = f.value_from_object(instance)
+        elif isinstance(f, ManyToManyField):
             # If the object doesn't have a primary key yet, just use an empty
             # list for its m2m fields. Calling f.value_from_object will raise
             # an exception.

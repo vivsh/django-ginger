@@ -45,7 +45,7 @@ setup(
         "django-webtest",
         "jinja2==2.7.3",
         "mock==1.0.1",
-        "libsass",
+        # "libsass",
         "geopy",
     ],
     include_package_data=True,
