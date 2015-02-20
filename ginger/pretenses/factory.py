@@ -267,7 +267,7 @@ class Factory(object):
                 errors = 0
 
     def get_field_value(self, field):
-        return field.default
+        return None
 
 
 

@@ -36,14 +36,20 @@ class Command(BaseCommand):
             sass_dir
         ]
         binaries = (utils.which("sassc"), utils.which("scss"))
-        exe = next((b for b in binaries if b is not None), None)
+        exe = filter(None, binaries)[0]
+        sassc = binaries[0] == exe
+
         cmd = [exe]
         if options["watch"]:
-            cmd.append("-w")
+            cmd.append("--watch")
         for inc in includes:
             cmd.append("-I%s" % inc)
-        cmd.append(source)
-        cmd.append(output)
+
+        if sassc:
+            cmd.extend((source, output))
+        else:
+            cmd.append("%s:%s" % (source, output))
+        print(cmd)
         try:
             output = subprocess.check_output(cmd)
         except subprocess.CalledProcessError as ex:
