@@ -188,6 +188,8 @@ class GingerSearchView(GingerFormView):
             ctx["page_limit"] = self.page_limit
             ctx["per_page"] = self.per_page
             ctx["page"] = self.request
+            if hasattr(self, 'queryset'):
+                ctx["queryset"] = self.queryset
         return ctx
 
     def get_context_data(self, **kwargs):

@@ -131,6 +131,7 @@ LIST_TEMPLATE = """
             No results found.
         </li>
     {% endfor %}
+    </ul>
     <nav>
         {{ page_tag(object_list) }}
     </nav>

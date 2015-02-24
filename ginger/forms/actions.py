@@ -246,6 +246,9 @@ class GingerSearchFormMixin(GingerFormMixin):
             return None
 
     def get_queryset(self, **kwargs):
+        queryset = self.context.get("queryset")
+        if queryset:
+            return queryset
         return self.queryset
 
     def execute(self, **kwargs):

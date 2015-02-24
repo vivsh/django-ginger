@@ -32,6 +32,8 @@ class ViewPatch(object):
             return "delete"
         if issubclass(self.view_class, generics.GingerSearchView):
             return "search"
+        if issubclass(self.view_class, generics.GingerListView):
+            return "list"
         if issubclass(self.view_class, generics.GingerFormView):
             return "form"
         if issubclass(self.view_class, generics.GingerTemplateView):
@@ -170,6 +172,13 @@ class ViewPatch(object):
             if model:
                 cls.Attr("model", model)
         self.create_template(templates.FORM_TEMPLATE)
+
+    def patch_list_view(self):
+        self.create_template(templates.LIST_TEMPLATE)
+        self.create_template(templates.LIST_ITEM_TEMPLATE,
+                             filename=path.join(self.meta.template_dir,
+                                            "%s/include/%s_item.html" % (self.app.label,
+                                                                         self.meta.resource_name)))
 
     def patch_search_view(self):
         model = self.model
