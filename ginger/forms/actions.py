@@ -97,7 +97,6 @@ class GingerFormMixin(object):
         if not isinstance(self, GingerSearchFormMixin) and hasattr(self, "cleaned_data"):
             if hasattr(self, "save"):
                 instance = self.save(commit=False)
-                utils.model_update_from_dict(instance, context, many_to_many=True)
                 context["instance"] = instance
             context["data"] = self.cleaned_data
         spec = inspect.getargspec(self.execute)
