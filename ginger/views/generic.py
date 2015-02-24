@@ -15,7 +15,7 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
-from ginger.exceptions import Http404, Redirect
+from ginger.exceptions import Http404, Redirect, BadRequest
 from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
 from ginger.paginator import paginate
@@ -27,7 +27,7 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerDetailView', 'GingerFormView', 'GingerWizardView',
            'GingerFormDoneView', 'GingerListView', 'GingerDeleteView',
            'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView',
-           "GingerNewDoneView", "GingerNewView", "GingerNewWizardView"]
+           "GingerNewDoneView", "GingerNewView", "GingerNewWizardView", 'PostFormMixin']
 
 
 from .base import GingerView, P
@@ -44,7 +44,8 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
     def process_exception(self, request, ex):
         result = super(GingerTemplateView, self).process_exception(request, ex)
         if result is None and isinstance(ex, Redirect):
-            result = self.redirect(ex.url)
+            url = ex.create_url(request)
+            result = self.redirect(url)
         return result
 
     def redirect(self, to, **kwargs):
@@ -568,3 +569,12 @@ class GingerListView(MultipleObjectViewMixin, GingerTemplateView):
             queryset = self.paginate_queryset(queryset)
         ctx[self.get_context_object_key(queryset)] = queryset
         return ctx
+
+
+class PostFormMixin(object):
+
+    def get(self, request, *args, **kwargs):
+        raise BadRequest()
+
+    def get_referrer_url(self):
+        return self.request.META["HTTP_REFERER"]

@@ -54,27 +54,38 @@ class Redirect(GingerHttpError):
     description = "Content has moved"
 
     def __init__(self, to, message=None, **kwargs):
-        url = resolve_url(to, **kwargs)
         super(Redirect, self).__init__(message)
-        self.url = url
+        self.to = to
+        self.kwargs = kwargs
+
+    def create_url(self, request):
+        url = resolve_url(self.to, **self.kwargs)
+        return url
 
 
 class PermissionRequired(Redirect):
     status_code = 401
     description = "Permission Required"
 
-    def __init__(self, request, url, message=None):
-        current_url = request.get_full_path()
-        url = utils.get_url_with_modified_params(url, {"next": current_url})
+    def __init__(self, url, message=None):
         super(PermissionRequired, self).__init__(url, message=message)
+
+    def create_url(self, request):
+        current_url = request.get_full_path()
+        url = utils.get_url_with_modified_params(self.to, {"next": current_url})
+        return url
 
 
 class LoginRequired(PermissionRequired):
 
-    def __init__(self, request, message=None):
+    def __init__(self, message=None):
+        url = reverse("login")
+        super(LoginRequired, self).__init__(url, message=message)
+
+    def create_url(self, request):
         current_url = request.get_full_path()
-        url = utils.get_url_with_modified_params(reverse("login"), {"next": current_url})
-        super(LoginRequired, self).__init__(request, url, message=message)
+        url = utils.get_url_with_modified_params(self.to, {"next": current_url})
+        return url
 
 
 class ValidationFailure(GingerHttpError):
