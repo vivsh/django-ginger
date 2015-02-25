@@ -162,6 +162,8 @@ def form_css_class(form):
 
 
 def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
+    if not page:
+        return ""
     H = common
     nav = H.ul(class_="pagination", **kwargs)
     if page.has_previous():

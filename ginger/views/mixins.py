@@ -16,7 +16,7 @@ class PermissionRequiredMixin(object):
         user = super(PermissionRequiredMixin, self).get_user()
         url = self.get_permission_url()
         if url is not None:
-            raise PermissionRequired(self.request, url)
+            raise PermissionRequired(url)
         return user
 
 
@@ -25,7 +25,7 @@ class LoginRequiredMixin(object):
     def get_user(self):
         user = super(LoginRequiredMixin, self).get_user()
         if not user.is_authenticated():
-            raise LoginRequired(self.request)
+            raise LoginRequired
         return user
 
 
