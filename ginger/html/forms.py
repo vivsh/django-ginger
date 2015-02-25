@@ -162,7 +162,7 @@ def form_css_class(form):
 
 
 def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
-    if not page:
+    if page.paginator.num_pages <= 1:
         return ""
     H = common
     nav = H.ul(class_="pagination", **kwargs)
