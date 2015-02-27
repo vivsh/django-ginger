@@ -10,7 +10,8 @@ from . import common
 
 __all__ = ["Choice", "Link", "form_csrf_tag", "form_attrs", "form_css_class",
            "field_choices", "field_name_range", "field_links", "iter_fields", "widget_css_class",
-           "render_widget", "register_layout", "render_field", "field_css_class", "field_range", "render_page"]
+           "render_widget", "register_layout", "render_field", "field_css_class", "field_range",
+           "render_page", "wrap_csrf_token"]
 
 Choice = namedtuple("Choice", ["name", "value", "content", "selected"])
 
@@ -83,6 +84,11 @@ def form_attrs(form, **kwargs):
 def form_csrf_tag(request):
     csrf_token = csrf.get_token(request)
     el = common.input(type_="hidden", name="csrfmiddlewaretoken", value=csrf_token)
+    return el.render()
+
+
+def wrap_csrf_token(token):
+    el = common.input(type_="hidden", name="csrfmiddlewaretoken", value=token)
     return el.render()
 
 
