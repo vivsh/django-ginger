@@ -37,7 +37,7 @@ def generate(model, n=20, name=None, callback=None):
     global _callback
     _callback = callback
     fac = Factory(model, limit=n, name=name)
-    fac.create_all(n)
+    return fac.create_all(n)
 
 
 def on_create(ins):
@@ -256,9 +256,10 @@ class Factory(object):
             limit = self.limit
         i = 0
         errors = 0
+        bulk = []
         while i < limit:
             try:
-                self.create(self.highest_id+i, **kwargs)
+                ins = self.create(self.highest_id+i, **kwargs)
                 i += 1
             except (IntegrityError, ValidationError, pyex.AmbiguousTimeError, pyex.NonExistentTimeError, pyex.InvalidTimeError) as ex:
                 errors += 1
@@ -266,6 +267,8 @@ class Factory(object):
                     raise
             else:
                 errors = 0
+                bulk.append(ins)
+        return bulk
 
     def get_field_value(self, field):
         return None
