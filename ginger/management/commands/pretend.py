@@ -2,6 +2,7 @@
 import pprint
 from optparse import make_option
 from django.apps import apps
+from django.db import models
 from ginger import pretenses
 from django.core.management import BaseCommand, CommandError
 
@@ -33,8 +34,14 @@ class Command(BaseCommand):
         name = args[0]
         if len(args) > 1 :
             raise CommandError("Too many arguments")
-        app_label, model_name = name.split(".", 1)
-        model = apps.get_model(app_label, model_name)
+        if '.' in name:
+            app_label, model_name = name.split(".", 1)
+            model = apps.get_model(app_label, model_name)
+        else:
+            try:
+                model = next(m for m in apps.get_models() if m.__name__.lower() == name.lower())
+            except StopIteration:
+                raise ValueError("No model found: %r" % name)
         pretense = options["pretense"]
         verbose = int(options["verbosity"]) > 1
         callback = self.verbose if verbose else None

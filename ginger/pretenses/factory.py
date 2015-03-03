@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.files import File
 import contextlib
+import pytz.exceptions as pyex
 import random
 import importlib
 from django.conf import settings
@@ -221,7 +222,7 @@ class Factory(object):
                 if field.primary_key:
                     continue
                 if field.has_choices():
-                    value = f.choice
+                    value = field.choice
                 else:
                     func = self.find_method(f, self.get_field_value)
                     value = func(field)
@@ -259,7 +260,7 @@ class Factory(object):
             try:
                 self.create(self.highest_id+i, **kwargs)
                 i += 1
-            except (IntegrityError, ValidationError) as ex:
+            except (IntegrityError, ValidationError, pyex.AmbiguousTimeError, pyex.NonExistentTimeError, pyex.InvalidTimeError) as ex:
                 errors += 1
                 if errors > limit * 5:
                     raise
@@ -327,7 +328,7 @@ class DefaultProcessor(object):
 
     def process_foreign_key(self, field):
         index = field.index
-        factory = Factory(field.model, self.factory.limit)
+        factory = Factory(field.model)
         value = factory.get(index)
         return value
 

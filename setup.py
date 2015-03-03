@@ -40,7 +40,7 @@ setup(
         "django_jinja==1.1.0",
         "django_nose==1.3",
         "django-imagekit==3.2.5",
-        "django==1.7.4",
+        "django==1.7.5",
         "webtest",
         "django-webtest",
         "jinja2==2.7.3",

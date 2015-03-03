@@ -1,4 +1,4 @@
-
+from django.forms.widgets import CheckboxInput
 import re
 from collections import namedtuple
 from django.middleware import csrf
@@ -152,6 +152,8 @@ def register_layout(name, func):
 
 
 def default_layout(field):
+    if isinstance(field.field.widget, CheckboxInput):
+        return "{widget}{label_tag}{help}{errors}"
     return "{label_tag}{widget}{help}{errors}"
 
 
