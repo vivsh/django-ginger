@@ -338,6 +338,7 @@ class GingerDataFormMixin(GingerSearchFormMixin):
         sort_field = self.get_sort_field()
         if sort_field:
             dataset.sort_parameter_name = sort_field.html_name
+            dataset.sort_field = sort_field.field
         return dataset
 
 

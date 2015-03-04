@@ -112,7 +112,7 @@ class GingerSortField(forms.ChoiceField):
         text_value = force_text(value)
         if text_value.startswith("-"):
             text_value = text_value[1:]
-        return text_value in self.field_map and super(GingerSortField, self).valid_value(text_value)
+        return text_value in self.field_map or super(GingerSortField, self).valid_value(text_value)
 
     def build_links(self, request, bound_field):
         value = bound_field.value()
@@ -141,6 +141,11 @@ class GingerSortField(forms.ChoiceField):
         values = map(invert, value.split())
         return queryset.order_by(*values)
 
+    def get_value_for_name(self, name):
+        for value, key in six.iteritems(self.field_map):
+            if name == key:
+                return value
+
 
 class GingerDataSetField(GingerSortField):
 
@@ -158,6 +163,7 @@ class GingerDataSetField(GingerSortField):
         reverse = text_value.startswith("-")
         column_dict = self.dataset_class.get_column_dict()
         name = text_value[1:] if reverse else text_value
+        name = self.field_map[name]
         col = column_dict[name]
         attr = col.attr or name
         if reverse:
@@ -169,7 +175,8 @@ class GingerDataSetField(GingerSortField):
         if not text_value:
             return
         reverse = text_value.startswith("-")
-        name = text_value[1:] if reverse else text_value
+        value = text_value[1:] if reverse else text_value
+        name = self.field_map[value]
         column = dataset.columns[name]
         column.sort(reverse=reverse)
 

@@ -339,12 +339,14 @@ class GingerDataSet(DataSetBase):
         sort_name = getattr(self, "sort_parameter_name", None)
         for col in self.columns.visible():
             if sort_name:
+                field = self.sort_field
+                code = field.get_value_for_name(col.name)
                 value = data.get(sort_name, "")
                 reverse = value.startswith("-")
                 if reverse:
                     value = value[1:]
-                is_active = col.name == value
-                next_value = "-%s" % col.name if not reverse and is_active else col.name
+                is_active = code == value
+                next_value = "-%s" % code if not reverse and is_active else code
                 mods = {sort_name: next_value}
             else:
                 is_active = False
