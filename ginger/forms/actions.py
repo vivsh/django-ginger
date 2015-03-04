@@ -238,9 +238,9 @@ class GingerSearchFormMixin(GingerFormMixin):
         field.choices = tuple(choices)
 
     def get_sort_field(self):
-        from .fields import SortField
+        from .fields import GingerSortField
         try:
-            return next(self[name] for name, f in six.iteritems(self.fields) if isinstance(f, SortField))
+            return next(self[name] for name, f in six.iteritems(self.fields) if isinstance(f, GingerSortField))
         except StopIteration:
             return None
 
