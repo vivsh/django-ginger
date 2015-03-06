@@ -103,7 +103,8 @@ def field_to_html(field, kwargs):
         'field_name': field_name,
         'field_class': field_class_name,
         'widget': widget,
-        'widget_class': widget_class_name
+        'widget_class': widget_class_name,
+        'prefix': "",
     }
     template = [template_name, "ginger/fields/%s.html"%layout]
     html = render_to_string(template, context)
