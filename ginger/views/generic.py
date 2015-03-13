@@ -299,11 +299,16 @@ class GingerFormDoneView(GingerStepViewMixin, GingerFormView):
         return self.redirect(self.get_done_url())
 
     def get_template_names(self):
+        template_names = super(GingerFormDoneView, self).get_template_names()
+        if not isinstance(template_names, (list, tuple)):
+            template_names = [template_names]
         if self.is_done_step():
-            base, ext = os.path.splitext(self.template_name)
-            return ["%s_%s%s" % (base, self.done_step, ext)]
-        else:
-            return [self.template_name]
+            result = []
+            for template_name in template_names:
+                base, ext = os.path.splitext(template_name)
+                result.append("%s_%s%s" % (base, self.done_step, ext))
+            template_names = result
+        return template_names
 
 
 class GingerWizardView(GingerStepViewMixin, GingerFormView):
