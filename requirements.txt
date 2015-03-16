@@ -5,7 +5,7 @@ MarkupSafe==0.23
 Pillow==2.6.0
 astunparse==1.2.2
 django-appconf==0.6
--e git+https://vivsh@github.com/vivsh/django-ginger.git@9b8cee02cf56463393bc0ad536ec0d2cd163e3dc#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@70e6724201d6399395c9f76be6083f3c27c74169#egg=django_ginger-master
 django-imagekit==3.2.5
 django-jinja==1.1.0
 django-jsonfield==0.9.13
