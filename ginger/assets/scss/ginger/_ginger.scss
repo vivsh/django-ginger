@@ -1,0 +1,41 @@
+
+@import "layouts";
+
+@mixin sticky-footer($height, $selector:"#footer"){
+  html{
+    min-height: 100%;
+    position: relative;
+  }
+
+  body{
+    margin-bottom: $height;
+    padding-bottom: 1px;
+  }
+
+  #{$selector}{
+    height: $height;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+@mixin vertical-gap($value: 1em, $child: "*", $property: margin){
+  & > #{$child}{
+    #{$property}-bottom: $value;
+  }
+  & > #{$child}:last-child{
+    #{$property}-bottom: 0;
+  }
+}
+
+
+@mixin horizontal-gap($value: 1em, $child: "*", $property: margin){
+  & > #{$child}{
+    #{$property}-right: $value;
+  }
+  & > #{$child}:last-child{
+    #{$property}-right: 0;
+  }
+}

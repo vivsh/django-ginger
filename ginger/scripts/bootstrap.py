@@ -245,4 +245,7 @@ def main():
 
     prj.create()
     prj.prepare_bower()
+    prj.manage("makemigrations auth")
     prj.manage("migrate")
+    prj.run("git init .")
+    prj.run("npm install gulp gulp-sass")
