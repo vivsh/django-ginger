@@ -131,7 +131,7 @@ class Factory(object):
     highest_id = 0
     total = 0
 
-    def __new__(cls, model, limit=20, name=None):
+    def __new__(cls, model, limit=1, name=None):
         if model not in cls.__cache:
             obj = super(Factory, cls).__new__(cls)
             cls.__cache[model] = obj

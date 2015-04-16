@@ -23,6 +23,7 @@ chdir           = {project_dir}src/
 module          = {project_name}.wsgi
 
 home            = {project_dir}venv/
+env = VIRTUAL_ENV={project_dir}venv/
 
 http-socket     = 0.0.0.0:{project_port}
 
