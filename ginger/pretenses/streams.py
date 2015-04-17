@@ -5,6 +5,7 @@ from django.contrib.webdesign import lorem_ipsum as lorem
 from django.core.files import File
 from django.contrib.gis.geos.point import Point
 import random
+import string
 
 from . import utils
 
@@ -34,6 +35,7 @@ __all__ = [
     "ManyToManyStream",
     "DefaultValueStream",
     "ValueStream",
+    "NameStream"
 ]
 
 
@@ -54,16 +56,6 @@ class FloatStream(IntegerStream):
 
     def next(self, field):
         return random.uniform(0.000001, 9999999999.99999999)
-
-
-class WordStream(object):
-
-    def __init__(self, n=4):
-        self.n = n
-
-    def next(self, field):
-        result = lorem.words(self.n, common=False)
-        return result
 
 
 class SentenceStream(object):
@@ -92,21 +84,39 @@ class ParagraphStream(object):
         return result
 
 
+class WordStream(object):
+
+    def __init__(self, min_length=4, max_length=16, total=1):
+        self.min_length = min_length
+        self.max_length = max_length
+        self.total = total
+
+    def next(self, field):
+        words = []
+        for i in range(self.total):
+            limit = random.randint(self.min_length, self.max_length)
+            word = "".join(random.sample(string.ascii_lowercase, limit))
+            words.append(word)
+        return " ".join(words)
+
+
 class FullNameStream(object):
 
     def next(self, field):
-        first_name = lorem.words(1, False)
-        last_name = lorem.words(1, False)
-        return "%s %s" % (first_name,last_name)
+        return " ".join(NameStream().next(field) for _ in range(2))
 
 
-class FirstNameStream(object):
+class NameStream(object):
 
     def next(self, field):
-        return lorem.words(1,False)
+        return WordStream(min_length=4, max_length=8).next(field)
 
 
-class LastNameStream(FirstNameStream):
+class FirstNameStream(NameStream):
+    pass
+
+
+class LastNameStream(NameStream):
     pass
 
 

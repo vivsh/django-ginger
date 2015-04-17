@@ -61,4 +61,3 @@ class SuperUserRequiredMixin(PrivilegeRequiredMixin):
     def has_privileges(self, user):
         return user.is_superuser
 
-
