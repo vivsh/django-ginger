@@ -1,4 +1,4 @@
-
+from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 import re
@@ -156,7 +156,9 @@ def data_attr(name, value):
 def js_value(name, value):
     return mark_safe("<script type='text/javascript'> var %s = %s </script>" % (name, ui.as_json(value)))
 
-
+@function_tag
+def content_type(value):
+    return ContentType.objects.get_for_model(value).id
 
 @filter_tag
 def local_datetime(stamp, large=True):
