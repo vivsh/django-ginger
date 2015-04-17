@@ -1,6 +1,6 @@
 define(["jquery", "lodash", "backbone"], function($, _, Backbone){
 
-    var components = {}, plugins = {}, extend = Backbone.History.extend;
+    var components = {}, plugins = {}, actions = {}, extend = Backbone.History.extend;
 
     var configured = false;
 
@@ -111,6 +111,17 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
         return func;
     }
 
+    function Action(name, settings, handler){
+        actions[name] = {construct: handler, settings: settings};
+        $(document).on("click", function func(event){
+            var $el = $(this), options = _.extend({}, obj.settings, $el.data(name+"-options"));
+            var result = handler.call($el, event, options);
+            if(result === false){
+                $(document).off(func);
+            }
+        });
+    }
+
     function Component(name, settings, handler, destructor){
         components[name] = {construct: handler, settings: settings, destroy: destructor};
     }
@@ -157,6 +168,7 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
         config: config,
         Plugin: Plugin,
         Component: Component,
+        Action: Action,
         Class: Class
     }
 
