@@ -12,12 +12,19 @@ define([], function(){
                 href.indexOf('tel:') !== 0;
     };
 
-    function format(){
-
+    function format(template, context){
+        return template.replace(/\{(\w+)\}/g, function(match, p1){
+            var value  = context[p1];
+            if(value == null){
+                return ""
+            }
+            return value+"";
+        });
     }
 
     return {
-
+        isInternalLink: isInternalLink,
+        format: format
     }
 
 });
