@@ -1,4 +1,4 @@
-
+from django.utils.encoding import force_text
 import re
 from django.utils import six
 from ginger import serializer
@@ -170,9 +170,9 @@ class Element(object):
 
     def render(self):
         attrs = self.attrib
-        content = "".join(six.text_type(c) for c in self.children)
+        content = "".join(force_text(c) for c in self.children)
         tag = _normalize(self.tag)
-        return "<{tag} {attrs}>{content}</{tag}>".format(**locals())
+        return u"<{tag} {attrs}>{content}</{tag}>".format(**locals())
 
     def __str__(self):
         return self.render()
