@@ -4,6 +4,7 @@ try:
     from django.utils import six
 except ImportError:
     import six
+from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import (InvalidPage, PageNotAnInteger, EmptyPage)
 from django.http import Http404
@@ -30,7 +31,12 @@ class GingerHttpError(Exception):
         super(Exception, self).__init__(self.description)
 
     def to_json(self):
-        return {'message': self.description, 'type': self.__class__.__name__}
+        messages = getattr(settings, "GINGER_HTTP_ERROR_MESSAGES",{})
+        class_name = self.__class__.__name__
+        return {
+            'message': messages.get(class_name, self.description),
+            'type': class_name
+        }
 
 
 class BadRequest(GingerHttpError):

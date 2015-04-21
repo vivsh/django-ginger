@@ -36,7 +36,7 @@ def register(pretense, *models):
 def generate(model, n=20, name=None, callback=None):
     global _callback
     _callback = callback
-    fac = Factory(model, limit=n, name=name)
+    fac = Factory(model)
     return fac.create_all(n)
 
 
@@ -130,23 +130,26 @@ class Factory(object):
 
     highest_id = 0
     total = 0
+    name = None
 
-    def __new__(cls, model, limit=1, name=None):
+    def __new__(cls, model):
         if model not in cls.__cache:
             obj = super(Factory, cls).__new__(cls)
             cls.__cache[model] = obj
             obj.model = model
             obj.meta = model._meta
             obj.fields = obj.meta.fields
-            obj.total = obj.model.objects.count()
-            obj.highest_id = obj.model.objects.order_by("id").last().id + 1 if obj.total else 0
-            obj.partial = False
-            obj.name = name
             Factory.load_pretenses()
         else:
             obj = cls.__cache[model]
-        obj.limit = limit
         return obj
+
+    def __init__(self, model):
+        self.update_stats()
+
+    def update_stats(self):
+        self.total = self.model.objects.count()
+        self.highest_id = self.model.objects.order_by("id").last().id + 1 if self.total else 0
 
     @classmethod
     def load_pretenses(cls):
@@ -161,21 +164,21 @@ class Factory(object):
                 except ImportError as ex:
                     pass
 
-    @cached_property
+    @property
     def processors(self):
         classes = [self.model] + list(self.model.__mro__)
         result = []
-        if not self.name:
-            for k in classes:
-                if k not in _processors:
-                    continue
-                proc = _processors[k]
-                result.append(proc)
-        else:
-            for mod in self.__modules:
-                cls = getattr(mod, self.name, None)
-                if cls is not None:
-                    result.append(cls())
+        # if not self.name:
+        for k in classes:
+            if k not in _processors:
+                continue
+            proc = _processors[k]
+            result.append(proc)
+        # else:
+        #     for mod in self.__modules:
+        #         cls = getattr(mod, self.name, None)
+        #         if cls is not None:
+        #             result.append(cls())
         result.append(DefaultProcessor(self))
         return result
 
@@ -211,10 +214,11 @@ class Factory(object):
             if issubclass(cls, models.Field):
                 yield template % self.snake_case(cls)
 
-    def create(self, index, **kwargs):
+    def create(self, index, limit, **kwargs):
         ins = self.model()
         for f in self.fields:
             field = Field(f, ins, index)
+            field.total = limit
             name = field.name
             if name in kwargs:
                 value = kwargs[name]
@@ -241,25 +245,22 @@ class Factory(object):
         on_create(ins)
         return ins
 
-    @cached_property
-    def all(self):
-        if self.limit >= self.total:
-            self.create_all(self.limit-self.total)
-        return list(self.model.objects.all())
+    def get(self):
+        if not self.total:
+            self.create_all(1)
+        return self.model.objects.order_by("?").first()
 
-    def get(self, index):
-        i = index % len(self.all)
-        return self.all[i]
+    def ensure_total(self, total):
+        if self.total < total:
+            self.create_all(total - self.total)
 
-    def create_all(self, limit=None, **kwargs):
-        if limit is None:
-            limit = self.limit
+    def create_all(self, limit, **kwargs):
         i = 0
         errors = 0
         bulk = []
         while i < limit:
             try:
-                ins = self.create(self.highest_id+i, **kwargs)
+                ins = self.create(self.highest_id+i, limit, **kwargs)
                 i += 1
             except (IntegrityError, ValidationError, pyex.AmbiguousTimeError, pyex.NonExistentTimeError, pyex.InvalidTimeError) as ex:
                 errors += 1
@@ -268,6 +269,7 @@ class Factory(object):
             else:
                 errors = 0
                 bulk.append(ins)
+        self.update_stats()
         return bulk
 
     def get_field_value(self, field):
@@ -277,10 +279,10 @@ class Factory(object):
 
 class FactoryProxy(object):
 
-    def __init__(self, model, limit=20):
-        self.factory = Factory(model, limit)
+    def __init__(self, model):
+        self.factory = Factory(model)
 
-    def create(self, limit=None, **kwargs):
+    def create(self, limit, **kwargs):
         return self.factory.create_all(limit, **kwargs)
 
 
@@ -330,9 +332,11 @@ class DefaultProcessor(object):
         return "".join("<p>%s</p>" % p for p in para)
 
     def process_foreign_key(self, field):
+        if field.null:
+            return None
         index = field.index
         factory = Factory(field.model)
-        value = factory.get(index)
+        value = factory.get()
         return value
 
     def process_date_time_field(self, field):
