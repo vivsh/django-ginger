@@ -7,14 +7,18 @@ define(["jquery"], function($){
     function normalizeError(jqxhr,status, reason){
         var status = jqxhr.statusCode(), text = jqxhr.responseText, data;
         try{
-            data = JSON.parse(text)
+            data = $.parseJSON(text)
         }catch (e){
             data = {
                 message: messages[reason],
-                type: ""
+                type: reason
             }
         }
         return data;
+    }
+
+    return {
+        normalize: normalizeError
     }
 
 });
