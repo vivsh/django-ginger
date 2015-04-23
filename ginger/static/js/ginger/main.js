@@ -1,6 +1,6 @@
 define(["jquery", "lodash", "backbone"], function($, _, Backbone){
 
-    var components = {}, plugins = {}, actions = {}, extend = Backbone.History.extend;
+    var components = {}, plugins = {}, actions = {}, extend = Backbone.History.extend, domReady = false;
 
     var configured = false;
 
@@ -124,15 +124,23 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
 
     function Component(name, settings, handler, destructor){
         components[name] = {construct: handler, settings: settings, destroy: destructor};
+        if(domReady){
+            enhanceComponent(name, document);
+        }
+    }
+
+    function enhanceComponent(name, scope){
+        var obj = components[name], $elements = $(scope);
+        $elements.find("."+name).each(function(i, el){
+            var $el = $(el), options = _.extend({}, obj.settings, $el.data(name+"-options"));
+            obj.construct.call($el, $el, options);
+        });
     }
 
     function enhanceUI(elements){
-        var $elements = $(elements);
+        elements = elements || document;
         _.each(components, function(obj, name){
-            $elements.find("."+name).each(function(i, el){
-                var $el = $(el), options = _.extend({}, obj.settings, $el.data(name+"-options"));
-                obj.construct($el, options);
-            });
+            enhanceComponent(name, elements);
         });
     }
 
@@ -161,6 +169,7 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
 
     $(function(){
        enhanceUI(document);
+        domReady = true;
     });
 
     return {
