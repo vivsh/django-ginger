@@ -115,7 +115,8 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
         if(name in actions){
             throw new Error("Action " + name + " already exists !");
         }
-        actions[name] = {construct: handler, settings: settings};
+        var obj = {construct: handler, settings: settings};
+        actions[name] = obj;
         $(document).on("click", "."+name, function func(event){
             var $el = $(this), options = _.extend({}, obj.settings, $el.data(name+"-options"));
             var result = handler.call($el, event, options);
