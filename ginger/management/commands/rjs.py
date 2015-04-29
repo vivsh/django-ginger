@@ -125,13 +125,8 @@ def get_requirejs_path():
         raise AttributeError("No REQUIREJS_PATH has been specified in settings")
     return requirejs_path
 
-def get_lesscss_path():
-    lesscss_path = getattr(settings, "LESSCSS_PATH", "js/less.js")
-    if not asset(lesscss_path):
-        raise AttributeError("No LESSCSS_PATH has been specified in settings")
-    return lesscss_path
 
-def pack_js():
+def pack_js(main, optimize):
     call_command("collectstatic", interactive=False, verbosity=0)
     root = asset("js")
     hashjs = hashdir(root,"js")
@@ -152,8 +147,8 @@ def pack_js():
         "baseUrl": asset("js"),
         "name": "main",
         "out": outfile,
-        "mainConfigFile": asset("js/main.js"),
-        "optimize":"none",
+        "mainConfigFile": asset("js/%s" % main),
+        "optimize": optimize,
         "preserveLicenseComments":"false",
         "paths.requireLib": require_module,
         "include":"requireLib"
@@ -163,89 +158,41 @@ def pack_js():
     local("r.js -o %s"%optargs)
     
     print("Output: %s %s"%(outfile, file_size(outfile)))
-          
 
-def pack_css():
-    root = asset("less")
-    hashcss = hashdir(root, "css")    
-    tempfile = asset("less", hashcss)
-    outfile = find_asset("css", hashcss)
-
-    change_version( template('requirecss.html'), 
-        lambda d: "<link href='{{STATIC_URL}}css/%s' rel='stylesheet' type='text/css'>"%hashcss)
-      
-    if os.path.exists(outfile):
-        print("No change detected")
-        return
-     
-    remove_files(find_asset("css"), r".{16}\.min.css$")
-    
-    infile = asset("less", "main.less")
-    
-    options = {
-           
-    }
-    optargs = " ".join("--%s=%s"%(key,value) for key, value in options.iteritems())
-    
-    local("lessc --strict-imports %s %s > %s"%(optargs, infile, tempfile))
-    
-    options = {
-        "cssIn": tempfile,
-        "out": tempfile,
-        "optimize":"uglify2",
-        "preserveLicenseComments":"false"
-    }
-      
-    optargs = " ".join("%s=%s"%(k,v)  for k,v in options.iteritems())
-    local("r.js -o %s"%optargs)
-    
-    local("cleancss -o %s --skip-rebase -s %s"%(tempfile, tempfile))
-      
-    os.rename(tempfile, outfile)
-    
-    print("Output: %s %s"%(outfile, file_size(outfile)))
-    
-    
-def pack_all():
-    pack_css()
-    pack_js()
-    
-def unpack_css():
-    less = """
-    <script>
-        less = {
-            environment: "development"
-        };
-    </script>
-    <link rel="stylesheet/less" href="{{STATIC_URL}}less/main.less" />
-    <script type="text/javascript" src="{{STATIC_URL}}%s#!watch"> </script>
-    """%get_lesscss_path()
-    change_version(template('requirecss.html'), less)
 
 def unpack_js():
     change_version(template('requirejs.html'), "<script src='{{STATIC_URL}}%s' data-main='{{STATIC_URL}}js/main' type='text/javascript'></script>"%(get_requirejs_path()))
 
-def unpack_all():
-    unpack_css()
-    unpack_js()
 
 class Command(BaseCommand):
-    
-    def handle(self, mode, target="all", **options):
-        if mode not in {'pack', 'unpack'}:
-            raise ValueError("Unknown directive: %r"%mode)
-        method_name = "%s_%s"%(mode, target)
-        if not self.local:
-            raise Exception("These commands should be run only on local filesystems")
-        try:
-            method = globals()[method_name]
-        except KeyError:
-            raise ValueError("Unknown target: %r"%target)
-        else:
-            method()
 
-    def install_deps(self):
-        subprocess.check_call("npm -g install requirejs")
-        subprocess.check_call("npm -g install lesscss")
-        subprocess.check_call("npm -g install bower")
-        subprocess.check_call("npm -g install cleancss")
+    option_list = BaseCommand.option_list + (
+
+        optparse.make_option(
+            "-o",
+            "--optimize",
+            type="choice",
+            choices=("none", "uglify", "uglify2"),
+            default="none",
+        ),
+        optparse.make_option(
+            "-m",
+            "--main",
+            default="main.js"
+        ),
+        optparse.make_option(
+            "-u",
+            "--unpack",
+            action="store_true",
+            default=False
+        )
+    )
+    
+    def handle(self, **options):
+        main_file = options["main"]
+        unpack = options["unpack"]
+        optimize = options["optimize"]
+        if unpack:
+            unpack_js()
+        else:
+            pack_js(main_file, optimize)
