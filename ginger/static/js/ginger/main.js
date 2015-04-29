@@ -112,8 +112,11 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
     }
 
     function Action(name, settings, handler){
+        if(name in actions){
+            throw new Error("Action " + name + " already exists !");
+        }
         actions[name] = {construct: handler, settings: settings};
-        $(document).on("click", function func(event){
+        $(document).on("click", "."+name, function func(event){
             var $el = $(this), options = _.extend({}, obj.settings, $el.data(name+"-options"));
             var result = handler.call($el, event, options);
             if(result === false){
@@ -123,6 +126,9 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
     }
 
     function Component(name, settings, handler, destructor){
+        if(name in components){
+            throw new Error("Component " + name + " already exists !");
+        }
         components[name] = {construct: handler, settings: settings, destroy: destructor};
         if(domReady){
             enhanceComponent(name, document);
