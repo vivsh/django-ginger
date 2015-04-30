@@ -262,7 +262,7 @@ class GingerSearchFormMixin(GingerFormMixin):
         data = self.cleaned_data if self.is_bound else self.initial_data
         allowed = set(self.get_queryset_filter_names())
         for name, value in six.iteritems(data):
-            if name not in allowed or not value:
+            if name not in allowed or value in (None, ''):
                 continue
             kwargs = {}
             field = self.fields[name]

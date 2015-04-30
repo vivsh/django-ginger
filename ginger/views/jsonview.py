@@ -52,6 +52,7 @@ class GingerJSONView(GingerView):
         return getattr(self, 'serializers', {})
 
     def render_to_response(self, payload, **kwargs):
+        print payload, kwargs
         content = serializer.encode(payload, serializers=self.get_serializers())
         kwargs.setdefault('status', 200)
         kwargs.setdefault('content_type', 'application/json')
