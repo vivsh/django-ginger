@@ -122,6 +122,8 @@ def iter_fields(form, names, hidden=True):
 
 
 def render_field(field, layout=None, **kwargs):
+    if field.is_hidden:
+        return field.as_hidden()
     layout = _layouts.get(layout, default_layout)
     template = layout(field)
     ctx = {
