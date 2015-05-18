@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import functools
+import itertools
+from django.utils.module_loading import import_string
 import jinja2
 import os
 
@@ -10,8 +12,8 @@ from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.template.loaders import app_directories
 from django.template.loaders import filesystem
-from django_jinja.base import Template
-from django_jinja import library
+from ginger.ginja.base import Template
+from ginger.ginja import library
 
 
 from ginger.serializer import JSONTemplate
@@ -40,7 +42,7 @@ JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 
 
 def get_env():
-    from django_jinja.base import env
+    from ginja.base import env
     return env
 
 
@@ -145,11 +147,24 @@ def field_layout(func):
 
 class GingerResponse(TemplateResponse):
 
+    def __init__(self, *args, **kwargs):
+        super(GingerResponse, self).__init__(*args, **kwargs)
+
+    @property
+    def context_processors(self):
+        return itertools.imap(import_string, settings.TEMPLATE_CONTEXT_PROCESSORS)
+
     def is_json(self):
         return self["content-type"] == "application/json"
 
     def resolve_context(self, context):
-        return context if self.is_json() else super(GingerResponse, self).resolve_context(context)
+        if self.is_json():
+            return context
+        else:
+            context = super(GingerResponse, self).resolve_context(context)
+            for processor in self.context_processors:
+                context.update(processor(self._request))
+            return context
 
     def resolve_template(self, template):
         return JSONTemplate if self.is_json() else super(GingerResponse, self).resolve_template(template)

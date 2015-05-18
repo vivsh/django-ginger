@@ -1,5 +1,8 @@
 
 from django.apps import AppConfig
+from django.core.exceptions import ImproperlyConfigured
+
+
 
 
 class GingerConfig(AppConfig):
@@ -9,10 +12,11 @@ class GingerConfig(AppConfig):
 
     def ready(self):
         from django.conf import settings
-        from django_jinja import base
-        if 'django_jinja' not in settings.INSTALLED_APPS:
-            base.setup_django_lte_17()
+        from ginja import base
         from ginger.extensions import URLExtension, LoadExtension, FormExtension
+        if 'django_jinja' in settings.INSTALLED_APPS:
+            raise ImproperlyConfigured
+        base.setup()
         base.env.finalize = lambda val: "" if val is None else val
         base.env.trim_blocks = True
         base.env.lstrip_blocks = True
