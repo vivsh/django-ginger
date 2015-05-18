@@ -12,8 +12,8 @@ from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.template.loaders import app_directories
 from django.template.loaders import filesystem
-from ginger.ginja.base import Template
-from ginger.ginja import library
+from django_jinja.base import Template
+from django_jinja import library
 
 
 from ginger.serializer import JSONTemplate
@@ -42,7 +42,7 @@ JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 
 
 def get_env():
-    from ginja.base import env
+    from django_jinja.base import env
     return env
 
 
@@ -162,8 +162,6 @@ class GingerResponse(TemplateResponse):
             return context
         else:
             context = super(GingerResponse, self).resolve_context(context)
-            for processor in self.context_processors:
-                context.update(processor(self._request))
             return context
 
     def resolve_template(self, template):
