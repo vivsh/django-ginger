@@ -12,17 +12,15 @@ from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.template.loaders import app_directories
 from django.template.loaders import filesystem
-from django_jinja.base import Template
-from django_jinja import library
-
+from ginger.template import library
 
 from ginger.serializer import JSONTemplate
 
 
 __all__ = [
-    "FileSystemLoader",
-    "AppLoader",
-    "Template",
+    # "FileSystemLoader",
+    # "AppLoader",
+    # "Template",
     "GingerResponse",
     "ginger_tag",
     "filter_tag",
@@ -42,40 +40,9 @@ JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 
 
 def get_env():
-    from django_jinja.base import env
-    return env
+    from django.template import engine
+    return engine.env
 
-
-class LoaderMixin(object):
-    is_usable = True
-
-    def process_template_name(self, template_name):
-        return template_name
-
-    def load_template(self, template_name, template_dirs=None):
-        """
-        In the root directory, use jinja only for files with jinja extension
-        In app directory, use it for all
-        """
-        root = template_name.strip("/").split("/",1)[0]
-        _, ext = os.path.splitext(template_name)
-        if root not in JINJA2_EXCLUDE_FOLDERS or ext == JINJA2_TEMPLATE_EXTENSION:
-            try:
-                template_name = self.process_template_name(template_name)
-                template = get_env().get_or_select_template(template_name)
-                return template, template.filename
-            except jinja2.TemplateNotFound:            
-                raise TemplateDoesNotExist(template_name)                    
-        else:                
-            return super(LoaderMixin, self).load_template(template_name, template_dirs)        
-
-
-class FileSystemLoader(LoaderMixin, filesystem.Loader):
-    pass
-
-
-class AppLoader(LoaderMixin, app_directories.Loader):
-    pass
 
 def from_string(value):
     return get_env().from_string(value)

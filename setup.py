@@ -38,8 +38,8 @@ setup(
     install_requires=[
         "django-pods==1.1.2",
         "django-jsonfield==0.9.13",
-        "django_nose==1.4",
         "django-imagekit==3.2.5",
+        "django_nose==1.4",
         "webtest",
         "django-webtest",
         "jinja2==2.7.3",

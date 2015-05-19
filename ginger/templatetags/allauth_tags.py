@@ -1,4 +1,4 @@
-from ginger.templates import ginger_tag
+from ginger.template.library import ginger_tag
 
 try:
     from allauth.socialaccount import providers
