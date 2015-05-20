@@ -9,18 +9,13 @@ import os
 from django.template.response import TemplateResponse
 from django.conf import settings
 from django.http import HttpResponse
-from django.template import TemplateDoesNotExist
-from django.template.loaders import app_directories
-from django.template.loaders import filesystem
+from django.template.loader import get_template, render_to_string, select_template
 from ginger.template import library
 
 from ginger.serializer import JSONTemplate
 
 
 __all__ = [
-    # "FileSystemLoader",
-    # "AppLoader",
-    # "Template",
     "GingerResponse",
     "ginger_tag",
     "filter_tag",
@@ -38,40 +33,47 @@ JINJA2_TEMPLATE_EXTENSION = getattr(settings, 'JINJA2_TEMPLATE_EXTENSION', '.jin
 
 JINJA2_EXCLUDE_FOLDERS = set(getattr(settings,'JINJA2_EXCLUDE_FOLDERS',()))
 
-
-def get_env():
-    from django.template import engine
-    return engine.env
-
-
-def from_string(value):
-    return get_env().from_string(value)
-
-def get_template(template_name):
-    return get_env().get_template(template_name)
-
-
-def select_template(template_names):
-    return get_env().select_template(template_names)
+#
+# _env = None
+#
+#
+# def get_env():
+#     global _env
+#     if _env is None:
+#         from django.template import engines
+#         _env =  engines["GINGER"].env
+#     return _env
 
 
-def get_or_select_template(templates):
-    return get_env().get_or_select_template(templates)
+# def from_string(value):
+#     return get_env().from_string(value)
+#
+# def get_template(template_name):
+#     return get_env().get_template(template_name)
+#
+#
+# def select_template(template_names):
+#     return get_env().select_template(template_names)
+#
+#
+# def get_or_select_template(templates):
+#     return get_env().get_or_select_template(templates)
 
-
-def render_to_string(template_names, context):
-    return get_env().get_or_select_template(template_names).render(context)
-
-
-def render_to_response(template_names, context, response_class=HttpResponse, response_kwargs=None):
-    defaults = {
-        "status": 200,
-        "content_type": "text/html"
-    }
-    if response_kwargs is not None:
-        defaults.update(response_kwargs)
-    content = render_to_string(template_names, context)
-    return response_class(content, **defaults)
+#
+# def render_to_string(template_names, context):
+#     return get_env().get_or_select_template(template_names).render(context)
+#
+#
+#
+# def render_to_response(template_names, context, response_class=HttpResponse, response_kwargs=None):
+#     defaults = {
+#         "status": 200,
+#         "content_type": "text/html"
+#     }
+#     if response_kwargs is not None:
+#         defaults.update(response_kwargs)
+#     content = render_to_string(template_names, context)
+#     return response_class(content, **defaults)
 
 
 def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
@@ -80,7 +82,7 @@ def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
         name_ = name or getattr(func,'_decorated_function',func).__name__
         if template:
             def wrapper(*args, **kwargs):
-                t = get_env().get_template(template)
+                t = get_template(template)
                 values = orig_func(*args,**kwargs)
                 result = t.render( values )
                 result = jinja2.Markup(result)

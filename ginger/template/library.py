@@ -5,20 +5,7 @@ import jinja2
 __all__ = ['function_tag', 'filter_tag', 'test_tag', 'ginger_tag']
 
 
-_local_env = {
-    "globals": {},
-    "tests": {},
-    "filters": {},
-}
-
-
 _env = None
-
-
-def _update_env(env):
-    env.globals.update(_local_env["globals"])
-    env.tests.update(_local_env["tests"])
-    env.filters.update(_local_env["filters"])
 
 
 def get_env():
