@@ -114,13 +114,6 @@ def field_layout(func):
 
 class GingerResponse(TemplateResponse):
 
-    def __init__(self, *args, **kwargs):
-        super(GingerResponse, self).__init__(*args, **kwargs)
-
-    @property
-    def context_processors(self):
-        return itertools.imap(import_string, settings.TEMPLATE_CONTEXT_PROCESSORS)
-
     def is_json(self):
         return self["content-type"] == "application/json"
 
