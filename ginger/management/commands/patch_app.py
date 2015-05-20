@@ -10,12 +10,11 @@ class Command(BaseCommand):
 
     help = "Converts any app to standard ginger app with celery-tasks, forms, signals modules"
 
-    def handle(self, *args, **options):
-        if not args:
-            raise CommandError("No view has been given")
-        if len(args) > 1:
-            raise CommandError("Too many arguments. Check python manage.py help bless_app")
-        app_name = args[0]
+    def add_arguments(self, parser):
+        parser.add_argument("app_name")
+
+    def handle(self, **options):
+        app_name = options["app_name"]
         app.Application(app_name)
 
 

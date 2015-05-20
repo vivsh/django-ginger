@@ -166,28 +166,24 @@ def unpack_js():
 
 class Command(BaseCommand):
 
-    option_list = BaseCommand.option_list + (
-
-        optparse.make_option(
+    def add_arguments(self, parser):
+        parser.add_argument("-u",
+            "--unpack",
+            action="store_true",
+            default=False)
+        parser.add_argument(
+            "-m",
+            "--main",
+            default="main.js"
+        )
+        parser.add_argument(
             "-o",
             "--optimize",
             type="choice",
             choices=("none", "uglify", "uglify2"),
             default="none",
-        ),
-        optparse.make_option(
-            "-m",
-            "--main",
-            default="main.js"
-        ),
-        optparse.make_option(
-            "-u",
-            "--unpack",
-            action="store_true",
-            default=False
         )
-    )
-    
+
     def handle(self, **options):
         main_file = options["main"]
         unpack = options["unpack"]

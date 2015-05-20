@@ -12,28 +12,13 @@ class Command(BaseCommand):
     args = "app_name.model_name"
     help = 'Create data for the specified model'
 
-    option_list = (
-        make_option(
-            "-t",
-            "--total",
-            default=20,
-            type="int",
-            help="Total number of instances to be created"
-        ),
-        make_option(
-            "-p",
-            "--pretense",
-            default=None,
-            help="Pretense to be used for content generation"
-        ),
-    ) + BaseCommand.option_list
+    def add_arguments(self, parser):
+        parser.add_argument("model")
+        parser.add_argument("-t", "--total", default=20, type=int, help="Total number of instances to be created")
+        parser.add_argument("-p", "--pretense", default=None, help="Pretense to be used for content generation")
 
-    def handle(self, *args, **options):
-        if not args:
-            raise CommandError("No model specified")
-        name = args[0]
-        if len(args) > 1 :
-            raise CommandError("Too many arguments")
+    def handle(self, **options):
+        name = options["model"]
         if '.' in name:
             app_label, model_name = name.split(".", 1)
             model = apps.get_model(app_label, model_name)

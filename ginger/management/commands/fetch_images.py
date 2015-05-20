@@ -1,47 +1,47 @@
-from django.conf import settings
-import os
-import optparse
+
 from ginger.extras.google_images import GoogleImage
-from django.core.management import BaseCommand, CommandError
+from django.core.management import BaseCommand
 
 
 class Command(BaseCommand):
 
-    option_list = BaseCommand.option_list + (
-        optparse.make_option(
+    def add_arguments(self, parser):
+        parser.add_argument("query")
+        parser.add_argument("--dest", default=None)
+        parser.add_argument(
             "-s",
             "--size",
             action="store",
             dest="size"
-        ),
-        optparse.make_option(
+        )
+        parser.add_argument(
             "-f",
             "--file-type",
             type="choice",
             choices=["jpg", "png", "svg"],
             default="jpg"
-        ),
-        optparse.make_option(
+        )
+        parser.add_argument(
             "-u",
             "--unsafe",
             action="store_true"
-        ),
-        optparse.make_option(
+        )
+        parser.add_argument(
             "-p",
             "--prefix",
             default="image"
-        ),
-        optparse.make_option(
+        )
+        parser.add_argument(
             "-c",
             "--count",
             default=10,
             type="int"
-        ),
-    )
+        )
+    
 
-    def handle(self, query, dest=None, *args, **options):
-        if dest is None:
-            dest = ""
+    def handle(self, **options):
+        query = options['query']
+        dest = options["dest"]
         gi = GoogleImage(dest, options["prefix"])
         results = gi.search(query, options["count"],
                   safe= not options["unsafe"],

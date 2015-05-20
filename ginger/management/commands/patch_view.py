@@ -27,13 +27,11 @@ class Command(BaseCommand):
     #                          help="type of view: %s" % ", ".join(view_types)),
     # )
 
-    def handle(self, *args, **options):
-        if not args:
-            raise CommandError("No view has been given")
-        if len(args) > 1:
-            raise CommandError("Too many arguments. Check python manage.py help create_view")
-        view = args[0]
+    def add_arguments(self, parser):
+        parser.add_argument("view")
 
+    def handle(self, **options):
+        view = options["view"]
         try:
             view_class = importlib.import_module(view)
         except ImportError:
