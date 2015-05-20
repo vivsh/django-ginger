@@ -1,7 +1,6 @@
 
 from decimal import Decimal
 from datetime import datetime, timedelta, date, time
-from django.contrib.webdesign import lorem_ipsum as lorem
 from django.core.files import File
 from django.contrib.gis.geos.point import Point
 import random
@@ -61,7 +60,9 @@ class FloatStream(IntegerStream):
 class SentenceStream(object):
 
     def next(self, field):
-        return lorem.sentence()
+        stream = WordStream()
+        result = " ".join(stream.next(field) for _ in range(random.randint(4, 9)))
+        return "%s." % result.capitalize()
 
 
 class ParagraphStream(object):
@@ -71,9 +72,13 @@ class ParagraphStream(object):
         self.maximum = maximum
         self.html = html
 
+    def create_paragraph(self, field):
+        stream = SentenceStream()
+        return " ".join(stream.next(field) for _ in range(random.randint(5, 20)))
+
     def next(self, field):
         limit = random.randint(self.minimum,self.maximum)
-        result = "\n".join(lorem.paragraphs(limit))
+        result = "\n".join(self.create_paragraph(field) for _ in range(limit))
         if field.max_length:
             result = result[:field.max_length]
         if self.html:
@@ -246,8 +251,9 @@ class RandomPasswordStream(object):
         list_special_char = ['!','@','#','$','%','^','&','*','(',')','+','_','~','<','>','|','{','}','[',']','`']
         password = ""
         size = random.randint(self.min_length, self.max_length)
+        stream = WordStream()
         while len(password) < size:
-            password += lorem.words(1, common=False)
+            password += stream.next(field)
         password = password[:size]
         result = list(password)
         positions = set(range(len(password)))

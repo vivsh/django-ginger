@@ -13,8 +13,6 @@ from django.apps import apps
 from django.db.utils import IntegrityError
 from django.forms.models import model_to_dict
 from django.utils import timezone
-from django.contrib.webdesign import lorem_ipsum as lipsum
-from django.utils.functional import cached_property
 from django.utils.text import camel_case_to_spaces
 from . import utils
 import datetime
