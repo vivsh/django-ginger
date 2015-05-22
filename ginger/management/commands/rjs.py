@@ -44,18 +44,17 @@ def find_asset(path, *tail):
     return os.path.join(assets_folder, *tail)
 
 def template(name):
-    try:
-        if loader.template_source_loaders is None:
-            loader.find_template(name)
-        for l in loader.template_source_loaders:
-            for filepath in l.get_template_sources(name):
-                if os.access(filepath, os.R_OK):
-                    return filepath
-    except TemplateDoesNotExist:
-        path = os.path.join(project_path(), project_name(), "templates", "requirejs.html")
-        with open(path, "w") as fh:
-            fh.write("")
-        return path
+    from django.template import engines
+    for nm in engines:
+        engine = engines[nm]
+        try:
+            return next(filename for filename in engine.iter_template_filenames(name) if os.path.exists(filename))
+        except StopIteration:
+            pass
+    path = os.path.join(project_path(), project_name(), "templates", "requirejs.html")
+    with open(path, "w") as fh:
+        fh.write("")
+    return path
     
 
 def file_size(filename):
@@ -179,7 +178,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "-o",
             "--optimize",
-            type="choice",
+            type=str,
             choices=("none", "uglify", "uglify2"),
             default="none",
         )
