@@ -61,7 +61,6 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
                 }
                 var isCSRF = domain !== window.document.location.hostname;
                 var hasHashLink = href.indexOf("#") === 0;
-
                 if (getRouteHandler(href) && !isCSRF && !hasHashLink) {
                     Backbone.history.navigate(href, {trigger: true});
                     event.preventDefault();
@@ -73,7 +72,7 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
         }
     }
 
-    function setUpRoutes(){
+    function setUpRoutes(routes){
 		routes.reverse();
 		_.each(routes, function(func){
 			new func;
@@ -95,7 +94,7 @@ define(["jquery", "lodash", "backbone"], function($, _, Backbone){
             throw new Error("Cannot configure ginger again")
         }
         _.extend(config, options);
-        setUpRoutes();
+        setUpRoutes(options.routes || []);
         configured = true;
     }
 
