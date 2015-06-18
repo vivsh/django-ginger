@@ -93,7 +93,7 @@ class GingerFormMixin(object):
             self.data = data
 
     def process_context(self):
-        context = self.context
+        context = self.context.copy()
         if not isinstance(self, GingerSearchFormMixin) and hasattr(self, "cleaned_data"):
             if hasattr(self, "save"):
                 instance = self.save(commit=False)
