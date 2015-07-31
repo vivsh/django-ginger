@@ -5,7 +5,7 @@ from ginger import serializer
 from jinja2 import Markup
 
 
-__all__ = ['html_json', 'html_attrs', "Element"]
+__all__ = ['html_json', 'html_attrs', "Element", "CssClassList", "CssStyle", 'add_css_class']
 
 
 def html_json(values):
@@ -17,6 +17,13 @@ def html_attrs(*args, **kwargs):
     attr = HtmlAttr()
     attr.update(*args, **kwargs)
     return six.text_type(attr)
+
+
+def add_css_class(original_class, *css_classes):
+    css = CssClassList()
+    css.append(original_class)
+    css.append(css_classes)
+    return six.text_type(css)
 
 
 class CssClassList(object):
@@ -119,7 +126,7 @@ class HtmlAttr(object):
     def render(self):
         pairs = []
         for key, value in self:
-            if value is None and value is False:
+            if value is None or value is False:
                 continue
             if value is True:
                 pairs.append(key)
@@ -185,3 +192,7 @@ for name in "html body link meta div span form section article aside main ul li 
             "i fieldset legend b em input select button label nav".split(" "):
     __all__.append(name)
     globals()[name] = Element(name)
+
+
+if __name__ == '__main__':
+    print input(type="radio", checked=False).render()

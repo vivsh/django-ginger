@@ -8,7 +8,8 @@ from django import forms
 from django.core.paginator import Page
 
 from ginger.exceptions import ValidationFailure
-from ginger import utils, paginator
+from ginger import utils, paginator, html
+import warnings
 
 
 __all__ = ['GingerModelForm', 
@@ -53,18 +54,7 @@ class GingerFormMixin(object):
         self.merge_defaults()
 
     def field_range(self, first, last, step=None):
-        keys = self.fields.keys()
-        if first is not None and isinstance(first, six.string_types):
-            try:
-                first = keys.index(first)
-            except ValueError:
-                raise KeyError("%r is not a field for form %r" % (first, self.__class__.__name__))
-        if last is not None and isinstance(last, six.string_types):
-            try:
-                last = keys.index(last)-1
-            except ValueError:
-                raise KeyError("%r is not a field for form %r" % (last, self.__class__.__name__))
-        return self.iter_fields(keys[first:last:step])
+        return html.field_range(self, first, last, step, hidden=True)
 
     def iter_fields(self, names):
         return (self[field] for field in names)
@@ -149,7 +139,7 @@ class GingerFormMixin(object):
 
     @classmethod
     def is_submitted(cls, data):
-        return data and (any(k in data for k in self.base_fields) or self.submit_name() in data)
+        return data and (any(k in data for k in cls.base_fields) or cls.submit_name() in data)
 
     @classmethod
     def submit_name(cls):
@@ -166,33 +156,14 @@ class GingerFormMixin(object):
             _ = self.__result
         except AttributeError:
             result = None
-            if self.is_bound and (not self._errors or self.ignore_errors):
-                context = self.process_context()
-                try:
+            try:
+                if self.is_bound and (not self._errors or self.ignore_errors):
+                    context = self.process_context()
                     result = self.execute(**context)
-                except forms.ValidationError as ex:
-                    self.add_error(None, ex)
-                finally:
-                    self.__result = result
-
-    #
-    # def is_valid(self):
-    #     func = super(GingerFormMixin, self).is_valid
-    #     try:
-    #         _ = self.result
-    #     except AttributeError:
-    #         pass
-    #     else:
-    #         return func()
-    #     result = None
-    #     if func() or self.ignore_errors:
-    #         try:
-    #             result = self.execute(**self.context)
-    #         except forms.ValidationError as ex:
-    #             self.add_error(None, ex)
-    #         finally:
-    #             self.__result = result
-    #     return func()
+            except forms.ValidationError as ex:
+                self.add_error(None, ex)
+            finally:
+                self.__result = result
 
     def execute(self, **kwargs):
         return {}
@@ -291,6 +262,7 @@ class GingerSearchFormMixin(GingerFormMixin):
         return 'page' in self.context
 
     def to_json(self):
+        warnings.warn("Form.to_json is deprecated and shall be removed in ginger 1.0", DeprecationWarning)
         result = self.run()
         if isinstance(result, Page):
             return {

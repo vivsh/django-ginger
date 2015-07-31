@@ -11,7 +11,7 @@ from . import common
 __all__ = ["Choice", "Link", "form_csrf_tag", "form_attrs", "form_css_class",
            "field_choices", "field_name_range", "field_links", "iter_fields", "widget_css_class",
            "render_widget", "register_layout", "render_field", "field_css_class", "field_range",
-           "render_page", "wrap_csrf_token"]
+           "render_page", "wrap_csrf_token", "is_selected_choice"]
 
 Choice = namedtuple("Choice", ["name", "value", "content", "selected"])
 

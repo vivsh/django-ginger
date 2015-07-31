@@ -57,8 +57,9 @@ class Pattern(object):
 
     _regex = re.compile("^(\w*)(\?)?:(.+?)(?:\s*\{\s*(\d*)\s*(,\s*\d*)?\s*\})?$")
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, value, prefix=None):
+        self.value = value if not isinstance(value, self.__class__) else value.value
+        self.prefix = prefix
 
     def match(self, value):
         for cls in self.pattern_types:
@@ -72,6 +73,8 @@ class Pattern(object):
 
     def create(self):
         parts = re.sub("/+", "/", self.value).lstrip("/").split("/")
+        if self.prefix:
+            parts.insert(0, self.prefix)
         result = []
         size = len(parts)
         for i, p in enumerate(parts):
@@ -111,4 +114,4 @@ class Pattern(object):
 
 
 if __name__ == "__main__":
-    print Pattern("asdsa/sadasd?:int/").regex()
+    print Pattern("asdsa/sadasd?:int/hello:(sdad|jkjk)/", prefix="some").regex()

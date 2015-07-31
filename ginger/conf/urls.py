@@ -1,9 +1,6 @@
-from django.utils import six
-import inspect
-from importlib import import_module
+
 from django.conf.urls import patterns, include, url
-from django.utils.module_loading import import_string
-from ginger.views import GingerView, utils
+from ginger.views import utils
 
 
 __all__ = ('pattern', 'include', 'url', 'scan', 'scan_to_include')
@@ -11,7 +8,13 @@ __all__ = ('pattern', 'include', 'url', 'scan', 'scan_to_include')
 
 def scan(module, predicate=None):
     view_classes = utils.find_views(module, predicate=predicate)
-    pattern = patterns("", *[values.as_url() for values in view_classes])
+    urls = []
+    for view in view_classes:
+        if hasattr(view, 'as_urls'):
+            urls.extend(view.as_urls())
+        else:
+            urls.append(view.as_url())
+    pattern = patterns("", *urls)
     return pattern
 
 

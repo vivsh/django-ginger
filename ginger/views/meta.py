@@ -1,5 +1,6 @@
 import os
 from ginger import utils
+from os import path
 
 
 class ViewInfo(object):
@@ -42,11 +43,15 @@ class ViewInfo(object):
 
     @property
     def view_class_name(self):
-        return "%sView" % "".join(p.capitalize() for p in self.url_name.split("_"))
+        return "%sView" % "".join(p.capitalize() for p in self.fragments)
 
     @property
     def resource_name(self):
-        return "_".join(self.url_name.split("_")[:-1])
+        return "_".join(self.fragments[:-1])
+
+    @property
+    def fragments(self):
+        return self.url_name.split("_")
 
     @property
     def form_path(self):
@@ -54,7 +59,7 @@ class ViewInfo(object):
 
     @property
     def verb(self):
-        return self.url_name.split("_")[-1]
+        return self.fragments[-1]
 
     @property
     def url_verb(self):

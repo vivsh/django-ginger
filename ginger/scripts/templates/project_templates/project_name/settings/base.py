@@ -114,3 +114,5 @@ STATICFILES_DIRS = (
 MIGRATION_MODULES = {
     'auth': '{{project_name}}.migrations.auth',
 }
+
+TEMPLATES = template_settings(dirs=TEMPLATE_DIRS, debug=DEBUG)

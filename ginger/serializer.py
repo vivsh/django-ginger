@@ -102,4 +102,52 @@ def process_redirect(request, response):
     return 278, {'type': 'Redirect', 'data': {'url': url}}
 
 
+def encode_exception(exc):
+    if isinstance(exc, KeyboardInterrupt):
+        raise
+    elif isinstance(exc, Http404):
+        ex = NotFound()
+        status = ex.status_code
+        payload = ex.to_json()
+    elif isinstance(exc, PermissionDenied):
+            status = 403
+            payload = {
+                'type': exc.__class__.__name__,
+                'message': 'Permission Denied'
+            }
+    elif isinstance(exc, GingerHttpError):
+        status = exc.status_code
+        payload = exc.to_json()
+    else:
+        status = 500
+        payload = {
+            'message': 'Internal server error',
+            'type': 'ServerError'
+        }
+    payload['status_code'] = status
+    if settings.DEBUG:
+        meta = payload
+        meta['type'] = exc.__class__.__name__
+        meta['message'] = str(exc)
+        meta['traceback'] = traceback.format_exc()
+    return payload
+
+
+def encode_object(instance):
+    return {
+        "data": instance
+    }
+
+
+def encode_collection(instance):
+    if isinstance(instance, Page):
+        return {
+            "data": instance.object_list,
+            "page": instance
+        }
+    else:
+        return {
+            "data": instance
+        }
+
 

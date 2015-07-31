@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
+import pytz
 
 
 __all__ = ['CurrentRequestMiddleware',
@@ -94,3 +95,16 @@ class UsersOnlineMiddleware(object):
 
         cache.set('users_online', users_online, 60*60*24)
         cache.set('guests_online', guests_online, 60*60*24)
+
+
+class TimezoneMiddleware(object):
+
+    def process_request(self, request):
+        session = request.session
+        key = 'ginger-tz'
+        if key in session:
+            try:
+                tz = pytz.timezone(session[key])
+                timezone.activate(tz)
+            except Exception:
+                del session[key]

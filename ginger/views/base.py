@@ -1,17 +1,17 @@
-
+import inspect
 import os
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
+from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.views.generic.base import View
-from django.conf.urls import url
+from django.conf.urls import url, patterns
 from django.utils import six
 from .meta import ViewInfo
 from ginger import utils, pattern
 
 
-__all__ = ["P", "GingerView"]
+__all__ = ["P", "GingerView", "GingerViewSet", "GingerSubView"]
 
 
 
@@ -20,12 +20,11 @@ P = pattern.Pattern
 
 class ViewMeta(ViewInfo):
 
-    def __init__(self, view, viewset=None):
+    def __init__(self, view):
         from django.apps import apps
         app = apps.get_containing_app_config(utils.qualified_name(view))
         super(ViewMeta, self).__init__(app, view.__name__)
         self.view = view
-        self.viewset = viewset
 
     @property
     def url_regex(self):
@@ -39,12 +38,14 @@ class ViewMeta(ViewInfo):
             regex = "%s%s" % (prefix, regex)
         return regex
 
-    def as_url(self, **kwargs):
-        view_func = self.view.as_view()
+    def as_url(self, prefix=None, parent=None, **kwargs):
+        view_func = self.view.as_view(parent=parent, **kwargs)
         regex = self.url_regex
         url_name = self.url_name
-        regex = pattern.Pattern(regex).create() if not isinstance(regex, pattern.Pattern) else regex.create()
-        return url(regex, view_func, name=url_name, kwargs=kwargs)
+        regex = pattern.Pattern(regex, prefix).create()
+        if prefix:
+            url_name = "%s_%s" % (prefix, url_name)
+        return url(regex, view_func, name=url_name)
 
     def reverse(self, args, kwargs):
         return reverse(self.url_name, args=args, kwargs=kwargs)
@@ -102,10 +103,13 @@ class GingerMetaView(type):
         cls.position = GingerMetaView.__position
 
 
+
 @six.add_metaclass(GingerMetaView)
 class GingerView(View, GingerSessionDataMixin):
 
     user = None
+
+    parent = None
 
     url_regex = None
 
@@ -134,7 +138,10 @@ class GingerView(View, GingerSessionDataMixin):
 
     @classmethod
     def setup_view(cls):
-        return
+        # if cls.url_regex is None:
+        #     raise ImproperlyConfigured("No url regex has been specified for %r" % cls)
+        if not (inspect.ismethod(cls.is_authorized) and cls.is_authorized.__self__ is cls):
+            raise ImproperlyConfigured("is_authorized should be a classmethod in %r" % cls)
 
     def get_target(self):
         return None
@@ -145,8 +152,14 @@ class GingerView(View, GingerSessionDataMixin):
     def get_ip(self):
         return utils.get_client_ip(self.request)
 
+    @classmethod
+    def is_authorized(self, user, resource=None):
+        return True
+
     def process_request(self, request):
         self.user = self.get_user()
+        if not self.is_authorized(self.user):
+            raise PermissionDenied
         if hasattr(self, 'get_object'):
             try:
                 self.object = self.get_object()
@@ -155,6 +168,8 @@ class GingerView(View, GingerSessionDataMixin):
         elif hasattr(self, 'get_queryset'):
             self.queryset = self.get_queryset()
         self.target = self.get_target()
+        if hasattr(self, 'object') and not self.is_authorized(self.user, self.object):
+            raise PermissionDenied
 
     def process_response(self, request, response):
         return response
@@ -189,3 +204,56 @@ class GingerView(View, GingerSessionDataMixin):
         if not message:
             return
         messages.add_message(self.request, level, message, **kwargs)
+
+
+
+class GingerSubView(object):
+
+    __position = 0
+    name = None
+
+    def __init__(self, view_class, **kwargs):
+        self.view_class = view_class
+        self.kwargs = kwargs
+        GingerSubView.__position += 1
+        self.position = GingerSubView.__position
+
+    def subclass(self, prefix, regex):
+        name = self.name
+        meta = self.view_class.meta
+        child_verb = meta.url_verb
+        parts = meta.url_name.replace(child_verb, name, 1).split("-")
+        parts.insert(0, prefix)
+        class_name = "".join(a.capitalize() for a in parts)
+        child_regex = meta.url_regex.replace(child_verb, name, 1)
+        regex = "%s/%s" % (regex, child_regex)
+        ctx = self.kwargs.copy()
+        ctx['url_regex'] = regex
+        new_class = type(class_name, (self.view_class,), ctx)
+        return new_class
+
+
+@six.add_metaclass(GingerMetaView)
+class GingerViewSet(object):
+
+    url_regex = None
+
+    @classmethod
+    def get_subviews(cls):
+        for name, subview in inspect.getmembers(cls, lambda a: isinstance(a, GingerSubView)):
+            subview.name = name
+            yield subview
+
+    @classmethod
+    def as_urls(cls):
+        instance = cls()
+        result = []
+        prefix = cls.__name__.replace("ViewSet", "")
+        for sub in sorted(cls.get_subviews(), key=lambda s: s.position):
+            result.append(sub.subclass(prefix, cls.url_regex).as_url(parent=instance))
+        return result
+
+    @classmethod
+    def as_patterns(cls, prefix=""):
+        return patterns(prefix, *cls.as_urls())
+

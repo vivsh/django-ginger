@@ -2,6 +2,8 @@ from collections import namedtuple
 import inspect
 import operator
 from django.utils.encoding import force_text
+from django.template import loader
+from django.utils.safestring import mark_safe
 from jinja2 import Markup
 import re
 import json
@@ -17,6 +19,10 @@ __all__ = [
     "build_links",
     "flatten_attributes",
     "create_css_class",
+    "Link",
+    "LinkList",
+    "UIComponent",
+    "as_json"
 ]
 
 _link_builders = {}
@@ -24,12 +30,39 @@ _link_builders = {}
 
 class Link(object):
 
+    has_links = False
+
     def __init__(self, url, content, is_active=False, **kwargs):
         self.url = url
         self.content = content
         self.is_active = is_active
         for k in kwargs:
             setattr(self, k, kwargs[k])
+
+
+class LinkList(object):
+
+    has_links = True
+
+    def __init__(self, url=None, content="", is_active=False, **kwargs):
+        self.url = url
+        self.content = content
+        self.is_active = is_active
+        for k in kwargs:
+            setattr(self, k, kwargs[k])
+        self.links = []
+
+    def append(self, link):
+        self.links.append(link)
+
+    def extend(self, links):
+        self.links.extend(links)
+
+    def __len__(self):
+        return len(self.links)
+
+    def __iter__(self):
+        return iter(self.links)
 
 
 def add_link_builder(cls, build_func):
@@ -204,11 +237,25 @@ class Navigation(object):
         return True
 
 
-class UIFormField(object):
-
-    def __init__(self, field):
-        self.field = field
-
 def as_json(values):
     content = serializer.encode(values)
     return Markup(content)
+
+
+class UIComponent(object):
+
+    template_name = None
+
+    def get_template_names(self):
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs):
+        return kwargs
+
+    def render(self, context, **kwargs):
+        ctx = {}
+        template_names = self.get_template_names()
+        ctx.update(context)
+        ctx.update(kwargs)
+        return mark_safe(loader.render_to_string(template_names, context=ctx))
+
