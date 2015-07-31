@@ -183,8 +183,8 @@ class Project(object):
 
 
     def prepare_bower(self):
-        assets = self.path(self.name, "assets-dev")
-        config_path = self.path(self.name, "assets-dev", "js/config.js")
+        assets = self.path(self.name, "assets")
+        config_path = self.path(self.name, "assets", "js/config.js")
         self.write_file(config_path, """
             requirejs.config({
                 map: {
