@@ -8,6 +8,7 @@ django-nose==1.4
 django-pods==1.1
 ecdsa==0.13
 Fabric==1.10.0
+geopy==1.10.0
 gnureadline==6.3.3
 ipython==2.4.1
 Jinja2==2.7.3
