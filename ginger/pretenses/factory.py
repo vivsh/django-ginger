@@ -14,7 +14,7 @@ from django.db.utils import IntegrityError
 from django.forms.models import model_to_dict
 from django.utils import timezone
 from django.utils.text import camel_case_to_spaces
-from . import utils
+from . import utils, streams
 import datetime
 
 
@@ -319,11 +319,11 @@ class DefaultProcessor(object):
         return random.randint(-2147483647, 2147483647)
 
     def process_char_field(self, field):
-        return lipsum.sentence()[: field.max_length]
+        return streams.SentenceStream().next(field)[: field.max_length]
 
     def process_text_field(self, field):
         limit = field.max_length
-        para = lipsum.paragraphs(random.randint(2, 10), boolean())
+        para = streams.ParagraphStream().next(field)
         if limit:
             content = "\n".join(para)[: limit]
             para = content.splitlines(True)
@@ -347,10 +347,11 @@ class DefaultProcessor(object):
                              day=random.randint(1, 28))
 
     def process_time_field(self, field):
-        return datetime.time(hour=random.randint(0, 23), minute=random.randint(0,59), second=random.randint(0,59))
+        return datetime.time(hour=random.randint(0, 23),
+                             minute=random.randint(0,59), second=random.randint(0,59))
 
     def process_username(self, field):
-        word = lipsum.words(1, False)
+        word = streams.FirstNameStream().next(field)
         return "%s%s" % (word, field.index)
 
     def process_ip_address_field(self, field):
@@ -363,7 +364,7 @@ class DefaultProcessor(object):
         return {}
 
     def process_password(self, field):
-        word = lipsum.words(1, False)
+        word = streams.FirstNameStream().next(field)
         field.instance.set_password(word)
 
     def process_point_field(self, field):
