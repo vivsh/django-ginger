@@ -6,6 +6,7 @@ from django.template import loader
 from django.utils.safestring import mark_safe
 from jinja2 import Markup
 import re
+from collections import OrderedDict
 import json
 import functools
 from django.forms.forms import BoundField
@@ -21,6 +22,7 @@ __all__ = [
     "create_css_class",
     "Link",
     "LinkList",
+    "LinkTree",
     "UIComponent",
     "as_json"
 ]
@@ -31,6 +33,7 @@ _link_builders = {}
 class Link(object):
 
     has_links = False
+    is_authorized = True
 
     def __init__(self, url, content, is_active=False, **kwargs):
         self.url = url
@@ -38,6 +41,7 @@ class Link(object):
         self.is_active = is_active
         for k in kwargs:
             setattr(self, k, kwargs[k])
+
 
 
 class LinkList(object):
@@ -63,6 +67,64 @@ class LinkList(object):
 
     def __iter__(self):
         return iter(self.links)
+
+
+class LinkTree(object):
+
+    def __init__(self, folder=None):
+        self.root = OrderedDict() if folder is None else folder
+
+    def child(self, path):
+        fragments = self.split(path)
+        folder = self.root
+        previous = None
+        for f in fragments:
+            if not isinstance(folder, dict):
+                d = OrderedDict()
+                d[previous[1]] = folder
+                previous[0][previous[1]] = d
+                folder = d
+            if f not in folder:
+                folder[f] = OrderedDict()
+            previous = folder, f
+            folder = folder[f]
+        if not isinstance(folder, dict):
+            raise ValueError("Invalid folder path: %r. The path value refers to a file." % path)
+        return LinkTree(folder) if fragments else self
+
+    def add(self, label, url):
+        folder = self.root
+        if url in folder:
+            raise ValueError("Key %r already exists" % label)
+        folder[label] = url
+
+    def extend(self, items):
+        for label, url in items:
+            self.add(label, url)
+
+    def split(self, path):
+        if not path:
+            path = ""
+        return [p for p in re.sub('/+', '/', path.strip("/ ")).split("/") if p]
+
+    def _make_links(self, path_info, store):
+        result = []
+        for label, data in store.iteritems():
+            if isinstance(data, dict):
+                node = LinkList(content=label)
+                children = self._make_links(path_info, data)
+                node.extend(children)
+            else:
+                is_active = path_info == data
+                node = Link(content=label, url=data, is_active=is_active)
+            result.append(node)
+        return result
+
+    def build_links(self, request):
+        path_info = request.path_info
+        return self._make_links(path_info, self.root)
+
+
 
 
 def add_link_builder(cls, build_func):

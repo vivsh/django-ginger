@@ -119,6 +119,16 @@ class GingerView(View, GingerSessionDataMixin):
 
     meta = ViewMetaDescriptor()
 
+    @classmethod
+    def instantiate(cls, request, **kwargs):
+        instance = cls()
+        instance.request = request
+        instance.args = ()
+        instance.kwargs = kwargs
+        instance.user = kwargs.pop("user", request.user)
+        if 'object' in kwargs:
+            instance.object = kwargs.pop("object")
+        return instance
 
     @classmethod
     def as_url(cls, **kwargs):
@@ -153,7 +163,7 @@ class GingerView(View, GingerSessionDataMixin):
         return utils.get_client_ip(self.request)
 
     @classmethod
-    def is_authorized(self, user, resource=None):
+    def is_authorized(cls, user, resource=None):
         return True
 
     def process_request(self, request):
@@ -204,6 +214,9 @@ class GingerView(View, GingerSessionDataMixin):
         if not message:
             return
         messages.add_message(self.request, level, message, **kwargs)
+
+    def get_messages(self):
+        return messages.get_messages(self.request)
 
 
 
@@ -256,4 +269,10 @@ class GingerViewSet(object):
     @classmethod
     def as_patterns(cls, prefix=""):
         return patterns(prefix, *cls.as_urls())
+
+    def get_template_names(self, view, **kwargs):
+        return ()
+
+    def get_context_view(self, view, **kwargs):
+        return ()
 

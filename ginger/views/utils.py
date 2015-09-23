@@ -1,7 +1,7 @@
 
 from django.utils import six
 from importlib import import_module
-from ginger.views import GingerView,GingerViewSet
+from ginger.views import GingerView, GingerViewSet
 import inspect
 
 

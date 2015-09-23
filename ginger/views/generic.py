@@ -11,7 +11,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.forms.models import ModelForm
 from django.utils.functional import cached_property
-from django.views.generic.base import TemplateResponseMixin, View
+from django.views.generic.base import TemplateResponseMixin
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
@@ -20,7 +20,11 @@ from ginger.serializer import process_redirect
 from ginger.templates import GingerResponse
 from ginger.paginator import paginate
 
-from . import storages, steps
+from . import storages
+from . import steps
+from .base import GingerView
+
+from ginger.ui import Link
 
 
 __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
@@ -30,10 +34,15 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            "GingerNewDoneView", "GingerNewView", "GingerNewWizardView", 'PostFormMixin']
 
 
-from .base import GingerView, P
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
+
+    page_title = None
+    page_css_class = None
+    page_label = None
+    page_icon = None
+    page_crumbs = None
 
     response_class = GingerResponse
 
@@ -63,6 +72,39 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
         if template_name is None:
             return self.meta.template_name
         return template_name
+
+    def get_page_css_class(self):
+        return self.page_css_class
+
+    def get_page_label(self):
+        return self.page_label
+
+    def get_page_icon(self):
+        return self.page_icon
+
+    def get_page_title(self):
+        return self.page_title or self.get_page_label()
+
+    def build_link(self):
+        url = self.reverse(*self.args, **self.kwargs)
+        is_active = self.request.path_info == url
+        return Link(content=self.get_page_label(),
+                    icon=self.get_page_icon(),
+                    is_active=is_active,
+                    url=url
+        )
+
+    @classmethod
+    def as_link(cls, *args, **kwargs):
+        ins = cls.instantiate(*args, **kwargs)
+        return ins.build_link()
+
+    def get_context_data(self, **kwargs):
+        ctx = super(GingerTemplateView, self).get_context_data(**kwargs)
+        ctx['view'] = self
+        ctx['page_title'] = self.get_page_title()
+        ctx['page_css_class'] = self.get_page_css_class()
+        return ctx
 
 
 
@@ -485,9 +527,6 @@ class SingleObjectViewMixin(object):
             return self.get_queryset().get(**kwargs)
         except ObjectDoesNotExist:
             raise Http404
-
-    def get_target(self):
-        return self.object
 
     def get_context_data(self, **kwargs):
         ctx = super(SingleObjectViewMixin, self).get_context_data(**kwargs)
