@@ -1,3 +1,4 @@
+from ginger.dataset import  GingerDataSet
 from django.forms.widgets import CheckboxInput
 import re
 from collections import namedtuple
@@ -172,13 +173,15 @@ def form_css_class(form):
 
 
 def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
+    if isinstance(page, GingerDataSet):
+        page = page.object_list
     if page.paginator.num_pages <= 1:
         return ""
     H = common
     nav = H.ul(class_="pagination", **kwargs)
     if page.has_previous():
         url = page.previous_link(request).url
-        previous_tag = H.li(href=url, aria_label="Previous")[H.span(aria_hidden="true")[previous]]
+        previous_tag = H.li(aria_label="Previous")[H.a(href=url)[previous]]
         nav.append(previous_tag)
     for link in page.build_links(request):
         if link.is_active:
@@ -188,6 +191,6 @@ def render_page(request, page, previous="&laquo;", next="&raquo;", **kwargs):
         nav.append(el)
     if page.has_next():
         url = page.next_link(request).url
-        next_tag = H.li(href=url, aria_label="Previous")[H.span(aria_hidden="true")[next]]
+        next_tag = H.li(aria_label="Next")[H.a(href=url)[next]]
         nav.append(next_tag)
     return nav.render()
