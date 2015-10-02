@@ -114,4 +114,4 @@ class Pattern(object):
 
 
 if __name__ == "__main__":
-    print Pattern("asdsa/sadasd?:int/hello:(sdad|jkjk)/", prefix="some").regex()
+    print(Pattern("asdsa/sadasd?:int/hello:(sdad|jkjk)/", prefix="some").regex())

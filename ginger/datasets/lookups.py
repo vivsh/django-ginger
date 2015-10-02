@@ -204,5 +204,5 @@ class Boy(object):
 if __name__ == '__main__':
     values = [Boy("Ram", 29), Boy("Shyam", 30), Boy("Pico", 12), Boy("Ram", 42)]
     qs = ListQuerySet(values)
-    print qs.filter(money__amount=360).order_by("name", "-age").get()
+    print(qs.filter(money__amount=360).order_by("name", "-age").get())
 

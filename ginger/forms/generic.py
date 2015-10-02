@@ -12,7 +12,7 @@ from ginger import utils, paginator, html
 import warnings
 
 
-__all__ = ['GingerModelForm', 
+__all__ = ['GingerModelForm',
            'GingerForm',
            'GingerSearchModelForm',
            'GingerSearchForm',
@@ -53,7 +53,7 @@ class GingerFormMixin(object):
         self.context = context
         self.merge_defaults()
 
-    def _bind_fields(self):
+    def _bind_form_to_fields(self):
         key = "__bound_with_form"
         for field in self.fields.values():
             if hasattr(field, 'bind_form') and not getattr(field, key, False):
@@ -356,3 +356,4 @@ class GingerDataModelForm(GingerDataFormMixin, forms.ModelForm):
 
 class GingerDataForm(GingerDataFormMixin, forms.Form):
     pass
+

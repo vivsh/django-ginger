@@ -116,18 +116,24 @@ class DataRow(object):
             schema = self.owner()._get_schema()
             if not inspect.isgenerator(obj) and not isinstance(obj, collections.Sequence):
                 result = []
+                print ">>>>>>>>>>>>>>"
                 for column in schema.columns:
+                    print column
                     attr = column.attr or column.name
                     try:
                         method = getattr(schema, "prepare_%s" % column.name)
+                        print method
                     except AttributeError:
+                        print "Not found", attr
                         if isinstance(obj, collections.Mapping):
                             value = obj[attr]
                         else:
                             value = getattr(obj, attr)
                     else:
                         value = method(obj)
+                    print attr, value
                     result.append(value)
+                print result
             else:
                 result = obj
             self._data = result
@@ -145,6 +151,8 @@ class DataRow(object):
         formatter = self.owner()._format_cell
         for col in cols:
             i = col.position
+            print i, formatter
+            print self._data
             value = mark_safe(formatter(self.data[i], i, self))
             yield (col, value) if columns else value
 

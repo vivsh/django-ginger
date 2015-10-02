@@ -11,10 +11,13 @@ from urlparse import urlparse
 from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
-from ginger import ui, utils
+from ginger import ui, utils, paginator
+
+from .widgets import EmptyWidget
 
 
-__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField", "GingerSortField"]
+__all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField", "GingerSortField", 
+           "GingerPageField"]
 
 
 class FileOrUrlInput(forms.ClearableFileInput):
@@ -186,3 +189,30 @@ class SortField(GingerSortField):
     def __init__(self, *args, **kwargs):
         super(SortField, self).__init__(*args, **kwargs)
         warnings.warn("Please use GingerSortField instead of SortField", DeprecationWarning)
+
+
+class GingerPageField(forms.IntegerField):
+    widget = EmptyWidget
+    html_name = None
+
+    def __init__(self, per_page=20, page_limit=10, **kwargs):
+        kwargs.setdefault('required', False)
+        self.per_page = per_page
+        self.page_limit = page_limit
+        super(GingerPageField, self).__init__(**kwargs)
+
+    def bind_form(self, name, form):
+        self.html_name = form[name].html_name
+
+    def clean(self, value):
+        try:
+            value = super(GingerPageField, self).clean(value)
+        except forms.ValidationError:
+            return 1
+        return value
+
+    def handle_queryset(self, queryset, value, data):
+        return paginator.paginate(queryset, value,
+                           per_page=self.per_page,
+                           parameter_name=self.html_name
+                           )

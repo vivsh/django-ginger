@@ -195,4 +195,4 @@ for name in "html body link meta div span form section article aside main ul li 
 
 
 if __name__ == '__main__':
-    print input(type="radio", checked=False).render()
+    print(input(type="radio", checked=False).render())

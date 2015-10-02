@@ -32,11 +32,9 @@ class FormExtension(Extension):
 
     def _make_helper(self, form):
         from ginger.templatetags.form_tags import FormHelper
-        print FormHelper
         return FormHelper(form)
 
     def _render(self, form_name, attrs, csrf_token, lineno, caller):
-        print form_name, attrs, csrf_token
         return caller()
 
 

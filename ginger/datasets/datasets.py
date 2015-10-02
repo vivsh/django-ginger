@@ -40,9 +40,6 @@ class BoundColumn(object):
         self.position = position
         self.hidden = column.hidden
 
-    def is_hidden(self):
-        return self.hidden
-
     def toggle(self):
         return self.show() if self.is_hidden() else self.hide()
 
@@ -133,10 +130,6 @@ class DataRow(object):
             self._data = result
         return self._data
 
-    @property
-    def columns(self):
-        return self.owner()._get_schema().columns
-
     def items(self):
         return self.cells(columns=True)
 
@@ -147,6 +140,10 @@ class DataRow(object):
             i = col.position
             value = mark_safe(formatter(self.data[i], i, self))
             yield (col, value) if columns else value
+
+    @property
+    def columns(self):
+        return self.owner()._get_schema().columns
 
     @property
     def object(self):
@@ -254,6 +251,24 @@ class DataSetBase(object):
         return len(self.rows)
 
 
+class DataAggregates(DataSetBase):
+
+    def __init__(self, schema):
+        super(DataAggregates, self).__init__()
+        self._schema = weakref.ref(schema)
+
+    def _format_cell(self, *args, **kwargs):
+        return self.schema._format_cell(*args, **kwargs)
+
+    def _get_schema(self):
+        return self._schema()
+
+    def _make_row(self, obj):
+        row = super(DataAggregates, self)._make_row(obj)
+        row.is_aggregate = True
+        return row
+
+
 class DictList(list):
 
     def __getitem__(self, item):
@@ -278,8 +293,12 @@ class GingerDataSet(DataSetBase):
     def __init__(self, object_list=None):
         super(GingerDataSet, self).__init__()
         self.__columns = self.setup_columns()
+        self.aggregates = DataAggregates(self)
         if object_list:
             self.extend(object_list)
+
+    def is_paginated(self):
+        return hasattr(self.object_list, "paginator")
 
     def _get_schema(self):
         return self
@@ -311,3 +330,25 @@ class GingerDataSet(DataSetBase):
             if func:
                 return func(value, index, row)
         return str(value) if value is not None else ""
+
+    def build_links(self, request):
+        data = request.GET
+        sort_name = getattr(self, "sort_parameter_name", None)
+        for col in self.columns.visible():
+            if sort_name:
+                field = self.sort_field
+                code = field.get_value_for_name(col.name)
+                value = data.get(sort_name, "")
+                reverse = value.startswith("-")
+                if reverse:
+                    value = value[1:]
+                is_active = code == value
+                next_value = "-%s" % code if not reverse and is_active else code
+                mods = {sort_name: next_value}
+            else:
+                is_active = False
+                reverse = False
+                mods = {}
+            url = get_url_with_modified_params(request, mods)
+            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse)
+            yield link

@@ -1,6 +1,5 @@
 from django.contrib.auth.backends import ModelBackend
 from django.db.models.query_utils import Q
-from django.db import models
 from django.utils import six
 from django.contrib.auth.models import User, AbstractUser
 
@@ -18,7 +17,6 @@ class MetaUser(type):
         for k, v in attrs.items():
             if k in field_dict:
                 field = field_dict[k]
-                attrs = ('verbose_name','_unique','max_length', 'help_text')
                 attrs = v.__dict__.keys()
                 for a in attrs:
                     value = getattr(v, a, None)
@@ -26,6 +24,8 @@ class MetaUser(type):
                         setattr(field, a, value)
             elif k not in cls.__dict__ and not hasattr(cls, k):
                 cls.add_to_class(k,v)
+            else:
+                cls.add_to_class(k, v)
         return cls
 
 
