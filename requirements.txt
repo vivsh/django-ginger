@@ -15,7 +15,7 @@ django-debug-toolbar==1.0.1
 django-debug-toolbar-template-timings==0.5.5
 django-devserver==0.7.0
 django-extensions==1.3.2
--e git+https://vivsh@github.com/vivsh/django-ginger.git@c691439cbd229a3fbeeb27187f32aa5060ee6ac6#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@fb6c8e61006ca8d58d6df48162f885b1257ea3a0#egg=django_ginger-master
 django-haystack==2.1.0
 django-imagekit==3.2.5
 django-jinja==1.1.0
