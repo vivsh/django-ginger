@@ -4,19 +4,7 @@ import os
 
 from importlib import import_module
 from django.utils import six
-
-
-def iter_templatetags_modules_list():
-    from django.apps import apps
-    all_modules = [x.name for x in apps.get_app_configs()]
-    for app_path in all_modules:
-        try:
-            mod = import_module(app_path + ".templatetags")
-        except ImportError:
-            pass
-        else:
-            if mod is not None:
-                yield (app_path, os.path.dirname(mod.__file__))
+from ginger.utils import iter_app_modules
 
 
 def patch_django_for_autoescape():
@@ -61,20 +49,8 @@ def preload_templatetags_from_apps():
     available template filters or functions for jinja2.
     """
 
-    for app_path, mod_path in iter_templatetags_modules_list():
-        if not os.path.isdir(mod_path):
-            continue
-
-        for filename in filter(lambda x: x.endswith(".py") or x.endswith(".pyc"), os.listdir(mod_path)):
-            # Exclude __init__.py files
-            if filename == "__init__.py" or filename == "__init__.pyc":
-                continue
-
-            file_mod_path = "%s.templatetags.%s" % (app_path, filename.rsplit(".", 1)[0])
-            try:
-                import_module(file_mod_path)
-            except ImportError:
-                pass
+    for _ in iter_app_modules("templatetags", deep=True):
+        pass
 
 
 def setup():

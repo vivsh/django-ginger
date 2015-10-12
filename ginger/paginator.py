@@ -15,7 +15,7 @@ class GingerPage(Page):
         base_url = request.get_full_path()
         param = self.paginator.parameter_name
         url = utils.get_url_with_modified_params(request, {param: number})
-        return ui.Link(url, six.text_type(number), url == base_url)
+        return ui.Link(url=url, content=six.text_type(number), is_active=url == base_url)
 
     def build_links(self, request):
         for i in utils.generate_pages(self.number,

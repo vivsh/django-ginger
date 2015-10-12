@@ -1,7 +1,6 @@
 
 from django.apps import AppConfig
-from django.core.exceptions import ImproperlyConfigured
-
+from ginger.template import prep
 
 
 
@@ -9,7 +8,9 @@ class GingerConfig(AppConfig):
 
     name = "ginger"
     verbose_name = "ginger"
+    __once = False
 
     def ready(self):
-        from ginger.template import prep
+        if not self.__once:
+            self.__once = True
         prep.setup()

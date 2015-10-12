@@ -29,7 +29,7 @@ TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.request',
 )
 
-JINJA2_EXCLUDED_FOLDERS = ["admin", "debug_toolbar", "suit"]
+JINJA2_EXCLUDED_FOLDERS = ["admin", "debug_toolbar", "suit", 'rest_framework']
 
 JINJA2_AUTOESCAPE = False
 

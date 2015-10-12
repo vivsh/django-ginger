@@ -624,3 +624,53 @@ class PostFormMixin(object):
 
     def get_referrer_url(self):
         return self.request.META["HTTP_REFERER"]
+
+
+class GingerObjectCreateView(GingerFormView):
+
+    def get(self, request, *args, **kwargs):
+        self.object = None
+        return super(GingerDeleteView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        return self.delete(request, *args, **kwargs)
+
+
+class GingerObjectDetailView(GingerTemplateView):
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super(GingerDetailView, self).get(request, *args, **kwargs)
+
+
+class GingerObjectDeleteView(GingerFormView):
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super(GingerDeleteView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.process_submit()
+
+
+class GingerObjectEditView(GingerFormView):
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super(GingerDeleteView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return self.delete(request, *args, **kwargs)
+
+
+class GingerObjectListFilterView(GingerSearchView):
+    pass
+
+
+class GingerObjectListEditView(GingerFormView):
+    pass

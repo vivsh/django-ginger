@@ -2,12 +2,12 @@
 import re
 import warnings
 import mimetypes
-import urllib2
+# import urllib2
 from django.utils.encoding import force_text
 from django.utils import six
 import os
-from urlparse import urlparse
-
+from django.utils.six.moves.urllib.request import urlopen
+from django.utils.six.moves.urllib.parse import urlparse
 from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -130,7 +130,7 @@ class GingerSortField(forms.ChoiceField):
             else:
                 next_value = key
             url = utils.get_url_with_modified_params(request, {field_name: next_value})
-            yield ui.Link(url, content, is_active=is_active)
+            yield ui.Link(url=url, content=content, is_active=is_active)
 
     def invert_sign(self, name, neg):
         if name.startswith("-"):
@@ -216,3 +216,18 @@ class GingerPageField(forms.IntegerField):
                            per_page=self.per_page,
                            parameter_name=self.html_name
                            )
+
+    def build_links(self, request, bound_field):
+        value = bound_field.value()
+        field_name = bound_field.name
+        text_value = force_text(value) if value is not None else None
+        for k, v in self.choices:
+            content = force_text(v)
+            key = force_text(k)
+            is_active = text_value and text_value == key
+            if is_active and self.toggle:
+                next_value = key if text_value.startswith("-") else "-%s" % key
+            else:
+                next_value = key
+            url = utils.get_url_with_modified_params(request, {field_name: next_value})
+            yield ui.Link(url=url, content=content, is_active=is_active)

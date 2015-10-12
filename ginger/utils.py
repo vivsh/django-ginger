@@ -1,4 +1,6 @@
-
+from importlib import import_module
+import pkgutil
+from django.utils.module_loading import module_has_submodule
 import os
 import threading
 import re
@@ -10,6 +12,7 @@ from django.http.request import HttpRequest
 from django.utils.encoding import force_bytes
 from django.utils import six,timezone
 from django.db import models
+from django.apps import apps
 
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
@@ -42,6 +45,7 @@ __all__ = [
     'base64pickle_dumps',
     'base64pickle_loads',
     'which',
+    'iter_app_modules'
 ]
 
 
@@ -283,3 +287,23 @@ def base64pickle_dumps(data):
 def which(name):
     from distutils import spawn
     return spawn.find_executable(name)
+
+
+def iter_app_modules(module_name, deep=False):
+    for config in apps.get_app_configs():
+        package = config.module
+        if module_has_submodule(package, module_name):
+            full_name = "%s.%s" %(package.__name__, module_name)
+            module = import_module(full_name)
+            if not deep:
+                yield module
+            else:
+                try:
+                    pkg_path = module.__path__
+                except AttributeError:
+                    yield module
+                else:
+                    for importer, modname, ispkg in pkgutil.iter_modules(pkg_path):
+                        if not ispkg:
+                            yield importer.find_module(modname).load_module(modname)
+
