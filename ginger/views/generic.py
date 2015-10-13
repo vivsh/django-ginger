@@ -70,8 +70,8 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
     def get_template_names(self):
         template_name = getattr(self, "template_name", None)
         if template_name is None:
-            return self.meta.template_name
-        return template_name
+            return [self.meta.template_name]
+        return [template_name]
 
     def get_page_css_class(self):
         return self.page_css_class
@@ -630,7 +630,7 @@ class GingerObjectCreateView(GingerFormView):
 
     def get(self, request, *args, **kwargs):
         self.object = None
-        return super(GingerDeleteView, self).get(request, *args, **kwargs)
+        return super(GingerObjectCreateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = None
