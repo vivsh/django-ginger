@@ -26,6 +26,7 @@ class MetaUser(type):
                 cls.add_to_class(k,v)
             else:
                 cls.add_to_class(k, v)
+        cls.__bases__ += tuple(b for b in bases if not issubclass(b, AbstractUser))
         return cls
 
 

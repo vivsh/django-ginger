@@ -158,8 +158,8 @@ class DataRow(object):
     def __getattr__(self, item):
         try:
             col = self.columns[item]
-        except KeyError:
-            raise AttributeError(item)
+        except KeyError as ex:
+            raise AttributeError(ex)
         else:
             return self.data[col.position]
 
