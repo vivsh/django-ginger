@@ -127,7 +127,6 @@ class DataRow(object):
                             value = getattr(obj, attr)
                     else:
                         value = method(obj)
-                    print(value, column)
                     result.append(value)
             else:
                 result = obj
