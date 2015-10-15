@@ -3,7 +3,6 @@ from django.apps import AppConfig
 from ginger.template import prep
 
 
-
 class GingerConfig(AppConfig):
 
     name = "ginger"

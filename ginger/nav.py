@@ -50,8 +50,8 @@ class Link(object):
         folder = self
         for f in fragments:
             if f not in folder:
-                self.add(f)
-            folder = self[f]
+                folder.add(f)
+            folder = folder[f]
         return folder
 
     def render_children(self):

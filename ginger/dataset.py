@@ -143,9 +143,10 @@ class DataRow(object):
     def cells(self, columns=False):
         cols = self.columns.visible()
         formatter = self.owner()._format_cell
+        data = self.data
         for col in cols:
             i = col.position
-            value = mark_safe(formatter(self.data[i], i, self))
+            value = mark_safe(formatter(data[i], i, self))
             yield (col, value) if columns else value
 
     @property
@@ -156,25 +157,17 @@ class DataRow(object):
         return getattr(self.obj, item)
 
     def __getattr__(self, item):
-        try:
-            col = self.columns[item]
-        except KeyError as ex:
-            raise AttributeError(ex)
-        else:
-            return self.data[col.position]
+        col = self.columns[item]
+        return self.data[col.position]
 
     def __setattr__(self, key, value):
         if not self.__inited or key in self.__dict__:
             self.__dict__[key] = value
         else:
-            try:
-                col = self.columns[key]
-            except KeyError:
-                raise AttributeError(key)
-            else:
-                data = list(self.data)
-                data[col.position] = value
-                self.__dict__['_data'] = tuple(data)
+            col = self.columns[key]
+            data = list(self.data)
+            data[col.position] = value
+            self.__dict__['_data'] = tuple(data)
 
     def __iter__(self):
         """
