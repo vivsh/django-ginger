@@ -9,7 +9,11 @@ __all__ = ['html_json', 'html_attrs', "Element", "CssClassList", "CssStyle", 'ad
 
 
 def html_json(values):
-    content = serializer.encode(values).encode("string-escape")
+    content = serializer.encode(values)
+    try:
+        content = content.encode("unicode-escape")
+    except LookupError:
+        content = content.encode("string-escape")
     return Markup(content)
 
 
