@@ -293,10 +293,10 @@ class GingerDataSet(DataSetBase):
         if object_list:
             self.extend(object_list)
 
-    def row_css_class(self, row):
+    def row_css_class(self, *args):
         return
 
-    def cell_css_class(self, row, column):
+    def cell_css_class(self, *args):
         return
 
     def is_paginated(self):
