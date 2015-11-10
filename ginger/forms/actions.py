@@ -308,19 +308,18 @@ class GingerDataFormMixin(GingerSearchFormMixin):
         cleaned_data = self.cleaned_data if self.is_bound else self.initial_data
         for name in self.get_dataset_filter_names():
             value = cleaned_data.get(name)
-            field = self.fields[name]
+            field = self.fields.get(name)
             if value is None or value == "":
                 continue
             if hasattr(self, "handle_%s" % name):
                 getattr(self,"handle_%s" % name)(dataset, value, cleaned_data)
-            elif hasattr(field, "handle_dataset"):
+            elif field and hasattr(field, "handle_dataset"):
                 field.handle_dataset(dataset, value, self[name])
         sort_field = self.get_sort_field()
         if sort_field:
             dataset.sort_parameter_name = sort_field.html_name
             dataset.sort_field = sort_field.field
         return dataset
-
 
     def get_dataset_class(self):
         try:
