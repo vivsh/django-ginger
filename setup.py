@@ -36,7 +36,6 @@ setup(
     ],
     keywords="django utilities",
     install_requires=[
-        "django-pods==1.1.2",
         "django-jsonfield==0.9.13",
         "django-imagekit==3.2.5",
         "python-dateutil",

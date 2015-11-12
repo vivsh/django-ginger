@@ -1,5 +1,6 @@
+
 from django import forms
-from ginger.staging import conf
+from ginger.contrib.staging import conf
 
 
 class StagingForm(forms.Form):
@@ -8,6 +9,6 @@ class StagingForm(forms.Form):
     
     def clean_secret(self):
         value = self.cleaned_data['secret']
-        if value != conf.STAGING_SECRET:
+        if value != conf.get("SECRET"):
             raise forms.ValidationError("Oops! you have entered an invalid secret. Please try again")
         return value

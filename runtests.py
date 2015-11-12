@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-
 import os
 
 
@@ -10,6 +9,8 @@ def run_tests(**options):
     import django
     import sys
     from django.conf import settings
+    from ginger.conf.settings import template_settings
+
     defaults = dict(
         MIDDLEWARE_CLASSES=(
             'django.contrib.sessions.middleware.SessionMiddleware',
@@ -26,12 +27,7 @@ def run_tests(**options):
                 'NAME': ':memory:'
             }
         },
-        TEMPLATE_DIRS = [
-            os.path.join(os.path.dirname(__file__), 'test_templates'),
-        ],
-        TEMPLATE_CONTEXT_PROCESSORS = [
-
-        ]
+        TEMPLATES = template_settings(dirs=[os.path.join(os.path.dirname(__file__), 'test_templates'),])
     )
     defaults.update(options)
     settings.configure(**defaults)
@@ -51,8 +47,9 @@ urlpatterns = []
 ROOT_URLCONF = 'runtests'
 
 INSTALLED_APPS = [
-    'django_nose',
+    # 'django_nose',
     'ginger',
+    'ginger.contrib.staging',
 ]
 
 
@@ -60,7 +57,7 @@ def main():
     failures = run_tests(
         INSTALLED_APPS=INSTALLED_APPS,
         ROOT_URLCONF=ROOT_URLCONF,
-        TEST_RUNNER='django_nose.NoseTestSuiteRunner'
+        # TEST_RUNNER='django_nose.NoseTestSuiteRunner'
     )
     sys.exit(failures)
 
