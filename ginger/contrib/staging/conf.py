@@ -9,6 +9,8 @@ SESSION_KEY = "staging-secret"
 
 TEMPLATE = "staging/staging.html"
 
+RESET_URL = "staging/reset/"
+
 
 def get(key):
     try:

@@ -23,7 +23,6 @@ class StagingView(TemplateView):
         form_obj = forms.StagingForm(request.POST)
         host = request.get_host().lower()
         hosts = allowed_hosts
-
         if (hosts is None or host in hosts) and form_obj.is_valid():
             response = redirect(request.get_full_path())
             response.set_signed_cookie(session_key, secret)

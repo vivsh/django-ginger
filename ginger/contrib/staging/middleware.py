@@ -1,7 +1,8 @@
-
+from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from ginger.contrib.staging import views
 from ginger.contrib.staging import conf
+from django.conf import settings
 
 
 class StagingMiddleware(object):
@@ -13,7 +14,7 @@ class StagingMiddleware(object):
         path_info = request.path_info.strip("/")
         if value != secret:
             return views.stage(request)
-        elif path_info == "staging_reset":
+        elif path_info == conf.get("RESET_URL").strip("/"):
             response = redirect("/")
             response.delete_cookie(session_key)
             return response
