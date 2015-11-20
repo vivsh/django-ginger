@@ -1,4 +1,5 @@
 
+import re
 from collections import OrderedDict
 
 __all__ = ["Link"]
@@ -10,18 +11,27 @@ class Link(object):
         self.content = content
         self.icon = icon
         self.url = url
+        self.patterns = map(re.compile, kwargs.pop("patterns", []))
         self.children = OrderedDict()
         self.is_active = False
         self.is_open = True
         for k,v in kwargs.items():
             setattr(self, k, v)
 
-    def set_active(self, url):
-        self.is_open = self.is_active = url == self.url
+    def set_active(self, url, prefix_match=False):
+        initial = False
+        if not prefix_match:
+            initial = (url == self.url)
+        elif prefix_match and self.patterns:
+            initial = any(p.match(url) is not None for p in self.patterns)
+        self.is_open = self.is_active = initial
         for n in self:
             n.set_active(url)
         if not self.is_open:
             self.is_open = any(n.is_open for n in self)
+        has_active = self.is_active or any(n.is_active for n in self)
+        if not has_active and not prefix_match:
+            self.set_active(url, prefix_match=True)
 
     def __iter__(self):
         return iter(self.children.values())
