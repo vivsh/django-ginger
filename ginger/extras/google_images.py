@@ -4,12 +4,14 @@ import logging
 import random
 import os
 from os.path import join as joinpath
-from urllib import urlencode
-from urllib2 import urlopen
-from urlparse import urlsplit
+
+from django.utils.six.moves.urllib.parse import urlencode, urlsplit
+from django.utils.six.moves.urllib.request import urlopen
+from django.utils.six import BytesIO
+
 import time
 from PIL import Image
-from StringIO import StringIO
+
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,7 @@ class GoogleImage(object):
     def download(self, url):
         logger.info("Downloading %s", url)
         try:
-            content = StringIO(urlopen(url, timeout=10).read())
+            content = BytesIO(urlopen(url, timeout=10).read())
             img = Image.open(content)
         except IOError as ex:
             logger.error("Failed to download image: %s", str(ex))
@@ -78,7 +80,7 @@ class GoogleImage(object):
     def get_urls(self, query, start, **kwargs):
         url = self.make_query(query, start, **kwargs)
         logger.info("Fetching results from %s", url)
-        response = urlopen(url).read()
+        response = urlopen(url).read().decode("utf8")
         results = json.loads(response)["responseData"]["results"]
         for item in results:
             yield item["unescapedUrl"]

@@ -290,12 +290,10 @@ class DefaultProcessor(object):
         self.factory = factory
 
     def process_float_field(self, field):
-        return random.uniform(0.1, 9999999999.28989)
+        return streams.FloatStream().next(field)
 
     def process_decimal_field(self, field):
-        limit = float("9"*field.max_digits)/10**field.decimal_places
-        value = random.uniform(0.1, limit)
-        return Decimal(value)
+        return streams.DecimalStream().next(field)
 
     def process_null_boolean_field(self, field):
         return boolean()
@@ -304,30 +302,25 @@ class DefaultProcessor(object):
         return boolean()
 
     def process_positive_small_integer_field(self, field):
-        return random.randint(1, 32767)
+        return streams.IntegerStream(end=2**32).next(field)
 
     def process_positive_integer_field(self, field):
-        return random.randint(1, 2147483647)
+        return streams.IntegerStream(end=2**32).next(field)
 
     def process_small_integer_field(self, field):
-        return random.randint(-32767, 32767)
+        return streams.IntegerStream(end=2**8).next(field)
 
     def process_big_integer_field(self, field):
-        return random.randint(0, 2147483647)
+        return streams.IntegerStream(end=2*32).next(field)
 
     def process_integer_field(self, field):
-        return random.randint(-2147483647, 2147483647)
+        return streams.IntegerStream(end=2**10).next(field)
 
     def process_char_field(self, field):
         return streams.SentenceStream().next(field)[: field.max_length]
 
     def process_text_field(self, field):
-        limit = field.max_length
-        para = streams.ParagraphStream().next(field)
-        if limit:
-            content = "\n".join(para)[: limit]
-            para = content.splitlines(True)
-        return "".join("<p>%s</p>" % p for p in para)
+        return streams.ParagraphStream().next(field)
 
     def process_foreign_key(self, field):
         if field.null:
@@ -338,24 +331,20 @@ class DefaultProcessor(object):
         return value
 
     def process_date_time_field(self, field):
-        value = datetime.datetime.combine(self.process_date_field(field), self.process_time_field(field))
-        return timezone.make_aware(value, timezone.get_default_timezone())
+        return streams.DateTimeStream().next(field)
 
     def process_date_field(self, field):
-        return datetime.date(year=random.randint(1970, 2015),
-                             month=random.randint(1, 12),
-                             day=random.randint(1, 28))
+        return streams.DateStream().next(field)
 
     def process_time_field(self, field):
-        return datetime.time(hour=random.randint(0, 23),
-                             minute=random.randint(0,59), second=random.randint(0,59))
+        return streams.TimeStream().next(field)
 
     def process_username(self, field):
         word = streams.FirstNameStream().next(field)
         return "%s%s" % (word, field.index)
 
     def process_ip_address_field(self, field):
-        return ".".join(str(random.randint(1, 254)) for _ in range(4))
+        return streams.IPAddressStream().next(field)
 
     def process_generic_ip_address_field(self, field):
         return self.process_ip_address_field(field)
@@ -368,15 +357,7 @@ class DefaultProcessor(object):
         field.instance.set_password(word)
 
     def process_point_field(self, field):
-        from geopy.distance import VincentyDistance
-        km = random.randint(100, 1000)
-        d = VincentyDistance(kilometers=km)
-        latitude = random.randint(-179, 179)
-        longitude = random.randint(-179, 179)
-        bearing = random.randint(0, 359)
-        p = d.destination((latitude, longitude),bearing)
-        return Point(x=p.longitude, y=p.latitude)
+        return streams.PointStream().next(field)
 
     def process_image_field(self, field):
-        filename = get_image_file()
-        return File(open(filename))
+        return streams.ImageStream(settings.GINGER_PRETENSE_IMAGE_DIRS).next(field)

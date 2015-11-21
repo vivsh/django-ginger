@@ -144,7 +144,7 @@ class DateTimeStream(object):
         result = self.start + timedelta(seconds=interval)
         if self.aware:
             from django.utils import timezone
-            timezone.make_aware(result, timezone.get_default_timezone())
+            result = timezone.make_aware(result, timezone.get_default_timezone())
         return result
 
 
@@ -196,7 +196,7 @@ class ImageStream(object):
 
     def next(self, field):
         filename = utils.get_random_image(self.folder)
-        return File(open(filename))
+        return File(open(filename, 'rb'))
 
 
 class FileStream(object):
@@ -207,7 +207,7 @@ class FileStream(object):
 
     def next(self, field):
         filename = utils.get_random_file(self.folders, self.extensions)
-        return File(open(filename))
+        return File(open(filename, 'rb'))
 
 
 class DecimalStream(object):

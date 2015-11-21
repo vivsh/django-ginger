@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "-f",
             "--file-type",
-            type="choice",
+            type=str,
             choices=["jpg", "png", "svg"],
             default="jpg"
         )
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             "-c",
             "--count",
             default=10,
-            type="int"
+            type=int
         )
     
 
