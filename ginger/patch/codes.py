@@ -1,6 +1,7 @@
 import itertools
 import inspect
 import warnings
+from django.utils import six
 
 from .import sources
 from .import utils
@@ -442,7 +443,7 @@ class Module(Block):
         self.reload()
 
     def reload(self):
-        self.code_obj = reload(self.code_obj)
+        self.code_obj = six.moves.reload_module(self.code_obj)
 
     @property
     def imports(self):
