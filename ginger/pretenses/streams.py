@@ -34,7 +34,8 @@ __all__ = [
     "ManyToManyStream",
     "DefaultValueStream",
     "ValueStream",
-    "NameStream"
+    "NameStream",
+    "SlugStream"
 ]
 
 
@@ -109,6 +110,12 @@ class FullNameStream(object):
 
     def next(self, field):
         return " ".join(NameStream().next(field) for _ in range(2))
+
+
+class SlugStream(WordStream):
+
+    def next(self, field):
+        return super(SlugStream, self).next(field).replace(" ", "-")
 
 
 class NameStream(object):

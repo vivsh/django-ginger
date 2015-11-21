@@ -316,6 +316,9 @@ class DefaultProcessor(object):
     def process_integer_field(self, field):
         return streams.IntegerStream(end=2**10).next(field)
 
+    def process_slug_field(self, field):
+        return streams.SlugStream().next(field)
+
     def process_char_field(self, field):
         return streams.SentenceStream().next(field)[: field.max_length]
 
