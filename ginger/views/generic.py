@@ -73,18 +73,6 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
             return [self.meta.template_name]
         return [template_name]
 
-    def get_page_css_class(self):
-        return self.page_css_class
-
-    def get_page_label(self):
-        return self.page_label
-
-    def get_page_icon(self):
-        return self.page_icon
-
-    def get_page_title(self):
-        return self.page_title or self.get_page_label()
-
     def build_link(self):
         url = self.reverse(*self.args, **self.kwargs)
         is_active = self.request.path_info == url
@@ -102,8 +90,6 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
     def get_context_data(self, **kwargs):
         ctx = super(GingerTemplateView, self).get_context_data(**kwargs)
         ctx['view'] = self
-        ctx['page_title'] = self.get_page_title()
-        ctx['page_css_class'] = self.get_page_css_class()
         return ctx
 
 
