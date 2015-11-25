@@ -18,13 +18,16 @@ class Column(object):
 
     __position = 1
 
-    def __init__(self, label=None, kind=None, hidden=False, attr=None):
+    def __init__(self, label=None, kind=None, hidden=False, attr=None,
+                 sortable=True, linkable=False):
         self.__position += 1
         Column.__position += 1
         self.label = label
         self.kind = kind
         self.attr = attr
         self.hidden = hidden
+        self.sortable = sortable
+        self.linkable = linkable
 
     @property
     def position(self):
@@ -51,6 +54,14 @@ class BoundColumn(object):
 
     def show(self):
         self.hidden = False
+
+    @property
+    def linkable(self):
+        return self.column.linkable
+
+    @property
+    def sortable(self):
+        return self.column.sortable
 
     @property
     def kind(self):
@@ -352,7 +363,7 @@ class GingerDataSet(DataSetBase):
                 reverse = False
                 mods = {}
             url = get_url_with_modified_params(request, mods)
-            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse)
+            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse, sortable=col.sortable)
             yield link
 
     def export_csv(self, response, header=False, hidden=True):

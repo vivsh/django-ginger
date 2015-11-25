@@ -131,7 +131,7 @@ def create_hash(*args):
     """
     md = hashlib.md5()
     for a in args:
-        md.update(repr(a))
+        md.update(repr(a).encode('utf-8'))
     return md.hexdigest()
 
 

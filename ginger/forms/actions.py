@@ -20,7 +20,8 @@ __all__ = ['GingerModelForm',
            'GingerFormMixin',
            'GingerSearchFormMixin',
            'GingerDataForm',
-           'GingerDataModelForm']
+           'GingerDataModelForm',
+           'GingerModelFormSet']
 
 
 
@@ -355,3 +356,85 @@ class GingerDataModelForm(GingerDataFormMixin, forms.ModelForm):
 
 class GingerDataForm(GingerDataFormMixin, forms.Form):
     pass
+
+
+class GingerModelFormSet(forms.BaseModelFormSet):
+    failure_message = None
+    success_message = None
+    confirmation_message = None
+
+    def __init__(self, **kwargs):
+        parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
+        constructor = parent_cls.__init__
+        keywords = set(inspect.getargspec(constructor).args)
+        context = {}
+        for key in kwargs.copy():
+            if key in keywords:
+                continue
+            value = kwargs.pop(key)
+            context[key] = value
+        super(GingerModelFormSet, self).__init__(**kwargs)
+        self.context = context
+
+    @property
+    def result(self):
+        self.is_valid()
+        return self.__result
+
+    def get_success_message(self):
+        return self.success_message
+
+    def get_failure_message(self):
+        return self.failure_message
+
+    def get_confirmation_message(self):
+        return self.confirmation_message
+
+    @classmethod
+    def class_oid(cls):
+        """
+        Obfuscated class id
+        :return: str
+        """
+        return utils.create_hash(utils.qualified_name(cls).encode('utf-8'))
+
+    def process_context(self):
+        context = self.context.copy()
+        if hasattr(self, "cleaned_data"):
+            if hasattr(self, "save"):
+                instance = self.save(commit=False)
+                context["instance"] = instance
+            context["data"] = self.cleaned_data
+        spec = inspect.getargspec(self.execute)
+        if spec.varargs:
+            raise ImproperlyConfigured("Form.execute cannot have variable arguments")
+        if spec.keywords:
+            return context
+        return {k: context[k] for k in spec.args[1:] if k in context}
+
+
+    def full_clean(self):
+        super(GingerModelFormSet, self).full_clean()
+        try:
+            _ = self.__result
+        except AttributeError:
+            result = None
+            try:
+                if self.is_bound :
+                    context = self.process_context()
+                    result = self.execute(**context)
+            except forms.ValidationError as ex:
+                self.add_error(None, ex)
+            finally:
+                self.__result = result
+
+    def execute(self, **kwargs):
+        return {}
+
+    @classmethod
+    def is_submitted(cls, data):
+        return data and (any(k in data for k in cls.base_fields) or cls.submit_name() in data)
+
+    @classmethod
+    def submit_name(cls):
+        return "submit-%s" % cls.class_oid()
