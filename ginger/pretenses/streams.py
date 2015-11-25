@@ -161,7 +161,7 @@ class DateStream(DateTimeStream):
         if start is None:
             start = date(1900, 1, 1)
         if end is None:
-            end = date.now()
+            end = datetime.now()
         super(DateStream, self).__init__(datetime.combine(start, time()),
                                             datetime.combine(end, time()), False)
 
