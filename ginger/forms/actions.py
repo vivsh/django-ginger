@@ -8,8 +8,8 @@ from django import forms
 from django.core.paginator import Page
 
 from ginger.exceptions import ValidationFailure
-from ginger import utils, paginator, html
-import html
+from ginger import utils, paginator
+from ginger import html
 import warnings
 
 
