@@ -81,6 +81,26 @@ def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
     return closure
 
 
+class TemplateTag(object):
+
+    template_name = None
+
+    def get_template_names(self):
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs):
+        return
+
+    def render(self, context, obj, **kwargs):
+        pass
+
+    @classmethod
+    def as_templatetag(cls, **init_kwargs):
+        def wrapper(context, *args, **kwargs):
+            return cls(**init_kwargs).render(*args, **kwargs)
+
+
+
 function_tag = global_function
 
 filter_tag = filter

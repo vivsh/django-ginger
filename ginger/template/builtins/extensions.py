@@ -108,41 +108,6 @@ class CacheExtension(Extension):
         return value
 
 
-
-class FormExtension(Extension):
-    tags = set(['form'])
-
-    def parse(self, parser):
-        stream = parser.stream
-        lineno = stream.next().lineno
-
-        form_name = parser.parse_expression()
-        attrs = []
-        while not parser.stream.current.test('block_end'):
-            stream.skip_if("comma")
-            key = nodes.Const(stream.next().value)
-            stream.expect("assign")
-            value = parser.parse_expression()
-            attrs.append(nodes.Pair(key, value, lineno=lineno))
-
-        body = parser.parse_statements(['name:endform'], drop_needle=True)
-        body.insert(0, nodes.Assign(nodes.Name("pappu", 'store'), self.call_method('_make_helper', [form_name])))
-        return nodes.CallBlock(
-            self.call_method('_render', args=[form_name,
-                                              nodes.Dict(attrs),
-                                              nodes.Name("csrf_token", "load"),
-                                              nodes.Const(lineno)]),
-            [], [], body).set_lineno(lineno)
-
-    def _make_helper(self, form):
-        from ginger.templatetags.form_tags import FormHelper
-        return FormHelper(form)
-
-    def _render(self, form_name, attrs, csrf_token, lineno, caller):
-        return caller()
-
-
-
 class LoadExtension(Extension):
     tags = set(['load'])
 

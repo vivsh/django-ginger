@@ -4,51 +4,8 @@ from django.forms.formsets import BaseFormSet
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from ginger import html
-from ginger.templates import function_tag, ginger_tag
-
-
-class FormHelper(object):
-
-    unique_key = "__ginger_form_helper"
-
-    def __init__(self, form):
-        self.form = form
-        self.used = set()
-        setattr(self.form, self.unique_key, self)
-
-    @classmethod
-    def get_or_create(cls, form):
-        try:
-            return getattr(form, cls.unique_key)
-        except AttributeError:
-            return cls(form)
-
-    def get_field(self, name):
-        field = self.form[name]
-        self.used.add(name)
-        return field
-
-    def remaining(self):
-        return [f for f in self.form if f.name not in self.used]
-
-    def hidden_tags(self, csrf_token):
-        fields = [html.wrap_csrf_token(csrf_token)]
-        if not isinstance(self.form, BaseFormSet):
-            for f in self.form.hidden_fields():
-                if f.name not in self.used:
-                    fields.append(str(f))
-        return "".join(fields)
-
-    def start_tag(self, csrf, **attrs):
-        csrf = attrs.get("method", "post").lower() == "post"
-        attrs = html.form_attrs(self.form, **attrs)
-        form_tag = "<form {}>".format(attrs)
-        hidden = self.hidden_tags(csrf)
-        mgmt = force_text(getattr(self.form, "management_form", ""))
-        return "%s%s%s" % (form_tag, hidden, mgmt)
-
-    def end_tag(self):
-        return "</form>"
+from ginger.template.library import function_tag, ginger_tag
+from ginger.html import layouts
 
 
 @ginger_tag(takes_context=True, mark_safe=True)
@@ -178,3 +135,9 @@ def class_is(obj, class_name):
 @ginger_tag(takes_context=True, mark_safe=True)
 def page_tag(context, page, **kwargs):
     return html.render_page(context["request"], page, **kwargs)
+
+
+@ginger_tag(takes_context=True, mark_safe=True)
+def form_tag(context, form, **kwargs):
+    layout = kwargs.pop("layout", "default")
+    return layouts.render_form(layout, context, form, **kwargs)

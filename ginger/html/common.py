@@ -5,7 +5,7 @@ from ginger import serializer
 from jinja2 import Markup
 
 
-__all__ = ['html_json', 'html_attrs', "Element", "CssClassList", "CssStyle", 'add_css_class']
+__all__ = ['html_json', 'html_attrs', "Element", "CssClassList", "CssStyle", 'add_css_class', 'empty']
 
 
 def html_json(values):
@@ -92,6 +92,9 @@ class HtmlAttr(object):
         attr.classes = self.classes.copy()
         return attr
 
+    def dict(self):
+        return dict(self)
+
     def __setitem__(self, key, value):
         self.set(key, value)
 
@@ -167,7 +170,13 @@ class Element(object):
     def copy(self):
         el = self.__class__(self.tag)
         el.attrib = self.attrib.copy()
-        el.children = el.children[:]
+        el.children = self.children[:]
+        return el
+
+    def mutate(self, tag):
+        el = tag.copy()
+        el.attrib.update(self.attrib.copy())
+        el.children = self.children[:]
         return el
 
     def append(self, child):
@@ -179,9 +188,15 @@ class Element(object):
         else:
             self.children.append(child)
 
-    def render(self):
+    def convert_to_text(self, el, *args, **kwargs):
+        return el.render(*args, **kwargs) if hasattr(el, 'render') else force_text(el)
+
+    def render_children(self, *args, **kwargs):
+        return "".join(self.convert_to_text(c, *args, **kwargs)for c in self.children)
+
+    def render(self, ctx=None):
         attrs = self.attrib
-        content = "".join(force_text(c) for c in self.children)
+        content = self.render_children(ctx)
         tag = _normalize(self.tag)
         return u"<{tag} {attrs}>{content}</{tag}>".format(**locals())
 
@@ -192,8 +207,14 @@ class Element(object):
         return self.render()
 
 
+class Empty(Element):
+    def render(self, *args, **kwargs):
+        return self.render_children(*args, **kwargs)
+
+empty = Empty("none")
+
 for name in "html body link meta div span form section article aside main ul li ol dl dd dt p a strong "\
-            "i fieldset legend b em input select button label nav".split(" "):
+            "i fieldset legend b em input select button label nav textarea".split(" "):
     __all__.append(name)
     globals()[name] = Element(name)
 

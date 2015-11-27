@@ -79,7 +79,7 @@ class Jinja2(BaseEngine):
             builtins.extensions.CacheExtension,
             builtins.extensions.URLExtension,
             builtins.extensions.LoadExtension,
-            builtins.extensions.FormExtension
+            # builtins.extensions.FormExtension
         ):
             self.env.add_extension(ext)
 
