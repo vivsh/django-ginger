@@ -154,7 +154,8 @@ class GingerFormView(GingerTemplateView):
         return self.render_form(form)
 
     def render_form(self, form):
-        kwargs = {self.get_context_form_key(form): form}
+        form_key = self.get_form_key()
+        kwargs = {self.get_context_form_key(form_key): form}
         return self.render_to_response(self.get_context_data(**kwargs))
 
     def get_form_initial(self, form_key):
@@ -199,6 +200,46 @@ class GingerFormView(GingerTemplateView):
         kwargs['files'] = files
         form_obj = form_class(**kwargs)
         return form_obj
+
+
+class GingerMultipleFormView(FormView):
+
+    form_classes = {}
+
+    def get_context_form_key(self, form_key):
+        suffix = "form"
+        return suffix if not form_key else "%s_%s" % (form_key, suffix)
+
+    def get_form_key(self):
+        if not self.can_submit():
+            return None
+        return "default"
+
+    def get_form_class(self, form_key):
+        return self.form_classes[form_key]
+
+    def get_unbound_form_keys(self):
+        return [k for k in self.form_classes.keys() if k != self.get_form_key()]
+
+    def get(self, request, *args, **kwargs):
+        key = self.get_form_key()
+        if key is None:
+            context = self.get_context_data(**kwargs)
+            return self.render_to_response(context)
+        return self.process_submit(key, data=request.GET, files=None)
+
+    def post(self, request, *args, **kwargs):
+        key = self.get_form_key()
+        if key is None:
+            return self.redirect(request.get_full_path())
+        return self.process_submit(key, data=request.POST, files=request.FILES)
+
+    def render_to_response(self, context, **response_kwargs):
+        for form_key in self.get_unbound_form_keys():
+            data, files = self.get_form_data(form_key)
+            form = self.get_form(form_key=form_key, data=data, files=files)
+            context[self.get_context_form_key(form_key)] = form
+        return super(MultipleFormView, self).render_to_response(context, **response_kwargs)
 
 
 class GingerSearchView(GingerFormView):

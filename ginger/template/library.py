@@ -1,6 +1,7 @@
 import functools
+from django.utils import six
 import jinja2
-
+from ginger.utils import camel_to_underscore
 
 __all__ = ['function_tag', 'filter_tag', 'test_tag', 'ginger_tag']
 
@@ -81,23 +82,52 @@ def ginger_tag(template=None, name=None, takes_context=False, mark_safe=False):
     return closure
 
 
+class MetaTemplateTag(type):
+    def __init__(cls, *args, **kwargs):
+        super(MetaTemplateTag, cls).__init__(*args, **kwargs)
+        cls.register()
+
+
+@six.add_metaclass(MetaTemplateTag)
 class TemplateTag(object):
 
     template_name = None
+    attribute_names = ()
+
+    def __init__(self, **kwargs):
+        super(TemplateTag, self).__init__()
+        self.context = kwargs
+        for attr in self.attribute_names:
+            if hasattr(self, attr):
+                raise TypeError("Invalid attribute: %r" % attr)
+            setattr(self, attr, kwargs.get(attr))
 
     def get_template_names(self):
         return [self.template_name]
 
     def get_context_data(self, **kwargs):
-        return
+        return kwargs
 
-    def render(self, context, obj, **kwargs):
-        pass
+    def render(self):
+        from django.template import loader
+        template_names = self.get_template_names()
+        t = loader.select_template(template_names)
+        context = self.get_context_data(**self.context)
+        result = t.render(context)
+        result = jinja2.Markup(result)
+        return result
 
     @classmethod
-    def as_templatetag(cls, **init_kwargs):
+    def register(cls, name=None, **init_kwargs):
         def wrapper(context, *args, **kwargs):
-            return cls(**init_kwargs).render(*args, **kwargs)
+            ctx = init_kwargs.copy()
+            ctx.update(context)
+            ctx.update(kwargs)
+            return cls(*args, **ctx).render()
+        if name is None:
+            name = camel_to_underscore(cls.__name__)
+        global_function(name, jinja2.contextfunction(wrapper))
+        return wrapper
 
 
 

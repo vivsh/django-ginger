@@ -118,6 +118,7 @@ class GingerFormMixin(object):
     success_message = None
     ignore_errors = False
     use_defaults = False
+    template_name = None
 
     def __init__(self, **kwargs):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
@@ -135,6 +136,12 @@ class GingerFormMixin(object):
         super(GingerFormMixin, self).__init__(**kwargs)
         self.context = context
         self.merge_defaults()
+
+    def get_template_names(self):
+        template_name = self.template_name
+        if not template_name:
+            raise ImproperlyConfigured("Not template defined for this form")
+        return [template_name]
 
     def insert_null(self, field_name, label, initial=""):
         field = self.fields[field_name]

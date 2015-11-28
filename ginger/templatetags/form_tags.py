@@ -6,6 +6,7 @@ from django.utils.safestring import mark_safe
 from ginger import html
 from ginger.template.library import function_tag, ginger_tag
 from ginger.html import layouts
+from ginger.template.library import TemplateTag
 
 
 @ginger_tag(takes_context=True, mark_safe=True)
@@ -137,7 +138,11 @@ def page_tag(context, page, **kwargs):
     return html.render_page(context["request"], page, **kwargs)
 
 
-@ginger_tag(takes_context=True, mark_safe=True)
-def form_tag(context, form, **kwargs):
-    layout = kwargs.pop("layout", "default")
-    return layouts.render_form(layout, context, form, **kwargs)
+class FormTag(TemplateTag):
+
+    def __init__(self, form, **kwargs):
+        super(FormTag, self).__init__(form=form, **kwargs)
+
+    def get_template_names(self):
+        return self.context['form'].get_template_names()
+
