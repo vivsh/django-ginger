@@ -163,7 +163,7 @@ class GingerFormMixin(object):
                 setattr(field, key, True)
                 field.bind_form(self)
 
-    def field_range(self, first, last, step=None):
+    def field_range(self, first, last=None, step=None):
         return html.field_range(self, first, last, step, hidden=True)
 
     def iter_fields(self, names):

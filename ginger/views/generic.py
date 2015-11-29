@@ -1,4 +1,4 @@
-
+from django import forms
 import os
 from datetime import timedelta
 from django.utils.six.moves.urllib.parse import urljoin
@@ -31,7 +31,8 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerDetailView', 'GingerFormView', 'GingerWizardView',
            'GingerFormDoneView', 'GingerListView', 'GingerDeleteView',
            'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView',
-           "GingerNewDoneView", "GingerNewView", "GingerNewWizardView", 'PostFormMixin']
+           "GingerNewDoneView", "GingerNewView", "GingerNewWizardView", 'PostFormMixin',
+           'GingerMultipleFormView']
 
 
 
@@ -202,9 +203,10 @@ class GingerFormView(GingerTemplateView):
         return form_obj
 
 
-class GingerMultipleFormView(FormView):
+class GingerMultipleFormView(GingerFormView):
 
     form_classes = {}
+    form_key_parameter = '_fkey'
 
     def get_context_form_key(self, form_key):
         suffix = "form"
@@ -213,7 +215,15 @@ class GingerMultipleFormView(FormView):
     def get_form_key(self):
         if not self.can_submit():
             return None
-        return "default"
+        name = self.form_key_parameter
+        request = self.request
+
+        return request.GET.get(name) if request.method == 'GET' else request.POST.get(name)
+
+    def get_form(self, form_key, data=None, files=None):
+        form_obj = super(GingerMultipleFormView, self).get_form(form_key, data, files)
+        form_obj.fields[self.form_key_parameter] = forms.CharField(widget=forms.HiddenInput, initial=form_key)
+        return form_obj
 
     def get_form_class(self, form_key):
         return self.form_classes[form_key]
@@ -239,7 +249,8 @@ class GingerMultipleFormView(FormView):
             data, files = self.get_form_data(form_key)
             form = self.get_form(form_key=form_key, data=data, files=files)
             context[self.get_context_form_key(form_key)] = form
-        return super(MultipleFormView, self).render_to_response(context, **response_kwargs)
+        return super(GingerMultipleFormView, self).render_to_response(context, **response_kwargs)
+
 
 
 class GingerSearchView(GingerFormView):

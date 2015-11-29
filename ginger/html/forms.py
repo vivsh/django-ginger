@@ -100,7 +100,7 @@ def field_range(form, start, end, step=None, hidden=True):
 
 def field_name_range(form, first, last, step=None, field_names=None):
     if field_names is None:
-        field_names = form.fields.keys()
+        field_names = list(form.fields.keys())
     keys = field_names
     if first is not None and isinstance(first, six.string_types):
         try:

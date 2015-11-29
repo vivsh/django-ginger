@@ -4,6 +4,7 @@ import traceback
 
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import six
 from jinja2.ext import Extension
 from jinja2 import nodes
 from jinja2 import Markup
@@ -113,7 +114,7 @@ class LoadExtension(Extension):
 
     def parse(self, parser):
         while not parser.stream.current.type == 'block_end':
-            parser.stream.next()
+            six.next(parser.stream)
         return []
 
 
@@ -146,7 +147,7 @@ to apply filters:
     def parse(self, parser):
         stream = parser.stream
 
-        tag = stream.next()
+        tag = six.next(stream)
 
         # get view name
         if stream.current.test('string'):
@@ -159,7 +160,7 @@ to apply filters:
             # token, we do so ourselves, and let parse_expression() handle all
             # other cases.
             if stream.look().test('string'):
-                token = stream.next()
+                token = six.next(stream)
                 viewname = nodes.Const(token.value, lineno=token.lineno)
             else:
                 viewname = parser.parse_expression()
@@ -169,10 +170,10 @@ to apply filters:
             name_allowed = True
             while True:
                 if stream.current.test_any('dot', 'sub', 'colon'):
-                    bits.append(stream.next())
+                    bits.append(six.next(stream))
                     name_allowed = True
                 elif stream.current.test('name') and name_allowed:
-                    bits.append(stream.next())
+                    bits.append(six.next(stream))
                     name_allowed = False
                 else:
                     break
@@ -188,7 +189,7 @@ to apply filters:
             if args or kwargs:
                 stream.expect('comma')
             if stream.current.test('name') and stream.look().test('assign'):
-                key = nodes.Const(stream.next().value)
+                key = nodes.Const(six.next(stream).value)
                 stream.skip()
                 value = parser.parse_expression()
                 kwargs.append(nodes.Pair(key, value, lineno=key.lineno))
