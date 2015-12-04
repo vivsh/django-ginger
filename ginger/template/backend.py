@@ -71,7 +71,8 @@ class Jinja2(BaseEngine):
     def inject_filters(self):
         from django.template.defaultfilters import register
         for name, func in six.iteritems(register.filters):
-            self.env.filters[name] = func
+            if name not in self.env.filters:
+                self.env.filters[name] = func
 
     def inject_extensions(self):
         for ext in (
