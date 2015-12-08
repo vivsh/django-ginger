@@ -512,7 +512,7 @@ class GingerModelFormSet(forms.BaseModelFormSet):
         except AttributeError:
             result = None
             try:
-                if self.is_bound and not any(self._errors) :
+                if self.is_bound and not any(self._errors) and not self._non_form_errors:
                     context = self.process_context()
                     result = self.execute(**context)
             except forms.ValidationError as ex:
