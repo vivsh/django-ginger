@@ -120,6 +120,16 @@ class DataRow(object):
     def schema(self):
         return self.owner()._get_schema()
 
+    def prepare_attr(self, obj, attr):
+        parts = attr.split("__")
+        while parts:
+            key = parts.pop(0)
+            if isinstance(obj, collections.Mapping):
+                obj = obj[key]
+            else:
+                obj = getattr(obj, key)
+        return obj
+
     @property
     def data(self):
         obj = self.obj
@@ -132,10 +142,7 @@ class DataRow(object):
                     try:
                         method = getattr(schema, "prepare_%s" % column.name)
                     except AttributeError:
-                        if isinstance(obj, collections.Mapping):
-                            value = obj[attr]
-                        else:
-                            value = getattr(obj, attr)
+                        value = self.prepare_attr(obj, attr)
                     else:
                         value = method(obj)
                     result.append(value)
