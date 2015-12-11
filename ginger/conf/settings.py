@@ -1,12 +1,8 @@
 
-from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS, TEMPLATE_LOADERS
 from . import env
 
 __all__ = ['STATIC_URL',
            'MEDIA_URL',
-           'TEMPLATE_CONTEXT_PROCESSORS',
-           # 'TEMPLATE_LOADERS',
-           'TEST_RUNNER',
             'CELERY_ALWAYS_EAGER',
             'CELERY_EAGER_PROPAGATES_EXCEPTIONS',
             'env',
@@ -24,11 +20,11 @@ STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 
-JINJA2_EXCLUDED_FOLDERS = ["admin", "debug_toolbar", "suit", 'rest_framework']
+JINJA2_EXCLUDED_FOLDERS = ["admin", "debug_toolbar", "suit", 'rest_framework', 'rest_framework_swagger']
 
 JINJA2_AUTOESCAPE = False
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+# TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 #Celery config
 CELERY_ALWAYS_EAGER = True
