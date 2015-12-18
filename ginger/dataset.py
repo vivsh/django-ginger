@@ -57,6 +57,10 @@ class BoundColumn(object):
         self.hidden = False
 
     @property
+    def reverse(self):
+        return self.column.reverse
+
+    @property
     def linkable(self):
         return self.column.linkable
 
