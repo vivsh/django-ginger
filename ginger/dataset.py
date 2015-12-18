@@ -19,7 +19,7 @@ class Column(object):
     __position = 1
 
     def __init__(self, label=None, kind=None, hidden=False, attr=None,
-                 sortable=True, linkable=False):
+                 sortable=True, linkable=False, reverse=False):
         self.__position += 1
         Column.__position += 1
         self.label = label
@@ -28,6 +28,7 @@ class Column(object):
         self.hidden = hidden
         self.sortable = sortable
         self.linkable = linkable
+        self.reverse = reverse
 
     @property
     def position(self):

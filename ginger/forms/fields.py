@@ -154,6 +154,7 @@ class GingerDataSetField(GingerSortField):
 
     def __init__(self, dataset_class, process_list=False, **kwargs):
         column_dict = dataset_class.get_column_dict()
+        self.reverse = kwargs.pop("reverse", False)
         choices = [(name, col.label or name.title()) for name, col in six.iteritems(column_dict) if not col.hidden]
         super(GingerDataSetField, self).__init__(choices=choices, **kwargs)
         self.dataset_class = dataset_class
@@ -169,6 +170,8 @@ class GingerDataSetField(GingerSortField):
         name = self.field_map[name]
         col = column_dict[name]
         attr = col.attr or name
+        if col.reverse:
+            reverse = not reverse
         if reverse:
             attr = "-%s" % attr
         return queryset.order_by(attr)
@@ -181,6 +184,8 @@ class GingerDataSetField(GingerSortField):
         value = text_value[1:] if reverse else text_value
         name = self.field_map[value]
         column = dataset.columns[name]
+        if column.reverse:
+            reverse = not reverse
         column.sort(reverse=reverse)
 
 
