@@ -530,3 +530,7 @@ class GingerModelFormSet(forms.BaseModelFormSet):
     @classmethod
     def submit_name(cls):
         return "submit-%s" % cls.class_oid()
+
+    def add_error(self, name, errors):
+        if name is None:
+            self._non_form_errors.append(errors)
