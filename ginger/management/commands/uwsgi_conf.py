@@ -43,6 +43,8 @@ pidfile         = {project_dir}run/uwsgi.pid
 
 processes       = 2
 
+enable-threads  = 1
+
 threads         = 10
 
 vacuum          = true
@@ -60,10 +62,6 @@ disable-logging = false
 limit-post      = 153600000
 
 http-timeout    = 10
-
-threads         = 10
-
-enable-threads  = 1
 
 touch-reload    = {project_dir}src/uwsgi.ini
 """

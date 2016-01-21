@@ -32,7 +32,7 @@ server {
     # Finally, send all non-media requests to the Django server.
     location / {
         uwsgi_pass  django;
-        include     /etc/nginx/uwsgi_params; # or the uwsgi_params you installed manually
+        include  uwsgi_params;
     }
 }
 """

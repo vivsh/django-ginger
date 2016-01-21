@@ -34,6 +34,9 @@ class Column(object):
     def position(self):
         return self.__position
 
+    @property
+    def display_label(self):
+        return (self.label or self.name).capitalize()
 
 class BoundColumn(object):
 
@@ -333,6 +336,8 @@ class GingerDataSet(DataSetBase):
         values = sorted(inspect.getmembers(cls,
                                        lambda value: isinstance(value, Column)),
                     key=lambda val: val[1].position)
+        for name, col in values:
+            col.name = name
         return OrderedDict(values)
 
     def setup_columns(self):
