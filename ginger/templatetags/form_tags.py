@@ -111,6 +111,10 @@ def field_tag(field, layout=None, **kwargs):
 def field_class(field):
     return html.field_css_class(field)
 
+@function_tag
+def form_class(form):
+    return html.make_class_name(form)
+
 
 @function_tag
 def widget_class(field):
