@@ -130,7 +130,7 @@ def render_field(field, layout=None, **kwargs):
     ctx = {
         "field": field,
         "label": field.label,
-        "label_tag": common.label(class_="form-label", for_=field.id_for_label)[field.label],
+        "label_tag": common.label(class_="form-label", for_=field.id_for_label)[field.label] if field.label else "",
         "widget": render_widget(field),
         "help": field.help_text,
         "help_tag": common.div(class_="form-help")[field.help_text],
