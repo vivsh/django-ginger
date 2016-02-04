@@ -62,7 +62,7 @@ class CssClassList(object):
         return item in self.classes
 
     def __str__(self):
-        return " ".join(self.classes)
+        return " ".join(str(c) for c in self.classes if c)
 
 
 class CssStyle(dict):
