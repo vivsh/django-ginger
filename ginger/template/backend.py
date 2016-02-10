@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from django.utils.safestring import mark_safe
 
 import os
 import sys
@@ -138,4 +139,4 @@ class Template(object):
             for processor in self.backend.context_processors:
                 context.update(processor(request))
 
-        return self.template.render(context)
+        return mark_safe(self.template.render(context))

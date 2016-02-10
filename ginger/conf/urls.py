@@ -14,7 +14,7 @@ def scan(module, predicate=None):
             urls.extend(view.as_urls())
         else:
             urls.append(view.as_url())
-    pattern = patterns("", *urls)
+    pattern = urls
     return pattern
 
 
