@@ -44,7 +44,7 @@ setup(
         "jinja2==2.7.3",
         "mock==1.0.1",
         "django>=1.9.2",
-        'pillow==2.8',
+        'pillow',
         "geopy",
         'bleach',
         "pytz"
