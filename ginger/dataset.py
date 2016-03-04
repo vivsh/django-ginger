@@ -359,7 +359,7 @@ class GingerDataSet(DataSetBase):
             func = getattr(self, "render_%s" % suffix, None)
             if func:
                 return func(value, index, row)
-        return str(value) if value is not None else ""
+        return six.text_type(value) if value is not None else ""
 
     def build_links(self, request):
         data = request.GET
