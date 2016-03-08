@@ -7,7 +7,7 @@ __all__ = ["Link"]
 
 class Link(object):
 
-    def __init__(self, content, icon=None, url=None, **kwargs):
+    def __init__(self, content, icon=None, url=None, attrs=None, **kwargs):
         self.content = content
         self.icon = icon
         self.url = url
@@ -15,6 +15,7 @@ class Link(object):
         self.children = OrderedDict()
         self.is_active = False
         self.is_open = True
+        self.attrs = attrs
         for k,v in kwargs.items():
             setattr(self, k, v)
 
@@ -71,7 +72,15 @@ class Link(object):
             return ""
 
     def render(self, tag="div"):
-        return "<%s><a href='%s'>%s</a>%s</%s>" % (tag, self.url, self.content, self.render_children(), tag)
+        attrs = self.html_attrs
+        return "<%s><a href='%s' %s>%s</a>%s</%s>" % (tag, self.url, attrs, self.content, self.render_children(), tag)
+
+    @property
+    def html_attrs(self):
+        from ginger.html import common as html
+        attrs = html.html_attrs(self.attrs) if self.attrs else ""
+        print(self.content, attrs, "<"*900)
+        return attrs
 
     def build_links(self, request):
         path_info = request.path_info
