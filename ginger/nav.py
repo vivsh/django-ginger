@@ -79,7 +79,6 @@ class Link(object):
     def html_attrs(self):
         from ginger.html import common as html
         attrs = html.html_attrs(self.attrs) if self.attrs else ""
-        print(self.content, attrs, "<"*900)
         return attrs
 
     def build_links(self, request):
