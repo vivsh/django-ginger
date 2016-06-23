@@ -36,7 +36,7 @@ setup(
     ],
     keywords="django utilities",
     install_requires=[
-        "django-jsonfield",
+        "django-jsonfield==0.9.15",
         "django-imagekit",
         "python-dateutil",
         "webtest",
