@@ -206,7 +206,7 @@ class Factory(object):
 
     def method_names(self, field):
         template = "process_%s"
-        yield template % field.name
+        # yield template % field.name
         yield template % self.snake_case(field.__class__)
         for cls in field.__class__.__mro__:
             if issubclass(cls, models.Field):
@@ -302,16 +302,16 @@ class DefaultProcessor(object):
         return boolean()
 
     def process_positive_small_integer_field(self, field):
-        return streams.IntegerStream(end=2**32).next(field)
+        return streams.IntegerStream(end=2**24).next(field)
 
     def process_positive_integer_field(self, field):
-        return streams.IntegerStream(end=2**32).next(field)
+        return streams.IntegerStream(end=2**24).next(field)
 
     def process_small_integer_field(self, field):
         return streams.IntegerStream(end=2**8).next(field)
 
     def process_big_integer_field(self, field):
-        return streams.IntegerStream(end=2*32).next(field)
+        return streams.IntegerStream(end=2*24).next(field)
 
     def process_integer_field(self, field):
         return streams.IntegerStream(end=2**10).next(field)
