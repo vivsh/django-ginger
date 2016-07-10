@@ -75,7 +75,7 @@ class ParagraphStream(object):
 
     def create_paragraph(self, field):
         stream = SentenceStream()
-        return " ".join(stream.next(field) for _ in range(random.randint(5, 20)))
+        return " ".join(stream.next(field) for _ in range(random.randint(5, 10)))
 
     def next(self, field):
         limit = random.randint(self.minimum,self.maximum)

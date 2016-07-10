@@ -166,17 +166,11 @@ class Factory(object):
     def processors(self):
         classes = [self.model] + list(self.model.__mro__)
         result = []
-        # if not self.name:
         for k in classes:
             if k not in _processors:
                 continue
             proc = _processors[k]
             result.append(proc)
-        # else:
-        #     for mod in self.__modules:
-        #         cls = getattr(mod, self.name, None)
-        #         if cls is not None:
-        #             result.append(cls())
         result.append(DefaultProcessor(self))
         return result
 
@@ -208,7 +202,6 @@ class Factory(object):
 
     def method_names(self, field):
         template = "process_%s"
-        # yield template % field.name
         yield template % self.snake_case(field.__class__)
         for cls in field.__class__.__mro__:
             if issubclass(cls, models.Field):
