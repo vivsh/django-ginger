@@ -20,7 +20,7 @@ STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 
-JINJA2_EXCLUDED_FOLDERS = ["admin", "debug_toolbar", "suit", 'rest_framework', 'rest_framework_swagger']
+JINJA2_EXCLUDED_FOLDERS = ["sitemaps", "admin", "debug_toolbar", "suit", 'rest_framework', 'rest_framework_swagger']
 
 JINJA2_AUTOESCAPE = False
 
