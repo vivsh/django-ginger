@@ -191,6 +191,8 @@ class Factory(object):
         for handler in self.processors:
             stream = getattr(handler, field.name, None)
             if stream:
+                if callable(stream):
+                    return stream
                 func = getattr(stream, 'next', None)
                 if callable(func):
                     return func
@@ -260,7 +262,12 @@ class Factory(object):
             try:
                 ins = self.create(self.highest_id+i, limit, **kwargs)
                 i += 1
-            except (IntegrityError, ValidationError, pyex.AmbiguousTimeError, pyex.NonExistentTimeError, pyex.InvalidTimeError) as ex:
+            except (IntegrityError,
+                        ValidationError,
+                        pyex.AmbiguousTimeError,
+                        pyex.NonExistentTimeError,
+                        pyex.InvalidTimeError
+                    ) as ex:
                 errors += 1
                 if errors > limit * 5:
                     raise
