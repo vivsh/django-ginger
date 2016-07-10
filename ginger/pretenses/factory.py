@@ -302,13 +302,13 @@ class DefaultProcessor(object):
         return boolean()
 
     def process_positive_small_integer_field(self, field):
-        return streams.IntegerStream(end=2**24).next(field)
+        return streams.IntegerStream(end=2**6).next(field)
 
     def process_positive_integer_field(self, field):
         return streams.IntegerStream(end=2**24).next(field)
 
     def process_small_integer_field(self, field):
-        return streams.IntegerStream(end=2**8).next(field)
+        return streams.IntegerStream(end=2**6).next(field)
 
     def process_big_integer_field(self, field):
         return streams.IntegerStream(end=2*24).next(field)

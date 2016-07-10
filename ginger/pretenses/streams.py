@@ -51,7 +51,7 @@ class IntegerStream(object):
 
 class FloatStream(IntegerStream):
 
-    def __init__(self, start, end):
+    def __init__(self, start=0, end=100.0):
         super(FloatStream, self).__init__(start, end)
 
     def next(self, field):
