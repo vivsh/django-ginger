@@ -67,8 +67,14 @@ class CssClassList(object):
 
 class CssStyle(dict):
 
+    def render(self):
+        return ";".join("%s:%s" % (key.replace("_", "-"), value) for (key, value) in six.iteritems(self))
+
     def __str__(self):
-        return ";".join("%s:%s"%p.replace("_", "-") for p in six.iteritems(self.items))
+        return self.render()
+
+    def copy(self):
+        return CssStyle(super(CssStyle, self).copy())
 
 
 def _normalize(key):
@@ -128,7 +134,7 @@ class HtmlAttr(object):
         if self.classes:
             yield "class", six.text_type(self.classes)
         if self.styles:
-            yield "style", six.text_type(self.styles)
+            yield "style", self.styles.render()
 
     def render(self):
         pairs = []
@@ -196,6 +202,7 @@ class Element(object):
 
     def render(self, ctx=None):
         attrs = self.attrib
+        print str(attrs), "<"*90, str(self.attrib.styles)
         content = self.render_children(ctx)
         tag = _normalize(self.tag)
         return u"<{tag} {attrs}>{content}</{tag}>".format(**locals())
