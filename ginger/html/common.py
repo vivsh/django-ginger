@@ -202,7 +202,6 @@ class Element(object):
 
     def render(self, ctx=None):
         attrs = self.attrib
-        print str(attrs), "<"*90, str(self.attrib.styles)
         content = self.render_children(ctx)
         tag = _normalize(self.tag)
         return u"<{tag} {attrs}>{content}</{tag}>".format(**locals())
