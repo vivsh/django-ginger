@@ -333,6 +333,8 @@ class GingerSearchFormMixin(GingerFormMixin):
         queryset = self.get_queryset(**kwargs)
         data = self.cleaned_data if self.is_bound else self.initial_data
         allowed = set(self.get_queryset_filter_names())
+        if hasattr(self, "before_filters"):
+            queryset = self.before_filters(queryset, data)
         for name, value in six.iteritems(data):
             if name not in allowed or value in (None, ''):
                 continue
@@ -340,6 +342,8 @@ class GingerSearchFormMixin(GingerFormMixin):
             field = self.fields[name]
             if hasattr(self, "handle_%s" % name):
                 result = getattr(self,"handle_%s" % name)(queryset, value, data)
+            elif hasattr(self, "filter_%s" % name):
+                result = getattr(self, "handle_%s" % name)(queryset, value, data)
             elif hasattr(field, "handle_queryset"):
                 result = field.handle_queryset(queryset, value, self[name])
             else:
@@ -349,6 +353,8 @@ class GingerSearchFormMixin(GingerFormMixin):
                 result = queryset.filter(**kwargs)
             if result is not None:
                 queryset = result
+        if hasattr(self, "after_filters"):
+            queryset = self.after_filters(queryset, data)
         if page is not None:
             queryset = self.paginate(queryset, page,
                                  parameter_name=parameter_name,
