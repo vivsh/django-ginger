@@ -343,7 +343,7 @@ class GingerSearchFormMixin(GingerFormMixin):
             if hasattr(self, "handle_%s" % name):
                 result = getattr(self,"handle_%s" % name)(queryset, value, data)
             elif hasattr(self, "filter_%s" % name):
-                result = getattr(self, "handle_%s" % name)(queryset, value, data)
+                result = getattr(self, "filter_%s" % name)(queryset, value, data)
             elif hasattr(field, "handle_queryset"):
                 result = field.handle_queryset(queryset, value, self[name])
             else:
