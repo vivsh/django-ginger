@@ -94,9 +94,12 @@ def get_url_with_modified_params(request, values, append=False):
     params = parse.parse_qs(parts.query)
     for key, value in six.iteritems(values):
         if key not in params or not append:
-            params[key] = [value]
+            params[key] = value if isinstance(value, (list, tuple)) else [value]
         else:
-            params[key].append(value)
+            if isinstance(value, (list, tuple)):
+                params[key].extend(value)
+            else:
+                params[key].append(value)
     return parts._replace(query=parse.urlencode(params, True)).geturl()
 
 
