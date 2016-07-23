@@ -336,7 +336,7 @@ class GingerSearchFormMixin(GingerFormMixin):
         if hasattr(self, "before_filters"):
             queryset = self.before_filters(queryset, data)
         for name, value in six.iteritems(data):
-            if name not in allowed or value in (None, ''):
+            if name not in allowed or value in (None, '', [], ()):
                 continue
             kwargs = {}
             field = self.fields[name]
