@@ -198,9 +198,11 @@ class Element(object):
         return el.render(*args, **kwargs) if hasattr(el, 'render') else force_text(el)
 
     def render_children(self, *args, **kwargs):
-        return "".join(self.convert_to_text(c, *args, **kwargs)for c in self.children)
+        return "".join(filter(None, (self.convert_to_text(c, *args, **kwargs)for c in self.children)))
 
     def render(self, ctx=None):
+        if self.attrib.get('if') is False:
+            return None
         attrs = self.attrib
         content = self.render_children(ctx)
         tag = _normalize(self.tag)
