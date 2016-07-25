@@ -186,7 +186,7 @@ class GingerFormMixin(object):
                 value = initial[key]
                 name = self.add_prefix(key)
                 if value is not None:
-                    if hasattr(value, "__iter__"):
+                    if isinstance(value, (list, tuple)):
                         data.setlistdefault(name, value)
                     else:
                         data.setdefault(name, value)
