@@ -340,10 +340,10 @@ class GingerSearchFormMixin(GingerFormMixin):
                 continue
             kwargs = {}
             field = self.fields[name]
-            if hasattr(self, "handle_%s" % name):
-                result = getattr(self,"handle_%s" % name)(queryset, value, data)
-            elif hasattr(self, "filter_%s" % name):
+            if hasattr(self, "filter_%s" % name):
                 result = getattr(self, "filter_%s" % name)(queryset, value, data)
+            elif hasattr(self, "handle_%s" % name):
+                result = getattr(self,"handle_%s" % name)(queryset, value, data)
             elif hasattr(field, "handle_queryset"):
                 result = field.handle_queryset(queryset, value, self[name])
             else:
