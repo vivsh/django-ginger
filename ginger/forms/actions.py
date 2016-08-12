@@ -253,7 +253,7 @@ class GingerFormMixin(object):
 
     @classmethod
     def submit_name(cls):
-        return "submit-%s" % cls.uid()
+        return "submit-%s" % cls.class_oid()
 
     def run(self):
         if not self.is_valid() and not self.ignore_errors:

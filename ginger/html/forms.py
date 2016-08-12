@@ -31,7 +31,7 @@ _layouts = {}
 
 
 def make_css_class(obj, suffix=""):
-    name = utils.camel_to_hyphen(re.sub(r'(?i)widget|field|ginger|form', '', obj.__class__.__name__, 1))
+    name = utils.camel_to_hyphen(re.sub(r'(?i)widget|field|ginger|form|input', '', obj.__class__.__name__, 1))
     if suffix:
         name = "%s%s" % (name, suffix)
     return name
