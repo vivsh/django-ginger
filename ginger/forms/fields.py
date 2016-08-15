@@ -169,6 +169,8 @@ class GingerDataSetField(GingerSortField):
         name = text_value[1:] if reverse else text_value
         name = self.field_map[name]
         col = column_dict[name]
+        if not col.sortable:
+            return queryset
         attr = col.attr or name
         if col.reverse:
             reverse = not reverse
