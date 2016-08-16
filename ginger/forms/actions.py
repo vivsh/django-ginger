@@ -124,14 +124,15 @@ class GingerFormMixin(object):
         parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
         constructor = parent_cls.__init__
         keywords = set(inspect.getargspec(constructor).args)
+        parent_keywords = set(inspect.getargspec(super(GingerFormMixin, self).__init__).args)
         self.use_defaults = kwargs.pop("use_defaults", self.use_defaults)
         if "ignore_errors" in kwargs:
             self.ignore_errors = kwargs.pop("ignore_errors")
         context = {}
         for key in kwargs.copy():
-            if key in keywords:
+            if key in keywords and key not in parent_keywords:
                 continue
-            value = kwargs.pop(key)
+            value = kwargs.pop(key) if key not in parent_keywords else kwargs.get(key)
             context[key] = value
         super(GingerFormMixin, self).__init__(**kwargs)
         self.context = context
