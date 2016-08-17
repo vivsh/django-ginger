@@ -13,6 +13,7 @@ def find_views(module, predicate=None):
         module = import_module(module)
     view_classes = inspect.getmembers(module, lambda a: isinstance(a, type)
                                                         and issubclass(a, (GingerView, GingerViewSet))
+                                                        and not getattr(a, '__abstract__', False)
                                                         and inspect.getmodule(a) is module
                                                         and (predicate is None or predicate(a)))
     return sorted((v[1] for v in view_classes), key=lambda a: a.position)

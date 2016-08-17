@@ -101,6 +101,7 @@ class GingerMetaView(type):
         super(GingerMetaView, cls).__init__(name, bases, attrs)
         GingerMetaView.__position += 1
         cls.position = GingerMetaView.__position
+        cls.__abstract__ = attrs.get("__abstract__", False)
 
 
 
