@@ -45,7 +45,8 @@ __all__ = [
     'base64pickle_dumps',
     'base64pickle_loads',
     'which',
-    'iter_app_modules'
+    'iter_app_modules',
+    'hyphen_to_camel'
 ]
 
 
@@ -62,6 +63,8 @@ def camel_to_hyphen(name):
 def join_with_underscore(*args):
     return '_'.join( str(a) for a in args if a )
 
+def hyphen_to_camel(value):
+    return "".join([x.title() for x in value.split('-')])
 
 def underscore_to_camel(value):
     return "".join([x.title() for x in value.split('_')])
