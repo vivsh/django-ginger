@@ -2,26 +2,16 @@ import functools
 from django.utils import six
 import jinja2
 from ginger.utils import camel_to_underscore
+from .backend import library_functions
+
 
 __all__ = ['function_tag', 'filter_tag', 'test_tag', 'ginger_tag']
-
-
-_env = None
-
-
-def get_env():
-    global _env
-    if _env is None:
-        from django.template import engines
-        _env = engines["GINGER"].env
-    return _env
 
 
 def _attach_function(attr, func, name=None):
     if name is None:
         name = func.__name__
-    env = get_env()
-    getattr(env, attr)[name] = func
+    library_functions.append((attr, name, func))
     return func
 
 

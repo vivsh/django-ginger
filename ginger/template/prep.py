@@ -48,8 +48,7 @@ def preload_templatetags_from_apps():
     Iterate over all available apps in searching and preloading
     available template filters or functions for jinja2.
     """
-
-    for _ in iter_app_modules("templatetags", deep=True):
+    for module in iter_app_modules("templatetags", deep=True):
         pass
 
 

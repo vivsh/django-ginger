@@ -113,7 +113,7 @@ def field_class(field):
 
 @function_tag
 def form_class(form):
-    return html.make_class_name(form)
+    return html.make_css_class(form)
 
 
 @function_tag
@@ -130,6 +130,9 @@ def field_is(field, class_name):
 def widget_is(field, class_name):
     return class_is(field.field.widget, class_name)
 
+@function_tag
+def visible_fields(form):
+    return form.visible_fields()
 
 @function_tag
 def class_is(obj, class_name):

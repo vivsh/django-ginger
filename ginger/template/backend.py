@@ -26,6 +26,8 @@ DEFAULT_EXTENSIONS = [
     "jinja2.ext.autoescape",
 ]
 
+library_functions = []
+
 
 class Jinja2(BaseEngine):
 
@@ -69,6 +71,11 @@ class Jinja2(BaseEngine):
         else:
             self.env.install_null_translations(newstyle=newstyle)
 
+    def inject_tags(self):
+        while library_functions:
+            attr, name, func = library_functions.pop(0)
+            getattr(self.env, attr)[name] = func
+
     def inject_filters(self):
         from django.template.defaultfilters import register
         for name, func in six.iteritems(register.filters):
@@ -93,6 +100,7 @@ class Jinja2(BaseEngine):
         self.inject_filters()
         self.inject_globals()
         self.inject_extensions()
+        self.inject_tags()
 
     @cached_property
     def context_processors(self):

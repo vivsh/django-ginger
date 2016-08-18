@@ -125,8 +125,9 @@ class GingerFormMixin(object):
         constructor = parent_cls.__init__
         parent_constructor = super(GingerFormMixin, self).__init__
         keywords = set(inspect.getargspec(constructor).args)
+        func = lambda a: getattr(a, 'im_func', a)
         parent_keywords = set(inspect.getargspec(parent_constructor).args) \
-            if parent_constructor.im_func is not constructor.im_func else set()
+            if func(parent_constructor) is not func(constructor) else set()
         self.use_defaults = kwargs.pop("use_defaults", self.use_defaults)
         if "ignore_errors" in kwargs:
             self.ignore_errors = kwargs.pop("ignore_errors")

@@ -312,4 +312,3 @@ def iter_app_modules(module_name, deep=False):
                     for importer, modname, ispkg in pkgutil.iter_modules(pkg_path):
                         if not ispkg:
                             yield importer.find_module(modname).load_module(modname)
-

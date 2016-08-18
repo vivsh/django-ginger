@@ -171,8 +171,7 @@ class GingerFormView(GingerTemplateView):
     def get_form_context(self, form_key):
         return {
             "request": self.request,
-            "user": self.user,
-            "ip": self.get_ip()
+            "user": self.user
         }
 
     def get_form_kwargs(self, form_key):
