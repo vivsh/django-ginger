@@ -380,7 +380,7 @@ class GingerDataSet(DataSetBase):
                 reverse = False
                 mods = {}
             url = get_url_with_modified_params(request, mods)
-            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse, sortable=col.sortable)
+            link = ui.Link(content=col.label, url=url, is_active=is_active, reverse=reverse, sortable=col.sortable, column=col)
             yield link
 
     def export_csv(self, response, header=False, hidden=True):
