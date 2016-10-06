@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, Per
 from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.views.generic.base import View
-from django.conf.urls import url, patterns
+from django.conf.urls import url
 from django.utils import six
 from .meta import ViewInfo
 from ginger import utils, pattern
@@ -269,7 +269,7 @@ class GingerViewSet(object):
 
     @classmethod
     def as_patterns(cls, prefix=""):
-        return patterns(prefix, *cls.as_urls())
+        return list(cls.as_urls())
 
     def get_template_names(self, view, **kwargs):
         return ()

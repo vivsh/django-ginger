@@ -1,9 +1,9 @@
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from ginger.views import utils
 
 
-__all__ = ('pattern', 'include', 'url', 'scan', 'scan_to_include')
+__all__ = ('include', 'url', 'scan', 'scan_to_include')
 
 
 def scan(module, predicate=None):
