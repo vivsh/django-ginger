@@ -222,13 +222,9 @@ class GingerFormMixin(object):
                         not getattr(field.widget, 'supports_microseconds', True)):
                     data = data.replace(microsecond=0)
             if data and isinstance(field, forms.MultiValueField):
-                initial = field.initial
-                if callable(initial):
-                    initial = initial()
                 for i, f in enumerate(field.fields):
                     key = "%s_%s" % (name, i)
-                    data = self.initial.get(key, initial[i] if initial else None)
-                    result[key] = data
+                    result[key] = data[i]
             elif data is not None:
                 result[name] = data
         return result
