@@ -1,5 +1,7 @@
+
 from django import forms
 import os
+import inspect
 from datetime import timedelta
 from django.utils.six.moves.urllib.parse import urljoin
 from django.core.paginator import EmptyPage
@@ -22,7 +24,7 @@ from ginger.paginator import paginate
 
 from . import storages
 from . import steps
-from .base import GingerView
+from .base import GingerView, GingerViewSetMixin
 
 from ginger.ui import Link
 
@@ -32,18 +34,23 @@ __all__ = ['GingerView', 'GingerTemplateView', 'GingerSearchView',
            'GingerFormDoneView', 'GingerListView', 'GingerDeleteView',
            'GingerEditView', 'GingerEditDoneView', 'GingerEditWizardView',
            "GingerNewDoneView", "GingerNewView", "GingerNewWizardView", 'PostFormMixin',
-           'GingerMultipleFormView']
-
-
+           'GingerMultipleFormView'
+           ]
 
 
 class GingerTemplateView(GingerView, TemplateResponseMixin):
 
+    view_icon = None
+
+    view_label = None
+
     page_title = None
+
+    page_heading = None
+
+    page_actions = ()
+
     page_css_class = None
-    page_label = None
-    page_icon = None
-    page_crumbs = None
 
     response_class = GingerResponse
 
@@ -88,11 +95,37 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
         ins = cls.instantiate(*args, **kwargs)
         return ins.build_link()
 
-    def get_context_data(self, **kwargs):
-        ctx = super(GingerTemplateView, self).get_context_data(**kwargs)
-        ctx['view'] = self
-        return ctx
+    def get_page_css_class(self, ctx):
+        return self.page_css_class
 
+    def get_page_title(self, ctx):
+        return self.page_title or self.get_page_heading(ctx)
+
+    def get_page_heading(self, ctx):
+        return self.page_heading
+
+    def get_page_actions(self, ctx):
+        return self.page_actions
+
+    def get_view_icon(self):
+        return self.view_icon
+
+    def get_view_label(self):
+        return self.view_label
+
+    def render_to_response(self, ctx, **response_kwargs):
+        if not self.request.is_ajax():
+            if six.PY2:
+                safe_call = lambda fn, arg: fn(arg) if len(inspect.getargspec(fn).args) else fn()
+            else:
+                safe_call = lambda fn, arg: fn(arg) if len(inspect.Signature.from_callable(fn).parameters) else fn()
+            ctx['view'] = self
+            ctx['page_heading'] = safe_call(self.get_page_heading, ctx)
+            ctx['page_title'] = safe_call(self.get_page_title, ctx)
+            ctx['page_actions'] = safe_call(self.get_page_actions, ctx)
+            ctx['page_css_class'] = safe_call(self.get_page_css_class, ctx)
+        response = super(GingerTemplateView, self).render_to_response(ctx, **response_kwargs)
+        return response
 
 
 class GingerFormView(GingerTemplateView):
@@ -127,21 +160,20 @@ class GingerFormView(GingerTemplateView):
             )
         return self.redirect(request.get_full_path())
 
+    def get(self, request, *args, **kwargs):
+        form_key = self.get_form_key()
+        if self.can_submit():
+            return self.process_submit(form_key=form_key, data=request.GET)
+        else:
+            data, files = self.get_form_data(form_key)
+            form = self.get_form(form_key=form_key, data=data, files=files)
+            return self.render_form(form)
+
     def get_form_data(self, form_key):
         return None, None
 
     def set_form_data(self, form_key, data, files=None):
         raise NotImplementedError
-
-    def get(self, request, *args, **kwargs):
-        form_key = self.get_form_key()
-        if self.can_submit():
-            return self.process_submit(form_key=form_key, data=request.GET)
-        data, files = self.get_form_data(form_key)
-        form = self.get_form(form_key=form_key, data=data, files=files)
-        kwargs[self.get_context_form_key(form)] = form
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
 
     def form_valid(self, form):
         url = self.get_success_url(form)
