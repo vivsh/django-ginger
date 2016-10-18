@@ -292,8 +292,13 @@ class GingerViewSetMixin(object):
         self.check_user_permissions()
         return getattr(self, self.action)(request, *args, **kwargs)
 
+    def process_response(self, response):
+        if isinstance(response, dict):
+            response = self.render_to_response(self.get_context_data(**response))
+        return response
+
     @classmethod
-    def as_urls(cls):
+    def as_urls(cls, **kwargs):
         result = []
         base_name = cls.base_name
         for subview in get_child_views(cls):
@@ -309,7 +314,8 @@ class GingerViewSetMixin(object):
             view_class = url(url_regex, cls.as_view(
                 action=subview.name,
                 url_name=url_name,
-                url_regex=url_regex
+                url_regex=url_regex,
+                **kwargs
             ), name=url_name)
             result.append(view_class)
         return result

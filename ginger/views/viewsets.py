@@ -9,13 +9,23 @@ __all__ = ['GingerViewSet',
            'GingerModelViewSet',
            'UpdateViewSetMixin',
            'ListViewSetMixin',
-           'DeleteViewSetMixin'
+           'DeleteViewSetMixin',
+           'DetailViewSetMixin'
            ]
 
 
 
 class GingerViewSet(GingerViewSetMixin, GingerTemplateView):
     pass
+
+
+class DetailViewSetMixin(object):
+
+    @view(suffix="")
+    def detail(self, request):
+        self.object = self.get_object()
+        context = self.get_context_data(**{self.context_object_key:self.object})
+        return self.render_to_response(**context)
 
 
 class CreateViewSetMixin(object):

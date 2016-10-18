@@ -116,6 +116,7 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
     def render_to_response(self, ctx, **response_kwargs):
         if not self.request.is_ajax():
             if six.PY2:
+                len(inspect.getargspec(self.get_page_heading).args)
                 safe_call = lambda fn, arg: fn(arg) if len(inspect.getargspec(fn).args) > 1 else fn()
             else:
                 safe_call = lambda fn, arg: fn(arg) if len(inspect.Signature.from_callable(fn).parameters) > 1 else fn()
