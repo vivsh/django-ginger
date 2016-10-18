@@ -297,6 +297,9 @@ class GingerViewSetMixin(object):
             response = self.render_to_response(self.get_context_data(**response))
         return response
 
+    def process_request(self, request):
+        self.user = self.get_user()
+
     @classmethod
     def as_urls(cls, **kwargs):
         result = []
