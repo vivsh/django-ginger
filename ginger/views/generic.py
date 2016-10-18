@@ -119,7 +119,7 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
                 len(inspect.getargspec(self.get_page_heading).args)
                 safe_call = lambda fn, arg: fn(arg) if len(inspect.getargspec(fn).args) > 1 else fn()
             else:
-                safe_call = lambda fn, arg: fn(arg) if len(inspect.Signature.from_callable(fn).parameters) > 1 else fn()
+                safe_call = lambda fn, arg: fn(arg) if len(inspect.Signature.from_callable(fn).parameters) > 0 else fn()
             ctx['view'] = self
             ctx['page_heading'] = safe_call(self.get_page_heading, ctx)
             ctx['page_title'] = safe_call(self.get_page_title, ctx)

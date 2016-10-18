@@ -20,17 +20,6 @@ class BackendViewMixin(object):
 
     site = None
 
-    permission_classes = []
-
-    side_menu = False
-
-    top_menu = False
-
-    def process_request(self, request):
-        user = self.user = self.get_user()
-        if not user.is_authenticated() or not user.is_staff:
-            raise Redirect(reverse("Backend:login")+"?next=%s" % request.get_full_path())
-
 
 class BackendViewSet(BackendViewMixin, views.GingerViewSet):
     pass

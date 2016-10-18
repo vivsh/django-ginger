@@ -292,7 +292,7 @@ class GingerViewSetMixin(object):
         self.check_user_permissions()
         return getattr(self, self.action)(request, *args, **kwargs)
 
-    def process_response(self, response):
+    def process_response(self, request, response):
         if isinstance(response, dict):
             response = self.render_to_response(self.get_context_data(**response))
         return response
