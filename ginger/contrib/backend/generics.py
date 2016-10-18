@@ -5,12 +5,14 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import *
 from ginger import views, serializer
+from ginger.views.viewsets import *
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from ginger.exceptions import MethodNotFound, BadRequest, Redirect
 import logging
 
 
-__all__ = ['BackendModelViewSet', 'BackendViewSet']
+__all__ = ['BackendModelViewSet', 'BackendViewSet', 'ListViewSetMixin', 'CreateViewSetMixin',
+           'DeleteViewSetMixin', 'DetailViewSetMixin', 'UpdateViewSetMixin']
 
 
 logger = logging.getLogger(__name__)
