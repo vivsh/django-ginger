@@ -6,10 +6,7 @@ from .base import Formatter
 class ChoiceFormatter(Formatter):
 
     def format(self, value, name, source):
-        method = getattr(source, "get_%s_display" % name, None)
-        if method:
-            return method()
-        return value
+        return getattr(source, "get_%s_display" % name)()
 
 
 class DateTimeFormatter(Formatter):

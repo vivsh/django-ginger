@@ -1,5 +1,6 @@
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect
+from ginger.paginator import GingerPaginator
 from .base import GingerViewSetMixin, view
 from .generic import *
 
@@ -22,10 +23,10 @@ class GingerViewSet(GingerViewSetMixin, GingerTemplateView):
 class DetailViewSetMixin(object):
 
     @view(suffix="")
-    def detail(self, request):
+    def detail(self, request, object_id):
         self.object = self.get_object()
         context = self.get_context_data(**{self.context_object_key:self.object})
-        return self.render_to_response(**context)
+        return self.render_to_response(context)
 
 
 class CreateViewSetMixin(object):
@@ -61,9 +62,8 @@ class ListViewSetMixin(object):
 
         ctx = {}
 
-        if self.paginator:
-            object_list = self.paginate_queryset(object_list)
-            ctx[self.context_page_key] = object_list
+        object_list = self.paginate_queryset(object_list)
+        ctx[self.context_page_key] = object_list
 
         if self.table_class:
             object_list = self.table_class(object_list)
@@ -77,8 +77,10 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
 
     filter_class = None
     table_class = None
-    paginator = None
+    paginator = GingerPaginator
     context_object_list_key = 'object_list'
+    params_page_key = 'page'
+    per_page = None
 
     def get_queryset(self):
         pass
@@ -91,7 +93,9 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         return queryset
 
     def paginate_queryset(self, queryset):
-        return self.paginator(queryset)
+        if not self.per_page:
+            return queryset
+        return self.paginator(queryset, per_page=self.per_page, parameter_name=self.params_page_key, allow_empty=False).page(self.request)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())

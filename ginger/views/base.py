@@ -1,9 +1,11 @@
 import inspect
+import functools
 import re
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured, PermissionDenied
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse
-from django.http.response import Http404
+from django.http.response import Http404, JsonResponse, HttpResponseBadRequest
 from django.utils.text import camel_case_to_spaces
 from django.views.generic.base import View
 from django.conf.urls import url
@@ -254,8 +256,19 @@ def view(fn=None, **kwargs):
     if kwargs and fn:
         raise TypeError("Only keyword arguments are accepted")
 
+    methods = kwargs.pop("methods", None)
+
     def wrapper(func):
-        func.subview = SubView(name=func.__name__, **kwargs)
+        subview = SubView(name=func.__name__, **kwargs)
+        wrapped = func
+        if methods:
+            def closure(self, request, *args, **kw):
+                if request.method not in methods:
+                    return HttpResponseBadRequest("")
+                response = func(self, request, *args, **kw)
+                return response
+            wrapped = functools.update_wrapper(closure, func)
+        wrapped.subview = subview
         return func
 
     if not kwargs and callable(fn):

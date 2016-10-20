@@ -23,18 +23,20 @@ def get_formatter_for_field(field):
     try:
         return getattr(field, 'get_formatter')()
     except AttributeError:
-        return FORMATTER_MAPPING.get(field, Formatter)
+        if field.choices:
+            return ChoiceFormatter()
+        return FORMATTER_MAPPING.get(field, Formatter)()
 
 
 def get_formatters_for_model(model_class, fields=None, exclude=None):
     meta = model_class._meta
-    field_map = {f.name: f for f in meta.get_fields()}
+    field_map = {f.name: f for f in meta.get_fields() if f.concrete and not f.auto_created}
     if fields is None:
         fields = list(field_map.keys())
     if exclude:
         exclude = set(exclude)
         fields = filter(lambda f: f.name not in exclude, fields)
-    return [(f, get_formatter_for_field(field_map[f])) for f in fields]
+    return [(f, get_formatter_for_field(field_map[f])) for f in fields if f in field_map]
 
 
 class MetaFormattedModel(type):
@@ -45,6 +47,7 @@ class MetaFormattedModel(type):
         if not meta:
             return
         model = meta.model
+
         for name, formatter in get_formatters_for_model(model, fields=getattr(meta, 'fields', None),
                                                         exclude=getattr(meta, 'exclude', None)):
             setattr(cls, name, formatter)

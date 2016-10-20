@@ -3,6 +3,8 @@ import inspect
 import copy
 from collections import OrderedDict
 
+from ginger.nav import Link
+from ginger.utils import get_url_with_modified_params
 
 __all__ = ['Formatter', 'FormattedTable', 'FormattedObject']
 
@@ -11,11 +13,12 @@ class Formatter(object):
 
     __position = 1
 
-    def __init__(self, label=None, attr=None, hidden=False):
+    def __init__(self, label=None, attr=None, hidden=False, sortable=True):
         Formatter.__position += 1
         self.__position = Formatter.__position
         self.label = label
         self.hidden = hidden
+        self.sortable = sortable
         self.attr = attr
 
     def copy(self):
@@ -31,20 +34,19 @@ class Formatter(object):
     def format(self, value, name, source):
         return str(value)
 
-    def extract(self, name, source):
-        method = 'prepare_%s' % name
-        func = getattr(source, method, None)
-        if func:
-            return func(source)
-        try:
+    def extract(self, name, source, owner=None):
+        if owner is not None:
+            method = 'prepare_%s' % name
+            func = getattr(owner, method, None)
+            if func:
+                return func(source)
+        if isinstance(source, dict):
+            return source[name]
+        else:
             return getattr(source, name)
-        except AttributeError:
-            if isinstance(source, dict) and name in source:
-                return source[name]
-            raise
 
-    def render(self, name, source):
-        value = self.extract(name, source)
+    def render(self, name, source, owner):
+        value = self.extract(name, source, owner)
         return self.format(value, name, source)
 
     @classmethod
@@ -55,11 +57,20 @@ class Formatter(object):
 
 class FormattedValue(object):
 
-    def __init__(self, name, prop, source, attrs=None):
+    def __init__(self, name, prop, source, attrs=None, owner=None):
         self.name = name
         self.prop = prop
         self.source = source
         self.__attrs = attrs
+        self.__owner = owner
+
+    def get_absolute_url(self):
+        try:
+            func = self.__owner.get_cell_url
+        except AttributeError:
+            return None
+        else:
+            return func(self)
 
     @property
     def attrs(self):
@@ -68,20 +79,17 @@ class FormattedValue(object):
     @property
     def label(self):
         label = self.prop.label
-        return  label if label is not None else self.name.capitalize()
+        return label if label is not None else self.name.capitalize()
 
     @property
     def value(self):
-        return self.prop.extract(self.name, self.source)
+        return self.prop.extract(self.name, self.source, self.__owner)
 
     def __getattr__(self, item):
         return getattr(self.prop, item)
 
     def __str__(self):
-        return self.prop.format(self.value, self.name, self.source)
-
-    def __repr__(self):
-        return self.__str__()
+        return str(self.prop.format(self.value, self.name, self.source))
 
 
 class FormattedObject(object):
@@ -89,12 +97,19 @@ class FormattedObject(object):
     def __init__(self, obj):
         self.__prop_cache = OrderedDict((n,p) for (n,p) in Formatter.extract_from(self.__class__) if not p.hidden)
         self.source = obj
+        data = self.data = OrderedDict()
         for name, prop in self.__prop_cache.items():
-            setattr(self, name, FormattedValue(name, prop, self.source, self.get_attrs))
+            data[name] = FormattedValue(name, prop, self.source, attrs=self.get_attrs, owner=self)
+
+    def __getattr__(self, item):
+        return self.__getitem__(item)
+
+    def __getitem__(self, item):
+        return self.data[item]
 
     def __iter__(self):
         for name, prop in self.__prop_cache.items():
-            yield getattr(self, name)
+            yield self.data[name]
 
     def __len__(self):
         return len(self.__prop_cache)
@@ -121,6 +136,10 @@ class FormattedTableColumn(object):
         self.prop = prop
         self.table = table
         self.__inited = True
+
+    @property
+    def label(self):
+        return self.prop.label or self.name.capitalize()
 
     def __setattr__(self, key, value):
         if self.__inited and key not in __dict__:
@@ -154,6 +173,15 @@ class FormattedTableColumnSet(object):
     def __init__(self, table, values):
         self.columns = OrderedDict((n, FormattedTableColumn(n, p, table)) for n,p in values)
 
+    def visible_columns(self):
+        return [col for col in self.columns.values() if not col.hidden]
+
+    def hidden_columns(self):
+        return [col for col in self.columns.values() if col.hidden]
+
+    def keys(self):
+        return self.columns.keys()
+
     def __iter__(self):
         for value in self.columns.values():
             yield value
@@ -181,9 +209,14 @@ class FormattedTableRow(object):
         self.source = source
         self.table = table
         self.kind = kind
+        self.data = OrderedDict()
         for column in self.table.columns:
-            setattr(self, column.name,
-                    FormattedValue(column.name, column.prop, self.object, self.table.get_cell_attrs))
+            self.data[column.name] = FormattedValue(column.name, column.prop, source,
+                                                    attrs=self.table.get_cell_attrs,
+                                                    owner=table)
+
+    def __getitem__(self, item):
+        return self.data[item]
 
     @property
     def object(self):
@@ -195,7 +228,7 @@ class FormattedTableRow(object):
 
     def __iter__(self):
         for column in self.table.columns:
-            yield getattr(self, column.name)
+            yield self.data[column.name]
 
     def __len__(self):
         return len(self.table.columns)
@@ -206,9 +239,37 @@ class FormattedTableRow(object):
 
 class FormattedTable(object):
 
-    def __init__(self, source):
+    def __init__(self, source, sort_key=None, sort_field=None):
         self.columns = FormattedTableColumnSet(self, Formatter.extract_from(self.__class__))
         self.source = source
+        self.sort_field = sort_field
+        self.sort_key = sort_key
+
+    def build_links(self, request):
+        data = request.GET
+        for col in self.columns.visible_columns():
+            if self.sort_key and self.sort_field:
+                field = self.sort_field
+                code = field.get_value_for_name(col.name)
+                value = data.get(self.sort_name, "")
+                reverse = value.startswith("-")
+                if reverse:
+                    value = value[1:]
+                is_active = code == value
+                next_value = "-%s" % code if not reverse and is_active else code
+                mods = {self.sort_name: next_value}
+            else:
+                is_active = False
+                reverse = False
+                mods = {}
+            url = get_url_with_modified_params(request, mods) if mods else None
+            link = Link(content=col.label, url=url, is_active=is_active, reverse=reverse, sortable=col.sortable, column=col)
+            print(link, url, col.label, col.name)
+            yield link
+
+    @property
+    def object_list(self):
+        return self.source
 
     def __iter__(self):
         index = 0
