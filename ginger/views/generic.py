@@ -121,10 +121,10 @@ class GingerTemplateView(GingerView, TemplateResponseMixin):
             else:
                 safe_call = lambda fn, arg: fn(arg) if len(inspect.Signature.from_callable(fn).parameters) > 0 else fn()
             ctx['view'] = self
-            ctx['page_heading'] = safe_call(self.get_page_heading, ctx)
-            ctx['page_title'] = safe_call(self.get_page_title, ctx)
-            ctx['page_actions'] = safe_call(self.get_page_actions, ctx)
-            ctx['page_css_class'] = safe_call(self.get_page_css_class, ctx)
+            ctx.setdefault('page_heading',  safe_call(self.get_page_heading, ctx))
+            ctx.setdefault('page_title',    safe_call(self.get_page_title, ctx))
+            ctx.setdefault('page_actions',  safe_call(self.get_page_actions, ctx))
+            ctx.setdefault('page_css_class',safe_call(self.get_page_css_class, ctx))
         response = super(GingerTemplateView, self).render_to_response(ctx, **response_kwargs)
         return response
 
