@@ -243,6 +243,8 @@ class SubView(object):
     many = False
     suffix = None
     regex = None
+    label = None
+    icon = None
 
     def __init__(self, name, **kwargs):
         for k,v in kwargs.items():
@@ -250,6 +252,8 @@ class SubView(object):
         self.name = name
         if self.suffix is None:
             self.suffix = self.name
+        if not self.label:
+            self.label = self.name.capitalize()
 
 
 def view(fn=None, **kwargs):
@@ -299,11 +303,11 @@ class GingerViewSetMixin(object):
 
     def get(self, request, *args, **kwargs):
         self.check_user_permissions()
-        return getattr(self, self.action)(request, *args, **kwargs)
+        return getattr(self, self.action)(request)
 
     def post(self, request, *args, **kwargs):
         self.check_user_permissions()
-        return getattr(self, self.action)(request, *args, **kwargs)
+        return getattr(self, self.action)(request)
 
     def process_response(self, request, response):
         if isinstance(response, dict):
@@ -339,3 +343,7 @@ class GingerViewSetMixin(object):
     def get_template_names(self):
         template_name = self.template_name
         return [template_name.format(action=self.action)]
+
+    @classmethod
+    def get_subviews(cls):
+        return get_child_views(cls)

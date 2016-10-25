@@ -94,7 +94,8 @@ class FormattedValue(object):
 
 class FormattedObject(object):
 
-    def __init__(self, obj):
+    def __init__(self, obj, **context):
+        self.context = context
         self.__prop_cache = OrderedDict((n,p) for (n,p) in Formatter.extract_from(self.__class__) if not p.hidden)
         self.source = obj
         data = self.data = OrderedDict()
@@ -105,7 +106,10 @@ class FormattedObject(object):
         return self.__getitem__(item)
 
     def __getitem__(self, item):
-        return self.data[item]
+        try:
+            return self.data[item]
+        except KeyError:
+            raise AttributeError(item)
 
     def __iter__(self):
         for name, prop in self.__prop_cache.items():
@@ -239,7 +243,8 @@ class FormattedTableRow(object):
 
 class FormattedTable(object):
 
-    def __init__(self, source, sort_key=None, sort_field=None):
+    def __init__(self, source, sort_key=None, sort_field=None, **context):
+        self.context = context
         self.columns = FormattedTableColumnSet(self, Formatter.extract_from(self.__class__))
         self.source = source
         self.sort_field = sort_field
@@ -264,7 +269,6 @@ class FormattedTable(object):
                 mods = {}
             url = get_url_with_modified_params(request, mods) if mods else None
             link = Link(content=col.label, url=url, is_active=is_active, reverse=reverse, sortable=col.sortable, column=col)
-            print(link, url, col.label, col.name)
             yield link
 
     @property

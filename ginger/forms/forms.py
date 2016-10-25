@@ -11,7 +11,8 @@ from ginger.forms.fields import GingerSortField
 from ginger import utils
 
 
-__all__ = ['ActionFormMixin', 'ActionModelForm', 'ActionForm', 'TableSortField']
+__all__ = ['ActionFormMixin', 'ActionModelForm', 'ActionForm', 'TableSortField', 'FilterForm',
+           'FilterModelForm', 'FilterFormMixin']
 
 
 class ActionFormMixin(object):
@@ -37,9 +38,12 @@ class ActionFormMixin(object):
             context[key] = value
         super(ActionFormMixin, self).__init__(**kwargs)
         self.context = context
+        prepare = getattr(self, 'prepare_%s' % self.get_action_name(), None)
+        if prepare is not None:
+            prepare()
 
     def get_action_name(self):
-        return self.context.get("action")
+        return self.context.get("action", "execute")
 
     def get_action_method(self):
         func = self.get_action_name() or 'execute'
@@ -129,6 +133,19 @@ class ActionFormMixin(object):
             finally:
                 self.__result = result
 
+    def select_fields(self, exclude=None, include=None, **extras):
+        if exclude is not None:
+            for f in exclude:
+                self.fields.pop(f, None)
+        if include is not None:
+            include = set(include)
+            for f in list(self.fields.keys()):
+                if f not in include:
+                    self.fields.pop(f)
+        if extras:
+            for f in extras:
+                self.fields[f] = extras[f]
+
     def execute(self, **kwargs):
         return {}
 
@@ -138,6 +155,9 @@ class ActionForm(ActionFormMixin, forms.Form):
 
 
 class ActionModelForm(ActionFormMixin, forms.ModelForm):
+
+    def prepare_delete(self):
+        self.select_fields(*self.fields.keys())
 
     def delete(self):
         self.instance.delete()
@@ -191,6 +211,14 @@ class FilterFormMixin(ActionFormMixin):
 
     def invalid_queryset(self, queryset):
         return queryset.none()
+
+
+class FilterForm(FilterFormMixin, forms.Form):
+    pass
+
+
+class FilterModelForm(FilterFormMixin, forms.ModelForm):
+    pass
 
 
 class TableSortField(GingerSortField):
