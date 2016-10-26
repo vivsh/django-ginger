@@ -20,16 +20,20 @@ FORMATTER_MAPPING = {
 FORMATTER_MAPPING.update(getattr(settings, 'FIELD_FORMATTERS', {}))
 
 
-def get_formatter_for_field(field):
+def get_formatter_for_field(field, options=None):
     try:
         return getattr(field, 'get_formatter')()
     except AttributeError:
+        label = field.verbose_name.title()
+        label = getattr(options, 'labels', {}).get(field.name, label)
         if field.choices:
-            return ChoiceFormatter()
-        return FORMATTER_MAPPING.get(field.__class__, Formatter)()
+            result = ChoiceFormatter(label=label)
+        else:
+            result = FORMATTER_MAPPING.get(field.__class__, Formatter)(label=label)
+        return result
 
 
-def get_formatters_for_model(model_class, fields=None, exclude=None):
+def get_formatters_for_model(model_class, fields=None, exclude=None, options=None):
     meta = model_class._meta
     field_map = OrderedDict((f.name, f) for f in meta.get_fields() if f.concrete and not f.auto_created)
     if fields is None:
@@ -37,7 +41,7 @@ def get_formatters_for_model(model_class, fields=None, exclude=None):
     if exclude:
         exclude = set(exclude)
         fields = filter(lambda f: f.name not in exclude, fields)
-    result = [(f, get_formatter_for_field(field_map[f])) for f in fields if f in field_map]
+    result = [(f, get_formatter_for_field(field_map[f], options)) for f in fields if f in field_map]
     return result
 
 
@@ -51,7 +55,8 @@ class MetaFormattedModel(type):
         model = meta.model
 
         for name, formatter in get_formatters_for_model(model, fields=getattr(meta, 'fields', None),
-                                                        exclude=getattr(meta, 'exclude', None)):
+                                                        exclude=getattr(meta, 'exclude', None),
+                                                        options=meta):
             setattr(cls, name, formatter)
 
 

@@ -172,7 +172,7 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
             return self.render_form(form)
         else:
             if self.success_url is None:
-                if self.action == 'delete' or not self.object.id:
+                if self.action in {'delete', "create"}:
                     self.success_url = self.reverse('list')
                 else:
                     self.success_url = self.reverse('detail', object_id=self.object.id)

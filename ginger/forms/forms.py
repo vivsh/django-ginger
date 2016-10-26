@@ -157,7 +157,7 @@ class ActionForm(ActionFormMixin, forms.Form):
 class ActionModelForm(ActionFormMixin, forms.ModelForm):
 
     def prepare_delete(self):
-        self.select_fields(*self.fields.keys())
+        self.select_fields(include=())
 
     def delete(self):
         self.instance.delete()
