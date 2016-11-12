@@ -672,6 +672,7 @@ class GingerListView(MultipleObjectViewMixin, GingerTemplateView):
     page_parameter_name = "page"
     page_limit = 10
     paginate = True
+    context_page_key = 'page_object'
 
     def paginate_queryset(self, queryset):
         return paginate(queryset, self.request,
@@ -685,6 +686,7 @@ class GingerListView(MultipleObjectViewMixin, GingerTemplateView):
         if self.paginate:
             queryset = self.paginate_queryset(queryset)
         ctx[self.get_context_object_key(queryset)] = queryset
+        ctx[self.context_page_key] = queryset
         return ctx
 
 
