@@ -23,7 +23,7 @@ class ChoiceWidgetMixin(object):
 
     def render_subwidget(self, code, label, selected, attrs):
         return [
-            html.input(type=self.input_type, checked=selected, value=code, **attrs),
+            html.input(type=self.input_type, checked=selected, value=str(code), **attrs),
             html.label(for_=attrs.get("id"))[label]
         ]
 

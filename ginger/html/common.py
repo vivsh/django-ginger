@@ -146,7 +146,7 @@ class HtmlAttr(object):
             else:
                 if not isinstance(value, six.string_types):
                     value = html_json(value)
-                pairs.append("%s='%s'" % (key, value))
+                pairs.append("%s='%s'" % (key, str(value)))
         return " ".join(pairs)
 
     def __str__(self):
