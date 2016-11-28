@@ -85,6 +85,8 @@ class HeightField(forms.MultiValueField):
 
     def clean(self, value):
         result = super(HeightField,self).clean(value)
+        if result < 100 or result > 250:
+            raise forms.ValidationError("Invalid height")
         return result
 
     def compress(self, data_list):

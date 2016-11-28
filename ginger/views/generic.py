@@ -4,7 +4,7 @@ import os
 import inspect
 from datetime import timedelta
 from django.utils.six.moves.urllib.parse import urljoin
-from django.core.paginator import EmptyPage
+from django.core.paginator import EmptyPage, Page
 from django.forms.fields import FileField
 from django.contrib import messages
 from django.utils import timezone, six
@@ -293,6 +293,7 @@ class GingerSearchView(GingerFormView):
     page_limit = 10
     paginate = True
     context_object_list_key = "object_list"
+    context_page_key = 'page_object'
 
     def get_form_kwargs(self, form_key):
         ctx = super(GingerSearchView, self).get_form_kwargs(form_key)
@@ -309,6 +310,8 @@ class GingerSearchView(GingerFormView):
         ctx = super(GingerSearchView, self).get_context_data(**kwargs)
         form = ctx["form"]
         ctx[self.context_object_list_key] = form.result
+        if isinstance(form.result, Page):
+            ctx[self.context_page_key] = form.result
         return ctx
 
     def can_submit(self):
