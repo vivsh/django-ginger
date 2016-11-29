@@ -60,7 +60,7 @@ class HeightWidget(forms.MultiWidget):
         if value:
             v = int(value)
             inches = v/2.54
-            return int(inches/12), int(inches%12)
+            return int(inches//12), int(round(inches%12, 0))
         else:
             return [None,None]
 
@@ -92,7 +92,7 @@ class HeightField(forms.MultiValueField):
     def compress(self, data_list):
         if data_list and all(data_list):
             feet,inches = data_list
-            return int((feet*12 + inches) * 2.54)
+            return int(round((feet*12 + inches) * 2.54, 0))
         return None
 
 
