@@ -82,12 +82,12 @@ class HeightField(forms.MultiValueField):
             forms.IntegerField(min_value=0,required=reqd),
         )
         super(HeightField, self).__init__(fields, *args, **kwargs)
-
-    def clean(self, value):
-        result = super(HeightField,self).clean(value)
-        if result < 100 or result > 250:
-            raise forms.ValidationError("Invalid height")
-        return result
+    #
+    # def clean(self, value):
+    #     result = super(HeightField,self).clean(value)
+    #     if result < 100 or result > 250:
+    #         raise forms.ValidationError("Invalid height")
+    #     return result
 
     def compress(self, data_list):
         if data_list and all(data_list):
