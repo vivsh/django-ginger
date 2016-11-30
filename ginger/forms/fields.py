@@ -58,9 +58,10 @@ class HeightWidget(forms.MultiWidget):
 
     def decompress(self, value):
         if value:
-            v = int(value)
-            inches = v/2.54
-            return int(inches//12), int(round(inches%12, 0))
+            v = float(value)
+            feet = int(round(v/30.48, 1))
+            inches = int(round((v - feet * 30.48)/2.54, 1))
+            return int(feet), int(round(inches, 0))
         else:
             return [None,None]
 
@@ -90,7 +91,7 @@ class HeightField(forms.MultiValueField):
     #     return result
 
     def compress(self, data_list):
-        if data_list and all(data_list):
+        if data_list and all(d is not None for d in data_list):
             feet,inches = data_list
             return int(round((feet*12 + inches) * 2.54, 0))
         return None
