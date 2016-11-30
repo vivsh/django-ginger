@@ -59,9 +59,9 @@ class HeightWidget(forms.MultiWidget):
     def decompress(self, value):
         if value:
             v = float(value)
-            feet = int(round(v/30.48, 1))
-            inches = int(round((v - feet * 30.48)/2.54, 1))
-            return int(feet), int(round(inches, 0))
+            feet = int(v/30.48)
+            inches = int(round((v - feet * 30.48)/2.54, 0))
+            return feet, inches
         else:
             return [None,None]
 
@@ -83,17 +83,12 @@ class HeightField(forms.MultiValueField):
             forms.IntegerField(min_value=0,required=reqd),
         )
         super(HeightField, self).__init__(fields, *args, **kwargs)
-    #
-    # def clean(self, value):
-    #     result = super(HeightField,self).clean(value)
-    #     if result < 100 or result > 250:
-    #         raise forms.ValidationError("Invalid height")
-    #     return result
 
     def compress(self, data_list):
         if data_list and all(d is not None for d in data_list):
             feet,inches = data_list
-            return int(round((feet*12 + inches) * 2.54, 0))
+            result = int(round((feet*12 + inches) * 2.54, 0))
+            return result
         return None
 
 
