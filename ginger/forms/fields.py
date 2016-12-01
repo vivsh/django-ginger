@@ -59,7 +59,8 @@ class HeightWidget(forms.MultiWidget):
 
     def decompress(self, value):
         if value:
-            return cm_to_feet_inches(value)
+            result = cm_to_feet_inches(value)
+            return result
         else:
             return [None,None]
 
@@ -85,7 +86,7 @@ class HeightField(forms.MultiValueField):
     def compress(self, data_list):
         if data_list and all(d is not None for d in data_list):
             feet, inches = data_list
-            feet_inches_to_cm(feet, inches)
+            return feet_inches_to_cm(feet, inches)
         return None
 
 
