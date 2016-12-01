@@ -12,7 +12,7 @@ from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
 from ginger import ui, utils, paginator
-from utils import feet_inches_to_cm, cm_to_feet_inches
+from ginger.utils import feet_inches_to_cm, cm_to_feet_inches
 
 from .widgets import EmptyWidget
 
