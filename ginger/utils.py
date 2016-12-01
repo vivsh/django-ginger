@@ -46,7 +46,9 @@ __all__ = [
     'base64pickle_loads',
     'which',
     'iter_app_modules',
-    'hyphen_to_camel'
+    'hyphen_to_camel',
+    'feet_inches_to_cm',
+    'cm_to_feet_inches'
 ]
 
 
@@ -312,3 +314,15 @@ def iter_app_modules(module_name, deep=False):
                     for importer, modname, ispkg in pkgutil.iter_modules(pkg_path):
                         if not ispkg:
                             yield importer.find_module(modname).load_module(modname)
+
+
+def cm_to_feet_inches(value):
+    v = float(value)
+    feet = int(v / 30.48)
+    inches = int(round((v - feet * 30.48) / 2.54, 0))
+    return feet, inches
+
+
+def feet_inches_to_cm(feet, inches):
+    result = int(round((feet * 12 + inches) * 2.54, 0))
+    return result

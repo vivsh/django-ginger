@@ -12,6 +12,7 @@ from django import forms
 from django.core.validators import URLValidator
 from django.core.files.uploadedfile import SimpleUploadedFile
 from ginger import ui, utils, paginator
+from utils import feet_inches_to_cm, cm_to_feet_inches
 
 from .widgets import EmptyWidget
 
@@ -58,10 +59,7 @@ class HeightWidget(forms.MultiWidget):
 
     def decompress(self, value):
         if value:
-            v = float(value)
-            feet = int(v/30.48)
-            inches = int(round((v - feet * 30.48)/2.54, 0))
-            return feet, inches
+            return cm_to_feet_inches(value)
         else:
             return [None,None]
 
@@ -86,9 +84,8 @@ class HeightField(forms.MultiValueField):
 
     def compress(self, data_list):
         if data_list and all(d is not None for d in data_list):
-            feet,inches = data_list
-            result = int(round((feet*12 + inches) * 2.54, 0))
-            return result
+            feet, inches = data_list
+            feet_inches_to_cm(feet, inches)
         return None
 
 
