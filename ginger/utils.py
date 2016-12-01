@@ -318,7 +318,7 @@ def iter_app_modules(module_name, deep=False):
 
 def cm_to_feet_inches(value):
     v = float(value)
-    feet = int(v / 30.48)
+    feet = int(round(v / 30.48, 1))
     inches = int(round((v - feet * 30.48) / 2.54, 0))
     return feet, inches
 
@@ -326,3 +326,4 @@ def cm_to_feet_inches(value):
 def feet_inches_to_cm(feet, inches):
     result = int(round((feet * 12 + inches) * 2.54, 0))
     return result
+
