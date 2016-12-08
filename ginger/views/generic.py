@@ -250,13 +250,19 @@ class GingerMultipleFormView(GingerFormView):
             return None
         name = self.form_key_parameter
         request = self.request
-
-        return request.GET.get(name) if request.method == 'GET' else request.POST.get(name)
+        data = request.GET if request.method == 'GET' else request.POST
+        for key in self.form_classes:
+            field_name = '%s-%s' % (key, name)
+            if field_name in data:
+                return data[field_name]
 
     def get_form(self, form_key, data=None, files=None):
         form_obj = super(GingerMultipleFormView, self).get_form(form_key, data, files)
         form_obj.fields[self.form_key_parameter] = forms.CharField(widget=forms.HiddenInput, initial=form_key)
         return form_obj
+
+    def get_form_prefix(self, form_key):
+        return form_key
 
     def get_form_class(self, form_key):
         return self.form_classes[form_key]
@@ -277,12 +283,13 @@ class GingerMultipleFormView(GingerFormView):
             return self.redirect(request.get_full_path())
         return self.process_submit(key, data=request.POST, files=request.FILES)
 
-    def render_to_response(self, context, **response_kwargs):
+    def get_context_data(self, **kwargs):
+        context = super(GingerMultipleFormView, self).get_context_data(**kwargs)
         for form_key in self.get_unbound_form_keys():
             data, files = self.get_form_data(form_key)
             form = self.get_form(form_key=form_key, data=data, files=files)
             context[self.get_context_form_key(form_key)] = form
-        return super(GingerMultipleFormView, self).render_to_response(context, **response_kwargs)
+        return context
 
 
 

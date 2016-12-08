@@ -271,7 +271,7 @@ class GingerFormMixin(object):
         except AttributeError:
             result = None
             try:
-                # self._bind_fields()
+                self._bind_fields()
                 if self.is_bound and (not self._errors or self.ignore_errors):
                     context = self.process_context()
                     result = self.execute(**context)

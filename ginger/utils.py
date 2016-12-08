@@ -252,7 +252,7 @@ def model_to_dict(instance, fields=None, exclude=None):
 
 def model_update_from_dict(instance, kwargs, many_to_many=False):
     meta = instance.__class__._meta
-    names = set(meta.get_all_field_names())
+    names = set(f.name for f in meta.get_fields())
     if not many_to_many:
         names.difference_update({a.name for a in meta.many_to_many})
     for k in names:
