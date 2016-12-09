@@ -35,7 +35,7 @@ def get_formatter_for_field(field, options=None):
 
 def get_formatters_for_model(model_class, fields=None, exclude=None, options=None):
     meta = model_class._meta
-    field_map = OrderedDict((f.name, f) for f in meta.get_fields() if f.concrete and not f.auto_created)
+    field_map = OrderedDict((f.name, f) for f in meta.get_fields() if f.concrete and (not f.auto_created or f.name == 'id'))
     if fields is None:
         fields = list(field_map.keys())
     if exclude:
