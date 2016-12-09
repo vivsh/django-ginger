@@ -1,3 +1,6 @@
+from ginger.formatters.models import object_formatter_factory, table_formatter_factory
+from ginger.forms.forms import action_model_factory
+
 from django.conf import settings
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -30,8 +33,9 @@ class DetailViewSetMixin(object):
         ctx = {
             self.context_object_key: self.object
         }
-        if self.object_formatter:
-            ctx[self.context_formatted_object_key] = self.object_formatter(self.object)
+        object_formatter = self.get_object_formatter()
+        if object_formatter:
+            ctx[self.context_formatted_object_key] = object_formatter(self.object)
         context = self.get_context_data(**ctx)
         return self.render_to_response(context)
 
@@ -72,8 +76,10 @@ class ListViewSetMixin(object):
         object_list = self.paginate_queryset(object_list)
         ctx[self.context_page_key] = object_list
 
-        if self.object_list_formatter:
-            object_list = self.object_list_formatter(object_list)
+        object_list_formatter = self.get_object_list_formatter()
+
+        if object_list_formatter:
+            object_list = object_list_formatter(object_list)
 
         ctx[self.context_object_list_key] = object_list
 
@@ -88,6 +94,8 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
 
     object_formatter = None
     object_list_formatter = None
+    formatter_fields = None
+    action_fields = None
 
     paginator = GingerPaginator
     url_object_key = 'object_id'
@@ -118,6 +126,32 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
             "data": self.request.GET,
             "files": None
         }
+
+    def get_object_formatter(self):
+        if self.object_formatter is None:
+            model_class = self.get_queryset().model
+            self.object_formatter = object_formatter_factory(
+                model_class,
+                include=self.formatter_fields
+            )
+        return self.object_formatter
+
+    def get_object_list_formatter(self):
+        if self.object_list_formatter is None:
+            model_class = self.get_queryset().model
+            self.object_list_formatter = table_formatter_factory(
+                model_class,
+                include=self.formatter_fields,
+                get_cell_url=lambda me, cell: self.reverse("detail", object_id=cell.source.id)
+            )
+        return self.object_list_formatter
+
+    def get_form_class(self, form_key=None):
+        if form_key is None:
+            if self.action_fields is None:
+                model_class = self.get_queryset().model
+                self.form_class = action_model_factory(model_class, include=self.action_fields)
+        return super(GingerModelViewSet, self).get_form_class(form_key)
 
     def get_filter_initial(self):
         return None
@@ -190,3 +224,4 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
                 return redirect(self.get_success_url(form))
             else:
                 return redirect(self.get_previous_url())
+

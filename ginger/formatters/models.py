@@ -7,13 +7,14 @@ from .base import FormattedObject, FormattedTable
 from django.conf import settings
 
 
-__all__ = ['FormattedModel', 'FormattedModelTable']
+__all__ = ['FormattedModel', 'FormattedModelTable', 'object_formatter_factory', 'table_formatter_factory']
 
 
 FORMATTER_MAPPING = {
     models.DateTimeField: DateTimeFormatter,
     models.DateField: DateFormatter,
-    models.TimeField: TimeFormatter
+    models.TimeField: TimeFormatter,
+    models.ImageField: ImageFormatter
 }
 
 
@@ -40,7 +41,7 @@ def get_formatters_for_model(model_class, fields=None, exclude=None, options=Non
         fields = list(field_map.keys())
     if exclude:
         exclude = set(exclude)
-        fields = filter(lambda f: f.name not in exclude, fields)
+        fields = filter(lambda f: f not in exclude, fields)
     result = [(f, get_formatter_for_field(field_map[f], options)) for f in fields if f in field_map]
     return result
 
@@ -68,3 +69,17 @@ class FormattedModel(FormattedObject):
 @six.add_metaclass(MetaFormattedModel)
 class FormattedModelTable(FormattedTable):
     pass
+
+
+def object_formatter_factory(model_class, fields=None, exclude=None, **kwargs):
+    name = "Formatted%sObject" % model_class.__name__
+    meta = type("Meta", (), {"fields": fields, "exclude": exclude, "model": model_class})
+    kwargs['Meta'] = meta
+    return type(name, (FormattedModel, ), kwargs)
+
+
+def table_formatter_factory(model_class, fields=None, exclude=None, **kwargs):
+    name = "Formatted%sTable" % model_class.__name__
+    meta = type("Meta", (), {"fields": fields, "exclude": exclude, "model": model_class})
+    kwargs['Meta'] = meta
+    return type(name, (FormattedModelTable, ), kwargs)

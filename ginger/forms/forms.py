@@ -12,7 +12,7 @@ from ginger import utils
 
 
 __all__ = ['ActionFormMixin', 'ActionModelForm', 'ActionForm', 'TableSortField', 'FilterForm',
-           'FilterModelForm', 'FilterFormMixin']
+           'FilterModelForm', 'FilterFormMixin', 'action_model_factory']
 
 
 class ActionFormMixin(object):
@@ -247,3 +247,10 @@ class TableSortField(GingerSortField):
         if reverse:
             attr = "-%s" % attr
         return queryset.order_by(attr)
+
+
+def action_model_factory(model_class, include=None, exclude=(), **kwargs):
+    name = "%sActionForm" % model_class.__name__
+    meta = type("Meta", (), {"include": include, "exclude": exclude, "model": model_class})
+    kwargs['Meta'] = meta
+    return type(name, (ActionModelForm, ), kwargs)
