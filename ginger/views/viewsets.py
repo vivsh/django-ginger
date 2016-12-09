@@ -147,11 +147,11 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         return self.object_list_formatter
 
     def get_form_class(self, form_key=None):
-        if form_key is None:
-            if self.action_fields is None:
-                model_class = self.get_queryset().model
-                self.form_class = action_model_factory(model_class, include=self.action_fields)
-        return super(GingerModelViewSet, self).get_form_class(form_key)
+        form_class = super(GingerModelViewSet, self).get_form_class(form_key)
+        if form_class is None:
+            model_class = self.get_queryset().model
+            form_class = action_model_factory(model_class, include=self.action_fields)
+        return form_class
 
     def get_filter_initial(self):
         return None

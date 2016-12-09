@@ -127,6 +127,9 @@ class FormattedObject(object):
     @classmethod
     def as_table(cls):
         props = dict(Formatter.extract_from(cls))
+        for key in cls.__dict__:
+            if key.startswith("prepare_"):
+                props[key] = cls.__dict__[key]
         name = cls.__name__
         return type("%sTable"%name, (FormattedTable,), props)
 
