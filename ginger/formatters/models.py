@@ -67,4 +67,10 @@ class FormattedModel(FormattedObject):
 
 @six.add_metaclass(MetaFormattedModel)
 class FormattedModelTable(FormattedTable):
-    pass
+
+    def get_cell_url(self, cell):
+        obj = cell.source
+        url = getattr(obj, 'get_absolute_url', None)
+        if url:
+            return url()
+        return None
