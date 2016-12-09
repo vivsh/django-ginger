@@ -38,9 +38,7 @@ class ActionFormMixin(object):
             context[key] = value
         super(ActionFormMixin, self).__init__(**kwargs)
         self.context = context
-        prepare = getattr(self, 'prepare_%s' % self.get_action_name(), None)
-        if prepare is not None:
-            prepare()
+
 
     def get_action_name(self):
         return self.context.get("action", "execute")
@@ -125,6 +123,9 @@ class ActionFormMixin(object):
             result = None
             try:
                 if self.is_bound and not self._errors:
+                    prepare = getattr(self, 'prepare_%s' % self.get_action_name(), None)
+                    if prepare is not None:
+                        prepare()
                     context = self.process_context()
                     result = self.get_action_method()(**context)
                     result = self.process_result(result)
