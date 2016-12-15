@@ -48,11 +48,11 @@ class Formatter(object):
         parts = name.split("__")
         result = source
         while parts:
-            item = parts.pop()
-            if isinstance(source, dict):
+            item = parts.pop(0)
+            if isinstance(result, dict):
                 result = result[item]
             else:
-                result = getattr(result, name)
+                result = getattr(result, item)
         return result
 
     def render(self, name, source, owner):

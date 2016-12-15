@@ -6,7 +6,12 @@ from .base import Formatter
 class ChoiceFormatter(Formatter):
 
     def format(self, value, name, source):
-        return getattr(source, "get_%s_display" % name)()
+        parts = name.split("__")
+        tail = parts.pop()
+        while parts:
+            item = parts.pop(0)
+            source = getattr(source, item)
+        return getattr(source, "get_%s_display" % tail)()
 
 
 
@@ -19,7 +24,7 @@ class FileFormatter(Formatter):
     def format(self, value, name, source):
         if not value:
             return ""
-        obj = getattr(source, name)
+        obj = value
         url = obj.url
         name = obj.name
         tag = "<a href='%s'>%s</a>" % (url, name)
@@ -37,7 +42,7 @@ class ImageFormatter(Formatter):
     def format(self, value, name, source):
         if not value:
             return ""
-        url = getattr(source, name).url
+        url = value.url
         tag = "<img src='%s' width='%s' height='%s' >" % (url, self.width, self.height)
         return tag
 

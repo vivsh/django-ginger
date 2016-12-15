@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from django.core.exceptions import FieldDoesNotExist
 from django.utils import six
 from django.db import models
 from .formatters import *
@@ -22,7 +23,16 @@ FORMATTER_MAPPING = {
 FORMATTER_MAPPING.update(getattr(settings, 'FIELD_FORMATTERS', {}))
 
 
-def get_formatter_for_field(field, options=None):
+def get_formatter_for_field(meta, field_map, field_name, options=None):
+    parts = field_name.split("__")
+    field_name = parts.pop(0)
+    field = field_map.get(field_name)
+    if not field:
+        return Formatter()
+    while parts and field.model:
+        model = field.related_model
+        item = parts.pop(0)
+        field = model._meta.get_field(item)
     try:
         return getattr(field, 'get_formatter')()
     except AttributeError:
@@ -37,13 +47,13 @@ def get_formatter_for_field(field, options=None):
 
 def get_formatters_for_model(model_class, fields=None, exclude=None, options=None):
     meta = model_class._meta
-    field_map = OrderedDict((f.name, f) for f in meta.get_fields() if f.concrete and (not f.auto_created or f.name == 'id'))
+    field_map = OrderedDict((f.name, f) for f in meta.get_fields() if f.concrete)
     if fields is None:
         fields = list(field_map.keys())
     if exclude:
         exclude = set(exclude)
         fields = filter(lambda f: f not in exclude, fields)
-    result = [(f, get_formatter_for_field(field_map[f], options)) for f in fields if f in field_map]
+    result = [(f, get_formatter_for_field(meta, field_map, f, options)) for f in fields]
     return result
 
 
