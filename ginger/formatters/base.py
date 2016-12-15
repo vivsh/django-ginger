@@ -45,10 +45,15 @@ class Formatter(object):
             func = getattr(owner, method, None)
             if func:
                 return func(source)
-        if isinstance(source, dict):
-            return source[name]
-        else:
-            return getattr(source, name)
+        parts = name.split("__")
+        result = source
+        while parts:
+            item = parts.pop()
+            if isinstance(source, dict):
+                result = result[item]
+            else:
+                result = getattr(result, name)
+        return result
 
     def render(self, name, source, owner):
         value = self.extract(name, source, owner)

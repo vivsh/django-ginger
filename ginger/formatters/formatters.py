@@ -9,6 +9,23 @@ class ChoiceFormatter(Formatter):
         return getattr(source, "get_%s_display" % name)()
 
 
+
+class FileFormatter(Formatter):
+
+    def __init__(self, **kwargs):
+        self.width = kwargs.pop("width", 48)
+        self.height = kwargs.pop("height", 48)
+        kwargs.setdefault("variants", "detail")
+        super(FileFormatter, self).__init__(**kwargs)
+
+    def format(self, value, name, source):
+        obj = getattr(source, name)
+        url = obj.url
+        name = obj.name
+        tag = "<a href='%s'>%s</a>" % (url, name)
+        return tag
+
+
 class ImageFormatter(Formatter):
 
     def __init__(self, **kwargs):
