@@ -112,6 +112,8 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
     def __init__(self, *args, **kwargs):
         super(GingerModelViewSet, self).__init__(*args, **kwargs)
         self.extra_context = {}
+        self.form_context = {}
+        self.form_initial = {}
 
     def render_to_response(self, ctx, **response_kwargs):
         self.extra_context.update(ctx)
@@ -189,7 +191,13 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         ctx = super(GingerModelViewSet, self).get_form_context(form_key)
         ctx['request'] = self.request
         ctx['action'] = self.action
+        ctx.update(self.form_context)
         return ctx
+
+    def get_form_initial(self, form_key):
+        initial = super().get_form_initial(form_key) or {}
+        initial.update(self.form_initial)
+        return initial
 
     def get_form_instance(self, form_key):
         return getattr(self, self.context_object_key, None)
