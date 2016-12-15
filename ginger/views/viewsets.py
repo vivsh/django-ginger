@@ -109,6 +109,14 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
     CONFIRM_BACK = 3
     SUBMIT_BACK = 4
 
+    def __init__(self, *args, **kwargs):
+        super(GingerModelViewSet, self).__init__(*args, **kwargs)
+        self.extra_context = {}
+
+    def render_to_response(self, ctx, **response_kwargs):
+        self.extra_context.update(ctx)
+        return super(GingerModelViewSet, self).render_to_response(self.extra_context, **response_kwargs)
+
     def get_queryset(self):
         raise NotImplementedError
 

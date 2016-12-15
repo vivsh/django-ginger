@@ -13,13 +13,18 @@ class Formatter(object):
 
     __position = 1
 
-    def __init__(self, label=None, attr=None, hidden=False, sortable=True):
+    def __init__(self, label=None, attr=None, hidden=False, sortable=True, variants=None):
         Formatter.__position += 1
         self.__position = Formatter.__position
         self.label = label
         self.hidden = hidden
         self.sortable = sortable
         self.attr = attr
+        if variants is not None:
+            if not isinstance(variants, (list, tuple)):
+                variants = [variants]
+            variants = set(variants)
+        self.variants = variants
 
     def copy(self):
         instance = copy.copy(self)
@@ -94,13 +99,15 @@ class FormattedValue(object):
 
 class FormattedObject(object):
 
-    def __init__(self, obj, **context):
+    def __init__(self, obj, variants=None, **context):
         self.context = context
+        self.variants = variants
         self.__prop_cache = OrderedDict((n,p) for (n,p) in Formatter.extract_from(self.__class__) if not p.hidden)
         self.source = obj
         data = self.data = OrderedDict()
         for name, prop in self.__prop_cache.items():
-            data[name] = FormattedValue(name, prop, self.source, attrs=self.get_attrs, owner=self)
+            if prop.variants is None or variants in prop.variants:
+                data[name] = FormattedValue(name, prop, self.source, attrs=self.get_attrs, owner=self)
 
     def __getattr__(self, item):
         return self.__getitem__(item)
@@ -246,8 +253,9 @@ class FormattedTableRow(object):
 
 class FormattedTable(object):
 
-    def __init__(self, source, sort_key=None, sort_field=None, **context):
+    def __init__(self, source, sort_key=None, sort_field=None, variants=None, **context):
         self.context = context
+        self.variants = variants
         self.columns = FormattedTableColumnSet(self, Formatter.extract_from(self.__class__))
         self.source = source
         self.sort_field = sort_field
