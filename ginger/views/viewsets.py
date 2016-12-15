@@ -114,6 +114,7 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         self.extra_context = {}
         self.form_context = {}
         self.form_initial = {}
+        self.form_instance = None
 
     def render_to_response(self, ctx, **response_kwargs):
         self.extra_context.update(ctx)
@@ -200,7 +201,8 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         return initial
 
     def get_form_instance(self, form_key):
-        return getattr(self, self.context_object_key, None)
+        form_instance = self.form_instance
+        return form_instance if form_instance is not None else getattr(self, self.context_object_key, None)
 
     def get_filter_class(self):
         return self.filter_class
