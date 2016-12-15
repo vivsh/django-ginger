@@ -3,7 +3,7 @@ beautifulsoup4==4.4.1
 bleach==1.4.2
 Django==1.8.6
 django-appconf==0.6
--e git+https://vivsh@github.com/vivsh/django-ginger.git@364680cb7260f2fa1043e1470e2a35f218f2f796#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@246bca2b0fcdf933f4e12b84b050b43316c24cdc#egg=django_ginger-master
 django-imagekit==3.2.5
 django-jinja==1.1.0
 django-jsonfield==0.9.13
