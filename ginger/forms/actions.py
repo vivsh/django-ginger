@@ -116,6 +116,7 @@ class GingerFormMixin(object):
 
     failure_message = None
     success_message = None
+    confirmation_message = None
     ignore_errors = False
     use_defaults = False
     template_name = None
