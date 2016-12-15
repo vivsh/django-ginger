@@ -31,6 +31,7 @@ class ImageFormatter(Formatter):
     def __init__(self, **kwargs):
         self.width = kwargs.pop("width", 48)
         self.height = kwargs.pop("height", 48)
+        kwargs.setdefault("variants", "detail")
         super(ImageFormatter, self).__init__(**kwargs)
 
     def format(self, value, name, source):

@@ -14,7 +14,8 @@ FORMATTER_MAPPING = {
     models.DateTimeField: DateTimeFormatter,
     models.DateField: DateFormatter,
     models.TimeField: TimeFormatter,
-    models.ImageField: ImageFormatter
+    models.ImageField: ImageFormatter,
+    models.FileField: FileFormatter
 }
 
 
