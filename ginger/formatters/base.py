@@ -60,9 +60,11 @@ class Formatter(object):
         return self.format(value, name, source)
 
     @classmethod
-    def extract_from(cls, source):
-        return sorted(inspect.getmembers(source, lambda a: isinstance(a, Formatter)),
+    def extract_from(cls, source, variant=None):
+        result = sorted(inspect.getmembers(source, lambda a: isinstance(a, Formatter)),
             key=lambda p: p[1].position)
+        result = [p for p in result if p[1].variants is None or variant in p[1].variants]
+        return result
 
 
 class FormattedValue(object):
@@ -104,15 +106,14 @@ class FormattedValue(object):
 
 class FormattedObject(object):
 
-    def __init__(self, obj, variants=None, **context):
+    def __init__(self, obj, variant=None, **context):
         self.context = context
-        self.variants = variants
-        self.__prop_cache = OrderedDict((n,p) for (n,p) in Formatter.extract_from(self.__class__) if not p.hidden)
+        self.variant = variant
+        self.__prop_cache = OrderedDict((n,p) for (n,p) in Formatter.extract_from(self.__class__, variant=variant) if not p.hidden)
         self.source = obj
         data = self.data = OrderedDict()
         for name, prop in self.__prop_cache.items():
-            if prop.variants is None or variants in prop.variants:
-                data[name] = FormattedValue(name, prop, self.source, attrs=self.get_attrs, owner=self)
+            data[name] = FormattedValue(name, prop, self.source, attrs=self.get_attrs, owner=self)
 
     def __getattr__(self, item):
         return self.__getitem__(item)
@@ -258,10 +259,10 @@ class FormattedTableRow(object):
 
 class FormattedTable(object):
 
-    def __init__(self, source, sort_key=None, sort_field=None, variants=None, **context):
+    def __init__(self, source, sort_key=None, sort_field=None, variant=None, **context):
         self.context = context
-        self.variants = variants
-        self.columns = FormattedTableColumnSet(self, Formatter.extract_from(self.__class__))
+        self.variant = variant
+        self.columns = FormattedTableColumnSet(self, Formatter.extract_from(self.__class__, variant=variant))
         self.source = source
         self.sort_field = sort_field
         self.sort_key = sort_key

@@ -13,12 +13,12 @@ class ChoiceFormatter(Formatter):
 class FileFormatter(Formatter):
 
     def __init__(self, **kwargs):
-        self.width = kwargs.pop("width", 48)
-        self.height = kwargs.pop("height", 48)
         kwargs.setdefault("variants", "detail")
         super(FileFormatter, self).__init__(**kwargs)
 
     def format(self, value, name, source):
+        if not value:
+            return ""
         obj = getattr(source, name)
         url = obj.url
         name = obj.name
@@ -35,6 +35,8 @@ class ImageFormatter(Formatter):
         super(ImageFormatter, self).__init__(**kwargs)
 
     def format(self, value, name, source):
+        if not value:
+            return ""
         url = getattr(source, name).url
         tag = "<img src='%s' width='%s' height='%s' >" % (url, self.width, self.height)
         return tag

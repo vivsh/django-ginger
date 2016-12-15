@@ -35,7 +35,7 @@ class DetailViewSetMixin(object):
         }
         object_formatter = self.get_object_formatter()
         if object_formatter:
-            ctx[self.context_formatted_object_key] = object_formatter(self.object)
+            ctx[self.context_formatted_object_key] = object_formatter(self.object, variant="detail")
         context = self.get_context_data(**ctx)
         return self.render_to_response(context)
 
