@@ -156,6 +156,8 @@ class ActionForm(ActionFormMixin, forms.Form):
 
 class ActionModelForm(ActionFormMixin, forms.ModelForm):
 
+    confirmation_message = "Please confirm that you really wish to {action} this object ?"
+
     def prepare_delete(self):
         self.select_fields(include=())
 
