@@ -51,9 +51,10 @@ class ImageFormatter(Formatter):
 class DateTimeFormatter(Formatter):
 
     def format(self, value, name, source):
-        if timezone.is_naive(value):
-            value = timezone.make_aware(value)
-        value = timezone.localtime(value)
+        if value:
+            if timezone.is_naive(value):
+                value = timezone.make_aware(value)
+            value = timezone.localtime(value)
         return localize(value)
 
 
