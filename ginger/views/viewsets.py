@@ -210,15 +210,16 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
     def render_context(self, context):
         return self.render_to_response(self.get_context_data(**context))
 
-    def handle_object_action(self):
+    def handle_object_action(self, **kwargs):
         if not hasattr(self, 'object'):
             self.object = self.get_object()
         self.template_name = "backend/object_action.html"
-        return self.handle_object_form()
+        return self.handle_object_form(**kwargs)
 
-    def handle_object_form(self):
+    def handle_object_form(self, **kwargs):
         request = self.request
         method = request.method
+        self.extra_context.update(kwargs)
         if method == 'GET':
             form = self.get_form(None, data=None, files=None)
             return self.render_form(form)
