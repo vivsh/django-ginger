@@ -1,5 +1,6 @@
 
 from django.utils.formats import localize
+from django.utils import timezone
 from .base import Formatter
 
 
@@ -50,6 +51,9 @@ class ImageFormatter(Formatter):
 class DateTimeFormatter(Formatter):
 
     def format(self, value, name, source):
+        if timezone.is_naive(value):
+            value = timezone.make_aware(value)
+        value = timezone.localtime(value)
         return localize(value)
 
 
