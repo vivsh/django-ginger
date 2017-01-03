@@ -202,10 +202,14 @@ class GingerFormView(GingerTemplateView):
         return None
 
     def get_form_context(self, form_key):
-        return {
+        action = self.action
+        ctx = {
             "request": self.request,
-            "user": self.user
+            "user": self.user,
         }
+        if action:
+            ctx['action'] = action
+        return ctx
 
     def get_form_kwargs(self, form_key):
         kwargs = {
