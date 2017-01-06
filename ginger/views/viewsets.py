@@ -66,20 +66,26 @@ class DeleteViewSetMixin(object):
 class ListViewSetMixin(object):
 
     context_page_key = 'page_obj'
+    context_order_key = 'order'
 
     @view(many=True, suffix="")
     def list(self, request):
-        object_list = self.filter_queryset(self.get_queryset())
+
+        object_list_formatter = self.get_object_list_formatter()
+
+        object_list = self.filter_queryset(self.get_queryset(), formatter_class=object_list_formatter)
+
+        filter_form = self.filter_form
 
         ctx = {}
 
         object_list = self.paginate_queryset(object_list)
         ctx[self.context_page_key] = object_list
 
-        object_list_formatter = self.get_object_list_formatter()
-
         if object_list_formatter:
-            object_list = object_list_formatter(object_list)
+            object_list = object_list_formatter(object_list,
+                                                sort_key=self.context_order_key,
+                                                sort_field=filter_form.fields.get(self.context_order_key))
 
         ctx[self.context_object_list_key] = object_list
 
@@ -123,9 +129,8 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
     def get_queryset(self):
         raise NotImplementedError
 
-    def filter_queryset(self, queryset):
-        filter_class = self.get_filter_class()
-        self.filter_form = self.get_filter_form(queryset)
+    def filter_queryset(self, queryset, **kwargs):
+        self.filter_form = self.get_filter_form(queryset, **kwargs)
         if self.filter_form:
             queryset = self.filter_form.perform_filter()
         return queryset
@@ -135,7 +140,8 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
             "initial": self.get_filter_initial(),
             "queryset": queryset,
             "data": self.request.GET,
-            "files": None
+            "files": None,
+            "request": self.request
         }
 
     def get_object_formatter(self):
@@ -167,11 +173,11 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
     def get_filter_initial(self):
         return None
 
-    def get_filter_form(self, queryset):
+    def get_filter_form(self, queryset, **extra):
         filter_class = self.get_filter_class()
         if filter_class:
-            request = self.request
             kwargs = self.get_filter_kwargs(queryset)
+            kwargs.update(extra)
             return filter_class(**kwargs)
 
     def paginate_queryset(self, queryset):
@@ -196,7 +202,7 @@ class GingerModelViewSet(GingerViewSetMixin, GingerFormView):
         return ctx
 
     def get_form_initial(self, form_key):
-        initial = super().get_form_initial(form_key) or {}
+        initial = super(GingerModelViewSet, self).get_form_initial(form_key) or {}
         initial.update(self.form_initial)
         return initial
 

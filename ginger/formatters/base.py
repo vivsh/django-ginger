@@ -13,12 +13,13 @@ class Formatter(object):
 
     __position = 1
 
-    def __init__(self, label=None, attr=None, hidden=False, sortable=True, variants=None):
+    def __init__(self, label=None, attr=None, hidden=False, sortable=True, variants=None, reverse=False):
         Formatter.__position += 1
         self.__position = Formatter.__position
         self.label = label
         self.hidden = hidden
         self.sortable = sortable
+        self.reverse = reverse
         self.attr = attr
         if variants is not None:
             if not isinstance(variants, (list, tuple)):
@@ -273,13 +274,13 @@ class FormattedTable(object):
             if self.sort_key and self.sort_field:
                 field = self.sort_field
                 code = field.get_value_for_name(col.name)
-                value = data.get(self.sort_name, "")
+                value = data.get(self.sort_key, "")
                 reverse = value.startswith("-")
                 if reverse:
                     value = value[1:]
                 is_active = code == value
                 next_value = "-%s" % code if not reverse and is_active else code
-                mods = {self.sort_name: next_value}
+                mods = {self.sort_key: next_value}
             else:
                 is_active = False
                 reverse = False
