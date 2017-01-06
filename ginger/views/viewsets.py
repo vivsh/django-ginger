@@ -85,7 +85,7 @@ class ListViewSetMixin(object):
         if object_list_formatter:
             object_list = object_list_formatter(object_list,
                                                 sort_key=self.context_order_key,
-                                                sort_field=filter_form.fields.get(self.context_order_key))
+                                                sort_field=filter_form.fields.get(self.context_order_key) if filter_form else None)
 
         ctx[self.context_object_list_key] = object_list
 
