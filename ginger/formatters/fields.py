@@ -41,7 +41,9 @@ class SortFilterField(forms.ChoiceField):
         return "%s%s" % ("-" if neg else "", name.lstrip("-"))
 
     def bind_form(self, form):
-        formatter_class = form.context['formatter_class']
+        formatter_class = form.context.get('formatter_class')
+        if formatter_class is None:
+            return
         column_dict = OrderedDict(Formatter.extract_from(formatter_class))
         choices = [(name, col.label or name.title()) for name, col in column_dict.items()
                         if col.sortable and not col.hidden]
