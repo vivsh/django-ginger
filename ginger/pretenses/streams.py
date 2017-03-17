@@ -6,6 +6,7 @@ from django.contrib.gis.geos.point import Point
 import random
 import string
 
+from django.core.files.base import ContentFile
 from . import utils
 
 
@@ -203,7 +204,7 @@ class ImageStream(object):
 
     def next(self, field):
         filename = utils.get_random_image(self.folder)
-        return File(open(filename, 'rb'))
+        return ContentFile(open(filename, 'rb').read())
 
 
 class FileStream(object):
@@ -214,7 +215,7 @@ class FileStream(object):
 
     def next(self, field):
         filename = utils.get_random_file(self.folders, self.extensions)
-        return File(open(filename, 'rb'))
+        return ContentFile(open(filename, 'rb').read())
 
 
 class DecimalStream(object):

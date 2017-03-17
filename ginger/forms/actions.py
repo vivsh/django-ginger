@@ -467,7 +467,7 @@ class GingerModelFormSet(forms.BaseModelFormSet):
     confirmation_message = None
 
     def __init__(self, **kwargs):
-        parent_cls = forms.Form if not isinstance(self, forms.ModelForm) else forms.ModelForm
+        parent_cls = forms.BaseFormSet if not isinstance(self, forms.BaseModelFormSet) else forms.BaseModelFormSet
         constructor = parent_cls.__init__
         keywords = set(inspect.getargspec(constructor).args)
         context = {}
