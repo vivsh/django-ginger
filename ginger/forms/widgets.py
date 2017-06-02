@@ -33,7 +33,9 @@ class ChoiceWidgetMixin(object):
     def render(self, name, value, attrs=None, choices=()):
         if value is None:
             value = ''
-        attrs = self.build_attrs(attrs, name=name)
+        attrs = attrs.copy() if attrs else {}
+        attrs["name"] = name
+        attrs = self.build_attrs(self.attrs, attrs)
         children = []
         id_ = attrs.get("id")
         for i, (code, label) in enumerate(itertools.chain(self.choices, choices)):
