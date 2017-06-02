@@ -1,9 +1,9 @@
 astunparse==1.2.2
 beautifulsoup4==4.4.1
 bleach==1.4.2
-Django==1.8.6
+Django==1.11.2
 django-appconf==0.6
--e git+https://vivsh@github.com/vivsh/django-ginger.git@1083af3293fe458cb80daa8f7f30aaef45c82ba7#egg=django_ginger-master
+-e git+https://vivsh@github.com/vivsh/django-ginger.git@7aa45afe48dd411ed95880b64faaeca7a431d25a#egg=django_ginger-master
 django-imagekit==3.2.5
 django-jinja==1.1.0
 django-jsonfield==0.9.13
@@ -25,7 +25,7 @@ pilkit==1.1.12
 Pillow==2.8.0
 pycrypto==2.6.1
 python-dateutil==2.4.2
-pytz==2014.10
+pytz==2017.2
 requests==2.4.1
 six==1.9.0
 waitress==0.8.10
