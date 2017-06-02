@@ -98,8 +98,8 @@ class FormattedValue(object):
     def value(self):
         try:
             return self.prop.extract(self.name, self.source, self.__owner)
-        except AttributeError:
-            raise ValueError("No attribute %r found in %r" % (self.name, self.source))
+        except AttributeError as ex:
+            raise ValueError("Error while accessing attribute %r in %r : %s" % (self.name, self.source, ex))
 
     def __getattr__(self, item):
         return getattr(self.prop, item)
