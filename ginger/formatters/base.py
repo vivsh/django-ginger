@@ -13,7 +13,7 @@ class Formatter(object):
 
     __position = 1
 
-    def __init__(self, label=None, attr=None, hidden=False, sortable=True, variants=None, reverse=False):
+    def __init__(self, label=None, attr=None, hidden=False, sortable=True, variants=None, reverse=False, empty=""):
         Formatter.__position += 1
         self.__position = Formatter.__position
         self.label = label
@@ -21,6 +21,7 @@ class Formatter(object):
         self.sortable = sortable
         self.reverse = reverse
         self.attr = attr
+        self.empty = empty
         if variants is not None:
             if not isinstance(variants, (list, tuple)):
                 variants = [variants]
@@ -108,7 +109,11 @@ class FormattedValue(object):
         return getattr(self.prop, item)
 
     def __str__(self):
-        return str(self.prop.format(self.value, self.name, self.source))
+        value = self.value
+        if value is None:
+            return self.prop.empty
+        result = self.prop.format(value, self.name, self.source)
+        return str(result)
 
 
 class FormattedObject(object):
@@ -264,6 +269,33 @@ class FormattedTableRow(object):
         return len(self) > 0
 
 
+class FooterRow:
+
+    __inited = False
+
+    def __init__(self, table, label):
+        self.data = {}
+        for column in table.columns:
+            self.data[column.name] = None
+        self.label = label
+        self.__inited = True
+
+    def __getattr__(self, item):
+        return self.data[item] if item in self.data else None
+
+    def __setattr__(self, key, value):
+        if self.__inited:
+            self.data[key] = value
+        else:
+            self.__dict__[key] = value
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def to_row(self):
+        return self.data
+
+
 class FormattedTable(object):
 
     def __init__(self, source, sort_key=None, sort_field=None, variant=None, **context):
@@ -298,6 +330,17 @@ class FormattedTable(object):
     @property
     def object_list(self):
         return self.source
+
+    def footer_row(self, label):
+        row = FooterRow(self, label)
+        return row
+
+    @property
+    def footer(self):
+        index = 0
+        for obj in self.get_footer_rows():
+            yield FormattedTableRow(index, obj, self)
+            index += 1
 
     def __iter__(self):
         index = 0

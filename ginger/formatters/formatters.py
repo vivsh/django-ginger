@@ -12,7 +12,8 @@ class ChoiceFormatter(Formatter):
         while parts:
             item = parts.pop(0)
             source = getattr(source, item)
-        return getattr(source, "get_%s_display" % tail)()
+        method = getattr(source, "get_%s_display" % tail, None)
+        return method() if method is not None else None
 
 
 
