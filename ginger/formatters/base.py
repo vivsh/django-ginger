@@ -27,10 +27,13 @@ class Formatter(object):
             variants = set(variants)
         self.variants = variants
 
+    def _update_position(self):
+        Formatter.__position += 1
+        self.__position = Formatter.__position
+
     def copy(self):
         instance = copy.copy(self)
-        Formatter.__position += 1
-        instance.__position = Formatter.__position
+        instance._update_position()
         return instance
 
     @property
@@ -92,7 +95,7 @@ class FormattedValue(object):
     @property
     def label(self):
         label = self.prop.label
-        return label if label is not None else self.name.capitalize()
+        return label if label is not None else self.name.replace("_", " ").title()
 
     @property
     def value(self):

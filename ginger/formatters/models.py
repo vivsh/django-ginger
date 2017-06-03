@@ -69,7 +69,11 @@ class MetaFormattedModel(type):
         for name, formatter in get_formatters_for_model(model, fields=getattr(meta, 'fields', None),
                                                         exclude=getattr(meta, 'exclude', None),
                                                         options=meta):
-            setattr(cls, name, formatter)
+            previous = getattr(cls, name, None)
+            if not isinstance(previous, Formatter):
+                setattr(cls, name, formatter)
+            else:
+                previous._update_position()
 
 
 @six.add_metaclass(MetaFormattedModel)
