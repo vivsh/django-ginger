@@ -71,6 +71,7 @@ class MetaFormattedModel(type):
                                                         options=meta):
             previous = getattr(cls, name, None)
             if not isinstance(previous, Formatter):
+                formatter._update_position()
                 setattr(cls, name, formatter)
             else:
                 previous._update_position()
