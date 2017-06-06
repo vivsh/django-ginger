@@ -16,7 +16,9 @@ FORMATTER_MAPPING = {
     models.DateField: DateFormatter,
     models.TimeField: TimeFormatter,
     models.ImageField: ImageFormatter,
-    models.FileField: FileFormatter
+    models.FileField: FileFormatter,
+    models.FloatField: DecimalFormatter,
+    models.DecimalField: DecimalFormatter
 }
 
 

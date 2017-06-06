@@ -71,4 +71,24 @@ class TimeFormatter(Formatter):
         return localize(value)
 
 
+class DecimalFormatter(Formatter):
+
+    def __init__(self, **kwargs):
+        self.decimal_places=  kwargs.pop("decimal_places", 2)
+        super(DecimalFormatter, self).__init__(**kwargs)
+
+    def format(self, value, name, source):
+        template = "%%.%df" % self.decimal_places
+        return template % value
+
+
+class CallableFormatter(Formatter):
+    def __init__(self, func, **kwargs):
+        self.func = func
+        super(CallableFormatter, self).__init__(**kwargs)
+
+    def format(self, value, name, source):
+        return self.func(value)
+
+
 
