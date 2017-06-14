@@ -246,7 +246,7 @@ class DataSetBase(object):
         return row
 
     def extend(self, items):
-        self.object_list = items
+        self.object_list = list(items)
         for d in items:
             self.append(d)
 
