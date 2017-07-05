@@ -314,7 +314,7 @@ class GingerSearchView(GingerFormView):
             ctx["per_page"] = self.per_page
             ctx["page"] = self.request
             if hasattr(self, 'queryset'):
-                ctx["queryset"] = self.queryset
+                ctx["queryset"] = self.get_queryset()
         return ctx
 
     def get_context_data(self, **kwargs):

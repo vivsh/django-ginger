@@ -1,5 +1,6 @@
 from __future__ import division
 
+import copy
 import itertools
 import inspect
 import weakref
@@ -246,8 +247,8 @@ class DataSetBase(object):
         return row
 
     def extend(self, items):
-        self.object_list = list(items)
-        for d in self.object_list:
+        self.object_list = items
+        for d in copy.copy(self.object_list):
             self.append(d)
 
     def insert(self, i, data):
