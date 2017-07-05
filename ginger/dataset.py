@@ -247,8 +247,10 @@ class DataSetBase(object):
         return row
 
     def extend(self, items):
-        self.object_list = items
-        for d in copy.copy(self.object_list):
+        if inspect.isgenerator(items):
+            items = list(items)
+        self.object_list = items        
+        for d in items:
             self.append(d)
 
     def insert(self, i, data):
