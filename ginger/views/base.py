@@ -76,8 +76,7 @@ class GingerSessionDataMixin(object):
     session_key_prefix = ""
 
     def get_session_key(self):
-        host = self.request.get_host()
-        return "%s-%s-%s" % (self.session_key_prefix, host, self.class_oid())
+        return "%s-%s" % (self.session_key_prefix, self.class_oid())
 
     def get_session_data(self):
         return self.request.session.get(self.get_session_key())
