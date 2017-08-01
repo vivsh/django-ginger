@@ -152,9 +152,9 @@ class FormattedObject(object):
     @classmethod
     def as_table(cls):
         props = dict(Formatter.extract_from(cls))
-        for key in cls.__dict__:
-            if key.startswith("prepare_"):
-                props[key] = cls.__dict__[key]
+        for key, value in cls.__dict__.items():
+            if not key.startswith("_") and callable(value):
+                props[key] = value
         name = cls.__name__
         return type("%sTable"%name, (FormattedTable,), props)
 

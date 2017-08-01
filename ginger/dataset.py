@@ -249,7 +249,7 @@ class DataSetBase(object):
     def extend(self, items):
         if inspect.isgenerator(items):
             items = list(items)
-        self.object_list = items        
+        self.object_list = items
         for d in items:
             self.append(d)
 
