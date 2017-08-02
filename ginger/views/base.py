@@ -14,7 +14,7 @@ from .meta import ViewInfo
 from ginger import utils, pattern
 
 
-__all__ = ["GingerView", "GingerViewSetMixin", 'view']
+__all__ = ["GingerView", "GingerViewSetMixin", 'view', 'list_view', 'object_view']
 
 
 P = pattern.Pattern
@@ -279,6 +279,14 @@ def view(fn=None, **kwargs):
 
     return wrapper
 
+
+def list_view(fn=None, **kwargs):
+    kwargs['many'] = True
+    return view(fn=fn, **kwargs)
+
+def object_view(fn=None, **kwargs):
+    kwargs['many'] = False
+    return view(fn=fn, **kwargs)
 
 def get_child_views(cls):
     for name, func in inspect.getmembers(cls):
