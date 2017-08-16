@@ -32,6 +32,15 @@ class Name:
         return r'[a-zA-Z]\w+'
 
 
+class AlNum:
+
+    def match(self, value):
+        return value == "alnum"
+
+    def pattern(self, value):
+        return r'\w+'
+
+
 class Any:
 
     def match(self, value):
@@ -53,7 +62,7 @@ class Choice:
 
 class Pattern(object):
 
-    pattern_types = [Num, Slug, Name, Choice, Any]
+    pattern_types = [Num, Slug, Name, Choice, Any, AlNum]
 
     _regex = re.compile("^(\w*)(\?)?:(.+?)(?:\s*\{\s*(\d*)\s*(,\s*\d*)?\s*\})?$")
 
