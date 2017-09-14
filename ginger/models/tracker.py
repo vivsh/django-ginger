@@ -12,6 +12,11 @@ class FieldTracker(object):
         self.data = {}
         self.reset()
 
+    def __getstate__(self):
+        data = self.__dict__.copy()
+        data['model'] = None
+        return data
+
     def is_dirty(self):
         return any(self.has_changed(f) for f in self.field_names)
 
@@ -41,6 +46,8 @@ class FieldTrackerDescriptor(object):
             raise ImproperlyConfigured("Tracker only works on instances")
         try:
             result = instance.__field_tracker
+            if result.model is None:
+                result.model = weakref.ref(instance)
         except AttributeError:
             result = FieldTracker(instance, self.field_names)
             instance.__field_tracker = result
