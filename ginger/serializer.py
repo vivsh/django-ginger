@@ -42,7 +42,7 @@ class GingerJSONEncoder(DjangoJSONEncoder):
 class JSONTemplate(object):
 
     @staticmethod
-    def render(context):
+    def render(context, *args):
         return encode(context)
 
 

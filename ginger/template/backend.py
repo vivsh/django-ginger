@@ -129,6 +129,7 @@ class Jinja2(BaseEngine):
 
 
 class Template(object):
+
     def __init__(self, template, backend):
         self.template = template
         self.backend = backend
