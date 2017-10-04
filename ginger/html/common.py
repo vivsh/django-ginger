@@ -223,7 +223,7 @@ empty = Empty("none")
 
 for name in "html body link meta div span form section article aside main ul li ol dl dd dt p a strong "\
             "i fieldset legend b em input select button label nav textarea " \
-            "table tbody tfoot thead tr td th figure caption".split(" "):
+            "table tbody tfoot thead tr td th figure caption img".split(" "):
     __all__.append(name)
     globals()[name] = Element(name)
 
