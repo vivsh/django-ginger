@@ -122,6 +122,7 @@ def flatten_attributes(attrs):
     return " ".join(result)
 
 
+# noinspection PyPackageRequirements
 def choices_to_options(request, bound_field):
     tags = []
     for link in build_links(bound_field, request):

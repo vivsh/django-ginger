@@ -42,7 +42,7 @@ setup(
         "django-webtest",
         "jinja2>=2.8",
         "mock>=1.0.1",
-        "django>=1.11",
+        "django>=1.10",
         'pillow',
         "geopy",
         'bleach',

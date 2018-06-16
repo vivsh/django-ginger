@@ -465,8 +465,7 @@ class Module(Block):
 
 
 if __name__ == '__main__':
-    import sample
-    mod = Module(sample)
+    mod = Module(sources)
     mod.export(object)
     print(list(mod.exporter.import_strings()))
 

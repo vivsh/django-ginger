@@ -3,6 +3,8 @@ import re
 import warnings
 import mimetypes
 # import urllib2
+from functools import total_ordering
+
 from django.utils.encoding import force_text
 from django.utils import six
 import os
@@ -19,6 +21,22 @@ from .widgets import EmptyWidget
 
 __all__ = ["FileOrUrlInput", "HeightField", "HeightWidget", "SortField", "GingerDataSetField", "GingerSortField", 
            "GingerPageField"]
+
+
+@total_ordering
+class _SortableNone(object):
+
+    def __ge__(self, other):
+        return False
+
+    def __le__(self, other):
+        return True
+
+    def __eq__(self, other):
+        return self is other
+
+
+SortableNone = _SortableNone()
 
 
 class FileOrUrlInput(forms.ClearableFileInput):
@@ -184,7 +202,7 @@ class GingerDataSetField(GingerSortField):
         column = dataset.columns[name]
         if column.reverse:
             reverse = not reverse
-        column.sort(reverse=reverse)
+        column.sort(reverse=reverse, key=lambda a: ((0 if a is None else 1), a))
 
 
 class SortField(GingerSortField):

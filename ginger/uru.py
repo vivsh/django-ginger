@@ -177,3 +177,6 @@ def u(tag, *args, **kwargs):
         return Tag(tag, attrs, children)
 
 
+if __name__ == '__main__':
+    el = u("div", u("i.fa.fa-some"), title="asdad", class_=["hello", "buffalo", {"some": True, "others": False}])
+    print(stringify(el, {}))
