@@ -107,8 +107,9 @@ class BoundColumn(object):
 
     def sort(self, key=None, reverse=False):
         i = self.position
-        self.schema.rows.sort(reverse=reverse,
-                              key=lambda row: key(row[i]) if key is not None else row[i])
+        if key is None:
+            key = lambda a: ((0 if a is None else 1), a)
+        self.schema.rows.sort(reverse=reverse, key=lambda row: key(row[i]))
 
     def __repr__(self):
         return "BoundColumn<name: %s, position:  %s>"%(self.name, self.position)

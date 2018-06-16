@@ -202,7 +202,7 @@ class GingerDataSetField(GingerSortField):
         column = dataset.columns[name]
         if column.reverse:
             reverse = not reverse
-        column.sort(reverse=reverse, key=lambda a: ((0 if a is None else 1), a))
+        column.sort(reverse=reverse)
 
 
 class SortField(GingerSortField):
